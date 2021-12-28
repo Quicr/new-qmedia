@@ -1,0 +1,18 @@
+{
+  "name": "media",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "protobuf",
+    "opus",
+    "openssl",
+    "doctest",
+    "dav1d",
+    "libsamplerate",
+    "curl",
+    "openh264",
+    {
+      "name": "portaudio",
+      "platform": "!uwp"
+    }
+  ]
+}

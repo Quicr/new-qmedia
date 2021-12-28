@@ -30,3 +30,25 @@
 *.exe
 *.out
 *.app
+
+# Temp Files
+.DS_Store
+*.swp
+*~
+build
+
+# log files
+*.log
+
+# IDEA
+.idea
+cmake-build-debug
+
+# Editor files/directories
+.vscode
+/.vs
+/CMakeSettings.json
+.projections.json
+
+# vcpkg
+/vcpkg_installed

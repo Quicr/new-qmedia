@@ -1,0 +1,236 @@
+
+#pragma once
+
+#include <string>
+#include <thread>
+#include <queue>
+#include <cstdint>
+#include <mutex>
+#include <cassert>
+#include <memory>
+#include <sframe/sframe.h>
+#include <ostream>
+#include <iostream>
+
+#if defined(__linux) || defined(__APPLE__)
+#include <sys/socket.h>
+#else
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
+#include "packet.hh"
+#include "transport.hh"
+#include "netTransportUDP.hh"
+#include "netTransportQuic.hh"
+#include "logger.hh"
+#include "metrics.hh"
+#include "rtx_manager.hh"
+
+namespace neo_media
+{
+class NetTransportUDP;
+
+///
+/// TransportManager
+///
+class TransportManager
+{
+public:
+    static NetTransport *make_transport(NetTransport::Type type,
+                                        TransportManager *transportManager,
+                                        const std::string &sfuName_in,
+                                        int sfuPort_in,
+                                        const LoggerPointer &logger)
+    {
+        NetTransport *transport = nullptr;
+        std::string name = "";
+        switch (type)
+        {
+            case NetTransport::UDP:
+                name = "TransportUDP";
+                if (sfuName_in.empty())
+                {
+                    transport = new NetTransportUDP(transportManager,
+                                                    sfuPort_in);
+                }
+                else
+                {
+                    transport = new NetTransportUDP(
+                        transportManager, sfuName_in, sfuPort_in);
+                }
+                break;
+            case NetTransport::PICO_QUIC:
+                name = "TransportQUIC";
+#ifdef ENABLE_QUIC
+                if (sfuName_in.empty())
+                {
+                    // server
+                    transport = NetTransportQUIC(transportManager, sfuPort_in);
+                }
+                else
+                {
+                    // client
+                    transport = NetTransportQUIC(
+                        transportManager, sfuName_in, sfuPort_in);
+                }
+#else
+                throw std::runtime_error("PICO_QUIC transport support isn't "
+                                         "enabled");
+#endif
+        }
+        transport->setLogger(name, logger);
+        return transport;
+    }
+
+    enum Type
+    {
+        Client,
+        Server
+    };
+
+    TransportManager(NetTransport::Type type,
+                     const std::string &sfuName_in,
+                     int sfuPort_in,
+                     Metrics::MetricsPtr metricsPtr,
+                     const LoggerPointer &parent_logger = nullptr);
+    virtual Type type() const = 0;
+    virtual void send(PacketPointer packet) = 0;        // queues this to be
+                                                        // sent thread safe
+    bool empty();                // any packets to receive..queue locked
+    void waitForPacket();        // blocks till a packet is ready for receive
+
+    std::condition_variable recv_cv;
+    std::condition_variable send_cv;
+
+    PacketPointer recv();
+
+    bool recvDataFromNet(std::string &data_in,
+                         NetTransport::PeerConnectionInfo info);
+    bool getDataToSendToNet(std::string &data_out,
+                            NetTransport::PeerConnectionInfo *info,
+                            socklen_t *addrLen);
+
+    virtual bool transport_ready() const = 0;
+
+    bool shutDown = false;
+
+protected:
+    friend NetTransport;
+    std::unique_ptr<NetTransport> netTransport;
+    // Metrics reported by transport manager
+    enum struct MeasurementType
+    {
+        PacketRate_Tx,
+        PacketRate_Rx,
+        FrameRate_Tx,
+        FrameRate_Rx,
+        QDepth_Tx,
+        QDepth_Rx,
+    };
+
+    std::map<MeasurementType, Metrics::MeasurementPtr> measurements;
+    void recordMetric(MeasurementType, const PacketPointer &packetPointer);
+    Metrics::MetricsPtr metrics;
+
+    // rtx handle (used by clientTxMgr today)
+    std::unique_ptr<RtxManager> rtx_mgr;
+
+protected:
+    virtual ~TransportManager();
+
+    void runNetRecv();
+    std::queue<PacketPointer> recvQ;
+    std::mutex recvQMutex;
+    std::thread recvThread;
+    static int recvThreadFunc(TransportManager *t)
+    {
+        assert(t);
+        t->runNetRecv();
+        return 0;
+    }
+
+    void runNetSend();
+    std::queue<PacketPointer> sendQ;
+    std::mutex sendQMutex;
+    std::thread sendThread;
+    static int sendThreadFunc(TransportManager *t)
+    {
+        assert(t);
+        t->runNetSend();
+        return 0;
+    }
+
+    // Encode packet to bytes based on underlying encoding
+    bool netEncode(Packet *packet, std::string &data_out);
+    // Decode bytes to Packet, return nullptr on decode error
+    bool netDecode(const std::string &data_in, Packet *packet_out);
+
+    std::unique_ptr<sframe::MLSContext> mls_context;
+    LoggerPointer logger;
+    bool isLoopback = false;
+
+private:
+    uint64_t nextTransportSeq = 0;        // Next packet transport sequence
+                                          // number
+    const int NUM_METRICS_TO_ACCUMULATE = 50;
+    int num_metrics_accumulated = 0;
+};
+
+class ClientTransportManager : public TransportManager
+{
+public:
+    ClientTransportManager(NetTransport::Type type,
+                           std::string sfuName_in,
+                           uint16_t sfuPort_in,
+                           Metrics::MetricsPtr metricsPtr = nullptr,
+                           const LoggerPointer &parent_logger = nullptr);
+    // used for testing
+    ClientTransportManager();
+    virtual ~ClientTransportManager();
+    void start();
+
+    virtual Type type() const { return Type::Client; }
+
+    virtual bool transport_ready() const { return netTransport->ready(); }
+
+    // queues this to be sent thread safe
+    virtual void send(PacketPointer packet);
+
+    // Initialize sframe context with the base secret provided by MLS key
+    // exchange Note: This is hard coded secret until we bring in MLS
+    void setCryptoKey(uint64_t epoch, const bytes &epoch_secret);
+
+    // add to the recvQ
+    void loopback(PacketPointer packet);
+
+    bytes protect(const bytes &plaintext);
+    bytes unprotect(const bytes &ciphertext);
+
+private:
+    std::string sfuName;
+    uint16_t sfuPort;
+    struct sockaddr_in sfuAddr;        // struct sockaddr_storage sfuAddr;
+    socklen_t sfuAddrLen;
+    int64_t current_epoch = 0;
+    sframe::MLSContext::SenderID senderId;
+    sframe::MLSContext mls_context;
+    LoggerPointer logger;
+};
+
+class ServerTransportManager : public TransportManager
+{
+public:
+    ServerTransportManager(NetTransport::Type type,
+                           int sfuPort = 5004,
+                           Metrics::MetricsPtr metricsPtr = nullptr,
+                           const LoggerPointer &logger = nullptr);
+    virtual ~ServerTransportManager();
+    virtual Type type() const { return Type::Server; }
+
+    virtual bool transport_ready() const { return netTransport->ready(); }
+
+    virtual void send(PacketPointer packet);
+};
+
+}        // namespace neo_media
