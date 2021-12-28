@@ -95,14 +95,14 @@ include_directories( include src/extern )
 ###
 ### Dependencies
 ###
-set(LIBRARIES media_api gsl sframe av1enc)
+set(LIBRARIES media_api gsl sframe )
 
 # picoquicls -l
-if (WIN32)
-  list(APPEND LIBRARIES picoquic)
-else(WIN32)
-  list(APPEND LIBRARIES picoquic-core)
-endif(WIN32)
+#if (WIN32)
+#  list(APPEND LIBRARIES picoquic)
+#else(WIN32)
+#  list(APPEND LIBRARIES picoquic-core)
+#endif(WIN32)
 
 # samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)
@@ -113,12 +113,12 @@ find_library(openh264 openh264 REQUIRED)
 list(APPEND LIBRARIES ${openh264})
 
 # dav1d
-if (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    list(APPEND LIBRARIES dav1d)
-else (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    find_library(dav1d dav1d REQUIRED)
-    list(APPEND LIBRARIES ${dav1d})
-endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+#if (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    list(APPEND LIBRARIES dav1d)
+#else (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+#   find_library(dav1d dav1d REQUIRED)
+#    list(APPEND LIBRARIES ${dav1d})
+#endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # curl
 find_package(CURL REQUIRED)
