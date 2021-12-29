@@ -40,7 +40,7 @@ void NetTransportUDP::shutdown()
 #else
     ::shutdown(fd, SHUT_RDWR);
 #endif
-};
+}
 
 void NetTransportUDP::close()
 {

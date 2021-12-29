@@ -1,3 +1,5 @@
+#include <cstring> // memeset
+
 #include "audio_encoder.hh"
 
 using namespace neo_media;
