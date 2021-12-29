@@ -21,7 +21,10 @@ RUN apt-get install -y \
 RUN apt-get install -y \
     python3 \
     nasm 
-    
+
+RUN apt-get install -y libcurl4-openssl-dev
+
+
 WORKDIR /tmp
 RUN git clone https://github.com/microsoft/vcpkg
 WORKDIR /tmp/vcpkg
@@ -33,22 +36,30 @@ RUN ./vcpkg install doctest
 RUN ./vcpkg install dav1d
 RUN ./vcpkg install libsamplerate
 RUN ./vcpkg install portaudio
-RUN ./vcpkg integrate install
+RUN ./vcpkg install openh264
+#RUN ./vcpkg integrate install
+
+WORKDIR /src/qmedia
+COPY ./CMakeLists.txt	./CMakeLists.txt
+COPY ./cmake ./cmake
+COPY ./proto ./proto
+COPY ./include ./include
+COPY ./cmd ./cmd 
+COPY ./test ./test
+COPY ./src ./src 
 
 RUN mkdir -p /tmp/build
 WORKDIR /tmp/build
 
-WORKDIR /src
-COPY . .
-
 #CMD /bin/tcsh
 
-RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake /src
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=/tmp/vcpkg/scripts/buildsystems/vcpkg.cmake /src/qmedia
 RUN make VERBOSE=1 -j 8 echoSFU
 
 RUN mkdir -p /src/bin
 
 RUN cp cmd/echoSFU /src/bin/
+RUN ldd cmd/echoSFU | grep "=> /" | awk '{print $3}' | xargs -I '{}' cp -v '{}' /src/bin
 
 FROM ubuntu:latest
 
