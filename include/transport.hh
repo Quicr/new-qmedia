@@ -26,7 +26,8 @@ public:
     enum Type
     {
         UDP,
-        PICO_QUIC
+        PICO_QUIC,
+        QUICR
     };
 
     virtual bool ready() = 0;

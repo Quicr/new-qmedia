@@ -56,7 +56,6 @@ Logger::Logger(const std::string &process_name,
 {
 }
 
-
 Logger::~Logger()
 {
     // Only the root logger deals with actual facilities
@@ -69,7 +68,6 @@ Logger::~Logger()
         if (log_facility == LogFacility::FILE) log_file.close();
     }
 }
-
 
 void Logger::Log(LogLevel level, const std::string &message, bool console)
 {
@@ -154,12 +152,10 @@ void Logger::Log(LogLevel level, const std::string &message, bool console)
     }
 }
 
-
 void Logger::Log(const std::string &message)
 {
     Log(LogLevel::INFO, message);
 }
-
 
 void Logger::SetLogFacility(LogFacility facility, std::string filename)
 {
@@ -203,7 +199,6 @@ void Logger::SetLogFacility(LogFacility facility, std::string filename)
     }
 }
 
-
 LogFacility Logger::GetLogFacility()
 {
     if (parent_logger) return parent_logger->GetLogFacility();
@@ -211,12 +206,10 @@ LogFacility Logger::GetLogFacility()
     return log_facility;
 }
 
-
 void Logger::SetLogLevel(LogLevel level)
 {
     log_level = level;
 }
-
 
 void Logger::SetLogLevel(const std::string level)
 {
@@ -238,24 +231,20 @@ void Logger::SetLogLevel(const std::string level)
     }
 }
 
-
 LogLevel Logger::GetLogLevel()
 {
     return log_level;
 }
-
 
 bool Logger::IsDebugging()
 {
     return log_level >= LogLevel::DEBUG;
 }
 
-
 void Logger::SetLogCallback(LogCallback log_callback)
 {
     this->log_callback = log_callback;
 }
-
 
 int Logger::MapLogLevel(LogLevel level) const
 {
@@ -295,7 +284,6 @@ int Logger::MapLogLevel(LogLevel level) const
 #endif
 }
 
-
 std::string Logger::LogLevelString(LogLevel level) const
 {
     std::string log_level_string = "INFO";
@@ -312,7 +300,6 @@ std::string Logger::LogLevelString(LogLevel level) const
 
     return log_level_string;
 }
-
 
 std::string Logger::GetTimestamp() const
 {

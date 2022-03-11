@@ -5,19 +5,16 @@
 
 #include "modulus_deque.hh"
 
-
 template <typename T, typename U, typename Allocator>
 ModulusDeque<T, U, Allocator>::ModulusDeque(bool allow_duplicates) :
     allow_duplicates(allow_duplicates)
 {
 }
 
-
 template <typename T, typename U, typename Allocator>
 ModulusDeque<T, U, Allocator>::~ModulusDeque()
 {
 }
-
 
 template <typename T, typename U, typename Allocator>
 bool ModulusDeque<T, U, Allocator>::Insert(const std::pair<T, U> &item)
@@ -103,7 +100,6 @@ bool ModulusDeque<T, U, Allocator>::Insert(std::pair<T, U> &&item)
     return true;
 }
 
-
 template <typename T, typename U, typename Allocator>
 bool ModulusDeque<T, U, Allocator>::AllKeysConsecutive() const
 {
@@ -127,20 +123,17 @@ bool ModulusDeque<T, U, Allocator>::AllKeysConsecutive() const
     return true;
 }
 
-
 template <typename T, typename U, typename Allocator>
 bool ModulusDeque<T, U, Allocator>::Empty() const
 {
     return sorted_pair_deque.empty();
 }
 
-
 template <typename T, typename U, typename Allocator>
 std::size_t ModulusDeque<T, U, Allocator>::Size() const
 {
     return sorted_pair_deque.size();
 }
-
 
 template <typename T, typename U, typename Allocator>
 const typename ModulusDeque<T, U, Allocator>::SortedPairDeque &
@@ -149,13 +142,11 @@ ModulusDeque<T, U, Allocator>::GetDeque() const
     return sorted_pair_deque;
 }
 
-
 template <typename T, typename U, typename Allocator>
 const std::pair<T, U> &ModulusDeque<T, U, Allocator>::Front() const
 {
     return sorted_pair_deque.front();
 }
-
 
 template <typename T, typename U, typename Allocator>
 void ModulusDeque<T, U, Allocator>::PopFront()

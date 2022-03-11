@@ -7,7 +7,6 @@
 
 #include "metrics.hh"
 
-
 using namespace neo_media;
 
 const std::string MetricsConfig::URL = "";
@@ -267,7 +266,10 @@ std::list<std::string> Metrics::Measurement::lineProtocol()
 
         // add series generated via TimeSeriesEntries
         std::for_each(
-            series.begin(), series.end(), [&lines, this](auto &entry) {
+            series.begin(),
+            series.end(),
+            [&lines, this](auto &entry)
+            {
                 // gen tags
                 std::string line = lineProtocol_nameAndTags(entry.second.tags);
                 if (line.empty()) return;

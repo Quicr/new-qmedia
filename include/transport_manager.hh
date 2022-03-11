@@ -23,6 +23,7 @@
 #include "transport.hh"
 #include "netTransportUDP.hh"
 #include "netTransportQuic.hh"
+#include "netTransportQuicR.hh"
 #include "logger.hh"
 #include "metrics.hh"
 #include "rtx_manager.hh"
@@ -59,6 +60,11 @@ public:
                     transport = new NetTransportUDP(
                         transportManager, sfuName_in, sfuPort_in);
                 }
+                break;
+            case NetTransport::QUICR:
+                name = "TransportQuicr";
+                transport = new NetTransportQUICR(
+                    transportManager, sfuName_in, sfuPort_in);
                 break;
             case NetTransport::PICO_QUIC:
                 name = "TransportQUIC";
@@ -111,126 +117,132 @@ public:
                             NetTransport::PeerConnectionInfo *info,
                             socklen_t *addrLen);
 
+    size_t hasDataToSendToNet();
+
     virtual bool transport_ready() const = 0;
 
     bool shutDown = false;
 
-protected:
-    friend NetTransport;
-    std::unique_ptr<NetTransport> netTransport;
-    // Metrics reported by transport manager
-    enum struct MeasurementType
+    std::weak_ptr<NetTransport> transport()
     {
-        PacketRate_Tx,
-        PacketRate_Rx,
-        FrameRate_Tx,
-        FrameRate_Rx,
-        QDepth_Tx,
-        QDepth_Rx,
+        return std::weak_ptr<NetTransport>(netTransport);
+
+    protected:
+        friend NetTransport;
+        std::shared_ptr<NetTransport> netTransport;
+        // Metrics reported by transport manager
+        enum struct MeasurementType
+        {
+            PacketRate_Tx,
+            PacketRate_Rx,
+            FrameRate_Tx,
+            FrameRate_Rx,
+            QDepth_Tx,
+            QDepth_Rx,
+        };
+
+        std::map<MeasurementType, Metrics::MeasurementPtr> measurements;
+        void recordMetric(MeasurementType, const PacketPointer &packetPointer);
+        Metrics::MetricsPtr metrics;
+
+        // rtx handle (used by clientTxMgr today)
+        std::unique_ptr<RtxManager> rtx_mgr;
+
+    protected:
+        virtual ~TransportManager();
+
+        void runNetRecv();
+        std::queue<PacketPointer> recvQ;
+        std::mutex recvQMutex;
+        std::thread recvThread;
+        static int recvThreadFunc(TransportManager * t)
+        {
+            assert(t);
+            t->runNetRecv();
+            return 0;
+        }
+
+        void runNetSend();
+        std::queue<PacketPointer> sendQ;
+        std::mutex sendQMutex;
+        std::thread sendThread;
+        static int sendThreadFunc(TransportManager * t)
+        {
+            assert(t);
+            t->runNetSend();
+            return 0;
+        }
+
+        // Encode packet to bytes based on underlying encoding
+        bool netEncode(Packet * packet, std::string & data_out);
+        // Decode bytes to Packet, return nullptr on decode error
+        bool netDecode(const std::string &data_in, Packet *packet_out);
+
+        std::unique_ptr<sframe::MLSContext> mls_context;
+        LoggerPointer logger;
+        bool isLoopback = false;
+
+        uint64_t nextTransportSeq = 0;        // Next packet transport sequence
+                                              // number
+    private:
+        const int NUM_METRICS_TO_ACCUMULATE = 50;
+        int num_metrics_accumulated = 0;
     };
 
-    std::map<MeasurementType, Metrics::MeasurementPtr> measurements;
-    void recordMetric(MeasurementType, const PacketPointer &packetPointer);
-    Metrics::MetricsPtr metrics;
-
-    // rtx handle (used by clientTxMgr today)
-    std::unique_ptr<RtxManager> rtx_mgr;
-
-protected:
-    virtual ~TransportManager();
-
-    void runNetRecv();
-    std::queue<PacketPointer> recvQ;
-    std::mutex recvQMutex;
-    std::thread recvThread;
-    static int recvThreadFunc(TransportManager *t)
+    class ClientTransportManager : public TransportManager
     {
-        assert(t);
-        t->runNetRecv();
-        return 0;
-    }
+    public:
+        ClientTransportManager(NetTransport::Type type,
+                               std::string sfuName_in,
+                               uint16_t sfuPort_in,
+                               Metrics::MetricsPtr metricsPtr = nullptr,
+                               const LoggerPointer &parent_logger = nullptr);
+        // used for testing
+        ClientTransportManager();
+        virtual ~ClientTransportManager();
+        void start();
 
-    void runNetSend();
-    std::queue<PacketPointer> sendQ;
-    std::mutex sendQMutex;
-    std::thread sendThread;
-    static int sendThreadFunc(TransportManager *t)
+        virtual Type type() const { return Type::Client; }
+
+        virtual bool transport_ready() const { return netTransport->ready(); }
+
+        // queues this to be sent thread safe
+        virtual void send(PacketPointer packet);
+
+        // Initialize sframe context with the base secret provided by MLS key
+        // exchange Note: This is hard coded secret until we bring in MLS
+        void setCryptoKey(uint64_t epoch, const bytes &epoch_secret);
+
+        // add to the recvQ
+        void loopback(PacketPointer packet);
+
+        bytes protect(const bytes &plaintext);
+        bytes unprotect(const bytes &ciphertext);
+
+    private:
+        std::string sfuName;
+        uint16_t sfuPort;
+        struct sockaddr_in sfuAddr;        // struct sockaddr_storage sfuAddr;
+        socklen_t sfuAddrLen;
+        int64_t current_epoch = 0;
+        sframe::MLSContext::SenderID senderId;
+        sframe::MLSContext mls_context;
+        LoggerPointer logger;
+    };
+
+    class ServerTransportManager : public TransportManager
     {
-        assert(t);
-        t->runNetSend();
-        return 0;
-    }
+    public:
+        ServerTransportManager(NetTransport::Type type,
+                               int sfuPort = 5004,
+                               Metrics::MetricsPtr metricsPtr = nullptr,
+                               const LoggerPointer &logger = nullptr);
+        virtual ~ServerTransportManager();
+        virtual Type type() const { return Type::Server; }
 
-    // Encode packet to bytes based on underlying encoding
-    bool netEncode(Packet *packet, std::string &data_out);
-    // Decode bytes to Packet, return nullptr on decode error
-    bool netDecode(const std::string &data_in, Packet *packet_out);
+        virtual bool transport_ready() const { return netTransport->ready(); }
 
-    std::unique_ptr<sframe::MLSContext> mls_context;
-    LoggerPointer logger;
-    bool isLoopback = false;
-
-private:
-    uint64_t nextTransportSeq = 0;        // Next packet transport sequence
-                                          // number
-    const int NUM_METRICS_TO_ACCUMULATE = 50;
-    int num_metrics_accumulated = 0;
-};
-
-class ClientTransportManager : public TransportManager
-{
-public:
-    ClientTransportManager(NetTransport::Type type,
-                           std::string sfuName_in,
-                           uint16_t sfuPort_in,
-                           Metrics::MetricsPtr metricsPtr = nullptr,
-                           const LoggerPointer &parent_logger = nullptr);
-    // used for testing
-    ClientTransportManager();
-    virtual ~ClientTransportManager();
-    void start();
-
-    virtual Type type() const { return Type::Client; }
-
-    virtual bool transport_ready() const { return netTransport->ready(); }
-
-    // queues this to be sent thread safe
-    virtual void send(PacketPointer packet);
-
-    // Initialize sframe context with the base secret provided by MLS key
-    // exchange Note: This is hard coded secret until we bring in MLS
-    void setCryptoKey(uint64_t epoch, const bytes &epoch_secret);
-
-    // add to the recvQ
-    void loopback(PacketPointer packet);
-
-    bytes protect(const bytes &plaintext);
-    bytes unprotect(const bytes &ciphertext);
-
-private:
-    std::string sfuName;
-    uint16_t sfuPort;
-    struct sockaddr_in sfuAddr;        // struct sockaddr_storage sfuAddr;
-    socklen_t sfuAddrLen;
-    int64_t current_epoch = 0;
-    sframe::MLSContext::SenderID senderId;
-    sframe::MLSContext mls_context;
-    LoggerPointer logger;
-};
-
-class ServerTransportManager : public TransportManager
-{
-public:
-    ServerTransportManager(NetTransport::Type type,
-                           int sfuPort = 5004,
-                           Metrics::MetricsPtr metricsPtr = nullptr,
-                           const LoggerPointer &logger = nullptr);
-    virtual ~ServerTransportManager();
-    virtual Type type() const { return Type::Server; }
-
-    virtual bool transport_ready() const { return netTransport->ready(); }
-
-    virtual void send(PacketPointer packet);
-};
+        virtual void send(PacketPointer packet);
+    };
 
 }        // namespace neo_media

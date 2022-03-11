@@ -85,6 +85,7 @@ public:
     MediaType mediaType;
     VideoFrameType videoFrameType = VideoFrameType::None;
     Type packetType;
+    bool is_last_fragment = false;
 
     float audioEnergyLevel;
     bool echo;
