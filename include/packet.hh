@@ -95,6 +95,7 @@ public:
     // payload
     std::vector<uint8_t> data;        // media bytes (may be encrypted or not)
     std::vector<uint8_t> authTag;
+    std::string encoded_data;        // transport encoded
 
     NetTransport::PeerConnectionInfo peer_info;        // destination
 

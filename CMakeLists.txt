@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.10)
 # the dependencies that we need without much knowledge that vcpkg actually
 # exists.
 set(CMAKE_TOOLCHAIN_FILE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/../media/vcpkg/scripts/buildsystems/vcpkg.cmake
     CACHE STRING "Vcpkg toolchain file")
 if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
     message(WARNING
@@ -112,7 +112,7 @@ message(STATUS "quicr libraries: ${QUICR_LIBRARIES}" )
 include_directories(include lib tests
         ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
 
-set(LIBRARIES media_api gsl sframe av1enc)
+set(LIBRARIES media_api gsl sframe)
 
 # samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)

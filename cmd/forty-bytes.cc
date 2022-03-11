@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
         assert(join);
 
         join->clientID = client_id;
-        join->packetType = neo_media::Packet::Join;
+        join->packetType = neo_media::Packet::Type::Join;
         join->conferenceID = conference_id;
         std::cout << "40B:Sending Join:" << std::endl;
         transportManager->send(std::move(join));

@@ -173,12 +173,7 @@ ClientTransportManager::ClientTransportManager() :
     mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
     current_epoch(0)
 {
-    if (type == NetTransport::Type::UDP)
-    {
-        // quic/quicr have their own rtx mechanisms, hence enable rtx
-        // just for udp transport.
-        rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
-    }
+    rtx_mgr = std::make_unique<RtxManager>(false, this, nullptr);
 }
 
 ClientTransportManager::ClientTransportManager(
@@ -194,9 +189,12 @@ ClientTransportManager::ClientTransportManager(
     mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
     current_epoch(0)
 {
-    // TODO: set second param to true, if we need to send retransmitted packets
-    // over network
-    rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
+    if (type == NetTransport::Type::UDP)
+    {
+        // quic/quicr have their own rtx mechanisms, hence enable rtx
+        // just for udp transport.
+        rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
+    }
 }
 
 void ClientTransportManager::start()

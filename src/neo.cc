@@ -85,7 +85,7 @@ void Neo::init(const std::string &remote_address,
     {
         PacketPointer joinPacket = std::make_unique<Packet>();
         assert(joinPacket);
-        joinPacket->packetType = neo_media::Packet::Join;
+        joinPacket->packetType = neo_media::Packet::Type::Join;
         joinPacket->clientID = myClientID;
         joinPacket->conferenceID = myConferenceID;
         joinPacket->echo = echo;
