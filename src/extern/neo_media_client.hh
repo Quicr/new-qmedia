@@ -88,4 +88,24 @@ extern "C"
     EXPORT void CALL Destroy(NeoMediaInstance *instance);
 
     EXPORT void CALL setMicrophoneMute(NeoMediaInstance instance, bool muted);
+
+    // --- QUICR Specific APIs ---
+    // Pub/Sub Api [ used only for quicr transport ]
+    // Adds a publisher source with the given url and media type
+    // Note: Media needs to be sent via sendXXX(..) functions
+    EXPORT void CALL publish(NeoMediaInstance instance,
+                             std::uint64_t source_id,
+                             std::uint16_t media_type,
+                             const char *url,
+                             std::uint16_t url_length);
+
+    // Adds a subscriber for a given url and media type
+    EXPORT void CALL subscribe(NeoMediaInstance instance,
+                               std::uint16_t media_type,
+                               const char *url,
+                               std::uint16_t url_length);
+    // Explicit call to kick off the transport.
+    // Needed for transports
+    EXPORT void CALL start_transport(NeoMediaInstance instance,
+                                     std::uint16_t transport_type);
 }

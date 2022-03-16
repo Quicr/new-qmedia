@@ -189,9 +189,12 @@ ClientTransportManager::ClientTransportManager(
     mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
     current_epoch(0)
 {
-    // TODO: set second param to true, if we need to send retransmitted packets
-    // over network
-    rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
+    if (type == NetTransport::Type::UDP)
+    {
+        // quic/quicr have their own rtx mechanisms, hence enable rtx
+        // just for udp transport.
+        rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
+    }
 }
 
 void ClientTransportManager::start()
@@ -208,6 +211,19 @@ void ClientTransportManager::send(PacketPointer packet)
     auto conn_info = netTransport->getConnectionInfo();
     memcpy(&(packet->peer_info.addr), &(conn_info.addr), conn_info.addrLen);
     packet->peer_info.addrLen = conn_info.addrLen;
+    // Set the packet transport sequence number
+    if (packet->packetType != Packet::Type::StreamContentAck)
+    {
+        packet->transportSequenceNumber = nextTransportSeq;
+    }
+    nextTransportSeq++;
+
+    if (!netEncode(packet.get(), packet->encoded_data))
+    {
+        // TODO
+        logger->error << "Packet encoding failed" << std::flush;
+        return;
+    }
     {
         std::lock_guard<std::mutex> lock(sendQMutex);
         sendQ.push(std::move(packet));
@@ -215,6 +231,12 @@ void ClientTransportManager::send(PacketPointer packet)
     }
     // Notify that a packet is ready to send
     send_cv.notify_all();
+}
+
+size_t TransportManager::hasDataToSendToNet()
+{
+    std::lock_guard<std::mutex> lock(sendQMutex);
+    return sendQ.empty() ? 0 : sendQ.front()->encoded_data.size();
 }
 
 void ClientTransportManager::loopback(PacketPointer packet)
@@ -494,34 +516,6 @@ bool TransportManager::getDataToSendToNet(
    }  // encryption
 #endif
 
-    // Set the packet transport sequence number
-    if (packet->packetType != Packet::Type::StreamContentAck)
-    {
-        packet->transportSequenceNumber = nextTransportSeq;
-    }
-
-    if (packet->packetType == Packet::Type::StreamContent)
-    {
-        recordMetric(MeasurementType::PacketRate_Tx, packet);
-    }
-
-    if (!netEncode(packet.get(), data_out))
-    {
-        // TODO
-        logger->error << "Packet encoding failed" << std::flush;
-        packet = nullptr;
-        return false;
-    }
-    assert(packet);
-
-    if (Packet::Type::StreamContent == packet->packetType)
-    {
-        assert(!data_out.empty());
-        assert(data_out.size() <= 1500);
-    }
-
-    assert(peer_info);
-
     if (!packet->peer_info.transport_connection_id.empty())
     {
         auto &cnx_id = packet->peer_info.transport_connection_id;
@@ -536,8 +530,7 @@ bool TransportManager::getDataToSendToNet(
     *addrLen = peer_info->addrLen;
     logger->debug << "sendDataToNet >" << std::flush;
 
-    // Increment the sequence number to be used for next packet
-    nextTransportSeq++;
+    data_out = std::move(packet->encoded_data);
 
     // pass the packet to rtx manager
     // For now only pass audio packets till we figure out the issue with video

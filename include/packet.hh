@@ -85,6 +85,7 @@ public:
     MediaType mediaType;
     VideoFrameType videoFrameType = VideoFrameType::None;
     Type packetType;
+    bool is_last_fragment = false;
 
     float audioEnergyLevel;
     bool echo;
@@ -94,6 +95,7 @@ public:
     // payload
     std::vector<uint8_t> data;        // media bytes (may be encrypted or not)
     std::vector<uint8_t> authTag;
+    std::string encoded_data;        // transport encoded
 
     NetTransport::PeerConnectionInfo peer_info;        // destination
 

@@ -82,7 +82,8 @@ int main(int argc, char **argv)
 
     // Send frames.
     std::thread sendThread(
-        [neo, image, image_size, image_width, image_height, enc_format]() {
+        [neo, image, image_size, image_width, image_height, enc_format]()
+        {
             while (true)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(33));
@@ -111,55 +112,66 @@ int main(int argc, char **argv)
         });
 
     // Get frames.
-    std::thread recvThread([neo,
-                            client_id,
-                            image,
-                            image_size,
-                            image_width,
-                            image_height,
-                            dec_format]() {
-        while (true)
+    std::thread recvThread(
+        [neo,
+         client_id,
+         image,
+         image_size,
+         image_width,
+         image_height,
+         dec_format]()
         {
-            std::cerr << " R ";        // << ts << " " << received_image_size <<
-                                       // std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(33));
-            if (source_id == 0) continue;
-            unsigned char *buffer = nullptr;
-            std::uint64_t ts = 0;
-            std::uint32_t width = 0;
-            std::uint32_t height = 0;
-            std::uint32_t format = dec_format;        // I420
-            auto received_image_size = getVideoFrame(
-                neo, client_id, source_id, ts, width, height, format, &buffer);
+            while (true)
+            {
+                std::cerr << " R ";        // << ts << " " <<
+                                           // received_image_size << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(33));
+                if (source_id == 0) continue;
+                unsigned char *buffer = nullptr;
+                std::uint64_t ts = 0;
+                std::uint32_t width = 0;
+                std::uint32_t height = 0;
+                std::uint32_t format = dec_format;        // I420
+                auto received_image_size = getVideoFrame(neo,
+                                                         client_id,
+                                                         source_id,
+                                                         ts,
+                                                         width,
+                                                         height,
+                                                         format,
+                                                         &buffer);
 
-            // std::cerr << " w:" << width << " iw:" << image_width
-            //          << " h:" << height << " ih:" << image_height
-            //          << " f:" << format << " df:" << dec_format << std::endl;
-            assert(received_image_size == image_size);
-            assert(width == image_width);
-            assert(height == image_height);
-            assert(format == dec_format);
-            assert(buffer);
+                // std::cerr << " w:" << width << " iw:" << image_width
+                //          << " h:" << height << " ih:" << image_height
+                //          << " f:" << format << " df:" << dec_format <<
+                //          std::endl;
+                assert(received_image_size == image_size);
+                assert(width == image_width);
+                assert(height == image_height);
+                assert(format == dec_format);
+                assert(buffer);
 
-            // Enable assert below if testing Raw video with echoSFU and no
-            // concealment. Must explicitly disable AV1 and decoder concealment
-            // for this assert to pass. assert(buffer[0] == 0x80 ||
-            // memcmp(buffer, image, image_size) == 0);
-            std::cerr << " " << (int) (buffer[0]) << " ";        // log frame
-                                                                 // counter
+                // Enable assert below if testing Raw video with echoSFU and no
+                // concealment. Must explicitly disable AV1 and decoder
+                // concealment for this assert to pass. assert(buffer[0] == 0x80
+                // || memcmp(buffer, image, image_size) == 0);
+                std::cerr << " " << (int) (buffer[0]) << " ";        // log
+                                                                     // frame
+                                                                     // counter
 
-            /* PSNR calc to test sanity (30-50 is believable) and quality
-            (>40=great) std::int64_t sq_err = 1; for (int i = 0; i < image_size;
-            ++i) { int diff = image[i] - buffer[i]; sq_err += diff * diff;
+                /* PSNR calc to test sanity (30-50 is believable) and quality
+                (>40=great) std::int64_t sq_err = 1; for (int i = 0; i <
+                image_size;
+                ++i) { int diff = image[i] - buffer[i]; sq_err += diff * diff;
+                }
+                double psnr = 10.0 * log10(255.0*255.0*image_size*8/12/sq_err);
+                if (psnr>100.0) psnr=100.0;
+                std::cerr << " PSNR=" << psnr << " ";
+                */
+                std::cerr << " r ";        // << ts << " " <<
+                                           // received_image_size << std::endl;
             }
-            double psnr = 10.0 * log10(255.0*255.0*image_size*8/12/sq_err);
-            if (psnr>100.0) psnr=100.0;
-            std::cerr << " PSNR=" << psnr << " ";
-            */
-            std::cerr << " r ";        // << ts << " " << received_image_size <<
-                                       // std::endl;
-        }
-    });
+        });
 
     // Main thread.
     while (true)

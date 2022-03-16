@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.10)
 # the dependencies that we need without much knowledge that vcpkg actually
 # exists.
 set(CMAKE_TOOLCHAIN_FILE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/../media/vcpkg/scripts/buildsystems/vcpkg.cmake
     CACHE STRING "Vcpkg toolchain file")
 if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
     message(WARNING
@@ -45,6 +45,7 @@ option(BUILD_TESTS  "build tests" ON)
 option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
 option(BUILD_WITH_QUIC "Build with quic transport" OFF)
+option(BUILD_WITH_QUICR "Build with quicr transport" ON)
 
 ################################################################################
 # dependencies
@@ -95,14 +96,23 @@ include_directories( include src/extern )
 ###
 ### Dependencies
 ###
-set(LIBRARIES media_api gsl sframe )
 
-# picoquicls -l
-#if (WIN32)
-#  list(APPEND LIBRARIES picoquic)
-#else(WIN32)
-#  list(APPEND LIBRARIES picoquic-core)
-#endif(WIN32)
+find_package(Picoquic REQUIRED)
+message(STATUS "Picoquic/include: ${Picoquic_INCLUDE_DIRS}" )
+message(STATUS "Picoquic library: ${Picoquic_LIBRARIES}" )
+
+find_package(PTLS REQUIRED)
+message(STATUS "picotls/include: ${PTLS_INCLUDE_DIRS}" )
+message(STATUS "picotls libraries: ${PTLS_LIBRARIES}" )
+
+find_package(Quicr REQUIRED)
+message(STATUS "quicr/include: ${QUICR_INCLUDE_DIRS}" )
+message(STATUS "quicr libraries: ${QUICR_LIBRARIES}" )
+
+include_directories(include lib tests
+        ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+
+set(LIBRARIES media_api gsl sframe)
 
 # samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)
@@ -111,14 +121,6 @@ list(APPEND LIBRARIES ${SAMPLE_RATE})
 # openh264
 find_library(openh264 openh264 REQUIRED)
 list(APPEND LIBRARIES ${openh264})
-
-# dav1d
-#if (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-#    list(APPEND LIBRARIES dav1d)
-#else (APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-#   find_library(dav1d dav1d REQUIRED)
-#    list(APPEND LIBRARIES ${dav1d})
-#endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # curl
 find_package(CURL REQUIRED)
@@ -181,6 +183,19 @@ if(BUILD_WITH_QUIC)
     endif(WIN32)
     add_compile_definitions(${LIB_NAME} ENABLE_QUIC)
 endif()
+
+if(BUILD_WITH_QUICR)
+    message(STATUS "PICO = ${Picoquic_LIBRARIES}")
+    message(STATUS "PICO_TLS = ${PTLS_LIBRARIES}")
+    # picoquic and friends
+    if (WIN32)
+        target_link_libraries(${LIB_NAME} ${QUICR_LIBRARIES} ${Picoquic_LIBRARIES} ${PTLS_LIBRARIES})
+    else(WIN32)
+        target_link_libraries(${LIB_NAME} ${QUICR_LIBRARIES} ${Picoquic_LIBRARIES} ${PTLS_LIBRARIES})
+    endif(WIN32)
+    add_compile_definitions(${LIB_NAME} ENABLE_QUICR)
+endif()
+
 
 ###
 ### Applications

@@ -76,7 +76,9 @@ protected:
 
             std::unique_lock<std::mutex> lock(buffer_mutex);
             wait_result = signal.wait_for(
-                lock, std::chrono::seconds(1), [&]() -> bool {
+                lock,
+                std::chrono::seconds(1),
+                [&]() -> bool {
                     return (!busy || (busy && owning_thread ==
                                                   std::this_thread::get_id()));
                 });
@@ -219,5 +221,3 @@ public:
     std::ostream debug;
     std::ostream console;
 };
-
-

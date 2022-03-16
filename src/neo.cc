@@ -28,7 +28,7 @@ void Neo::init(const std::string &remote_address,
                uint64_t clientID,
                uint64_t conferenceID,
                callbackSourceId callback,
-               NetTransport::Type transport_type,
+               NetTransport::Type xport_type,
                bool echo)
 {
     myClientID = clientID;
@@ -43,6 +43,7 @@ void Neo::init(const std::string &remote_address,
     video_encode_pixel_format = video_encode_pixel_format_;
     video_decode_pixel_format = video_decode_pixel_format_;
     newSources = callback;
+    transport_type = xport_type;
 
     if (transport_type == NetTransport::Type::PICO_QUIC)
     {
@@ -57,6 +58,17 @@ void Neo::init(const std::string &remote_address,
             std::this_thread::sleep_for(std::chrono::seconds(2));
         }
     }
+    else if (transport_type == NetTransport::Type::QUICR)
+    {
+        transport = std::make_unique<ClientTransportManager>(
+            NetTransport::Type::QUICR,
+            remote_address,
+            remote_port,
+            metrics,
+            log);
+
+        // setup sources
+    }
     else
     {
         // UDP
@@ -69,13 +81,16 @@ void Neo::init(const std::string &remote_address,
     transport->setCryptoKey(epoch_id, bytes(8, uint8_t(epoch_id)));
 
     // Construct and send a Join Packet
-    PacketPointer joinPacket = std::make_unique<Packet>();
-    assert(joinPacket);
-    joinPacket->packetType = neo_media::Packet::Type::Join;
-    joinPacket->clientID = myClientID;
-    joinPacket->conferenceID = myConferenceID;
-    joinPacket->echo = echo;
-    transport->send(std::move(joinPacket));
+    if (transport_type != NetTransport::Type::QUICR)
+    {
+        PacketPointer joinPacket = std::make_unique<Packet>();
+        assert(joinPacket);
+        joinPacket->packetType = neo_media::Packet::Type::Join;
+        joinPacket->clientID = myClientID;
+        joinPacket->conferenceID = myConferenceID;
+        joinPacket->echo = echo;
+        transport->send(std::move(joinPacket));
+    }
 
     // TODO: add audio_encoder
 
@@ -117,6 +132,43 @@ void Neo::init(const std::string &remote_address,
     {
         log->error << "AV1 video encoder init failed" << std::flush;
         return;
+    }
+}
+
+void Neo::publish(std::uint64_t source_id,
+                  Packet::MediaType media_type,
+                  std::string url)
+{
+    auto pkt_transport = transport->transport();
+    std::weak_ptr<NetTransportQUICR> tmp =
+        std::static_pointer_cast<NetTransportQUICR>(pkt_transport.lock());
+    auto quicr_transport = tmp.lock();
+    quicr_transport->publish(source_id, media_type, url);
+}
+
+void Neo::subscribe(Packet::MediaType mediaType, std::string url)
+{
+    auto pkt_transport = transport->transport();
+    std::weak_ptr<NetTransportQUICR> tmp =
+        std::static_pointer_cast<NetTransportQUICR>(pkt_transport.lock());
+    auto quicr_transport = tmp.lock();
+    quicr_transport->subscribe(mediaType, url);
+}
+
+void Neo::start_transport(NetTransport::Type transport_type)
+{
+    if (transport_type == NetTransport::Type::QUICR)
+    {
+        auto pkt_transport = transport->transport();
+        std::weak_ptr<NetTransportQUICR> tmp =
+            std::static_pointer_cast<NetTransportQUICR>(pkt_transport.lock());
+        auto quicr_transport = tmp.lock();
+        quicr_transport->start();
+
+        while (!transport->transport_ready())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
 }
 

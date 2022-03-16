@@ -118,6 +118,13 @@ public:
         loopbackMode = (LoopbackMode) mode;
     };
 
+    // Quicr APIs
+    void publish(uint64_t source_id,
+                 Packet::MediaType media_type,
+                 std::string url);
+    void subscribe(Packet::MediaType mediaType, std::string url);
+    void start_transport(NetTransport::Type transport_type);
+
 protected:
     void doWork();
     std::thread workThread;
@@ -183,6 +190,7 @@ private:
 
     LoopbackMode loopbackMode = LoopbackMode::none;
     Metrics::MetricsPtr metrics = nullptr;
+    NetTransport::Type transport_type;
 };        // class Neo
 
 typedef std::shared_ptr<Neo> NeoPointer;

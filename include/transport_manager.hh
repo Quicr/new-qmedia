@@ -23,6 +23,7 @@
 #include "transport.hh"
 #include "netTransportUDP.hh"
 #include "netTransportQuic.hh"
+#include "netTransportQuicR.hh"
 #include "logger.hh"
 #include "metrics.hh"
 #include "rtx_manager.hh"
@@ -59,6 +60,11 @@ public:
                     transport = new NetTransportUDP(
                         transportManager, sfuName_in, sfuPort_in);
                 }
+                break;
+            case NetTransport::QUICR:
+                name = "TransportQuicr";
+                transport = new NetTransportQUICR(
+                    transportManager, sfuName_in, sfuPort_in);
                 break;
             case NetTransport::PICO_QUIC:
                 name = "TransportQUIC";
@@ -111,13 +117,20 @@ public:
                             NetTransport::PeerConnectionInfo *info,
                             socklen_t *addrLen);
 
+    size_t hasDataToSendToNet();
+
     virtual bool transport_ready() const = 0;
 
     bool shutDown = false;
 
+    std::weak_ptr<NetTransport> transport()
+    {
+        return std::weak_ptr<NetTransport>(netTransport);
+    }
+
 protected:
     friend NetTransport;
-    std::unique_ptr<NetTransport> netTransport;
+    std::shared_ptr<NetTransport> netTransport;
     // Metrics reported by transport manager
     enum struct MeasurementType
     {
@@ -170,9 +183,9 @@ protected:
     LoggerPointer logger;
     bool isLoopback = false;
 
-private:
     uint64_t nextTransportSeq = 0;        // Next packet transport sequence
                                           // number
+private:
     const int NUM_METRICS_TO_ACCUMULATE = 50;
     int num_metrics_accumulated = 0;
 };

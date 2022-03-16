@@ -27,18 +27,15 @@ extern "C"
         // Bridge to external logging.
         LoggerPointer logger = std::make_shared<Logger>("NEO_EXTERN");
         logger->SetLogFacility(LogFacility::NOTIFY);
-        auto logCallback = [log](LogLevel /*level*/,
-                                 const std::string &message) {
-            log(message.c_str());
-        };
+        auto logCallback = [log](LogLevel /*level*/, const std::string &message)
+        { log(message.c_str()); };
         logger->SetLogCallback(logCallback);
 
         auto wrapped_callback = [callback](uint64_t client_id,
                                            uint64_t source_id,
                                            uint64_t source_ts,
-                                           Packet::MediaType media_type) {
-            callback(client_id, source_id, source_ts, (int) media_type);
-        };
+                                           Packet::MediaType media_type)
+        { callback(client_id, source_id, source_ts, (int) media_type); };
         // Create media library.
         auto instance = new Neo(logger);
         instance->init(std::string(remote_address),
@@ -141,5 +138,34 @@ extern "C"
     {
         auto neo = (Neo *) instance;
         neo->setMicrophoneMute(muted);
+    }
+
+    void CALL publish(NeoMediaInstance instance,
+                      std::uint64_t source_id,
+                      std::uint16_t media_type,
+                      const char *url,
+                      std::uint16_t url_length)
+    {
+        auto neo = (Neo *) instance;
+        neo->publish(source_id,
+                     (Packet::MediaType) media_type,
+                     std::string(url, url + url_length));
+    }
+
+    void CALL subscribe(NeoMediaInstance instance,
+                        std::uint16_t media_type,
+                        const char *url,
+                        std::uint16_t url_length)
+    {
+        auto neo = (Neo *) instance;
+        neo->subscribe((Packet::MediaType) media_type,
+                       std::string(url, url + url_length));
+    }
+
+    void CALL start_transport(NeoMediaInstance instance,
+                              std::uint16_t transport_type)
+    {
+        auto neo = (Neo *) instance;
+        neo->start_transport((NetTransport::Type) transport_type);
     }
 }
