@@ -41,7 +41,7 @@ public:
     const unsigned int mtu_size = 1300;
 
     ISVCEncoder *encoder{};
-    SEncParamExt encodeParams;
+    SEncParamBase encParamBase;
     SFrameBSInfo outputFrame{};
     SSourcePicture inputFrame{};
 };
