@@ -210,14 +210,16 @@ media_consumer_frame_ready(void *media_ctx,
 {
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
+    struct sockaddr_storage stored_addr;
     struct sockaddr *peer_addr = nullptr;
-    picoquic_get_peer_addr(cons_ctx->cnx_ctx->cnx, &peer_addr);
+    quicrq_get_peer_address(cons_ctx->cnx_ctx, &stored_addr);
+
     NetTransport::PeerConnectionInfo peer_info;
     // TODO: support IPV6
-    memcpy(&peer_info.addr, (sockaddr_in *) peer_addr, sizeof(sockaddr_in));
+    memcpy(&peer_info.addr, (sockaddr *) &stored_addr, sizeof(sockaddr_in));
     peer_info.addrLen = sizeof(struct sockaddr_storage);
-    auto cnx_id = picoquic_get_client_cnxid(cons_ctx->cnx_ctx->cnx);
-    auto cnx_id_bytes = bytes(cnx_id.id, cnx_id.id + cnx_id.id_len);
+    //auto cnx_id = picoquic_get_client_cnxid(cons_ctx->cnx_ctx->cnx);
+    bytes cnx_id_bytes = {};
     // print_sock_info("dg_callbk:", &peer_info.addr);
     peer_info.transport_connection_id = std::move(cnx_id_bytes);
 
@@ -421,7 +423,10 @@ void NetTransportQUICR::publish(uint64_t source_id,
         url.length(),
         pub_context,
         media_publisher_subscribe,
-        media_frame_publisher_fn);
+        media_frame_publisher_fn,
+        [](void* pub_ctx){
+            free(pub_ctx);
+        });
 
     assert(src_ctx);
 
