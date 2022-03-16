@@ -1,9 +1,10 @@
-
 #include <iostream>
 #include <vector>
 #include <cassert>
 
 #include <string.h>        // memcpy , strncat
+#include <sstream>
+#include <iomanip>
 
 #include "h264_encoder.hh"
 
@@ -22,28 +23,13 @@ H264Encoder::H264Encoder(unsigned int video_max_width,
         assert(0);        // todo: throw exception?
     }
 
-    // Apply client app settings
-    encodeParams.eSpsPpsIdStrategy = INCREASING_ID;
-    // encodeParams.bPrefixNalAddingCtrl = 1; // codec_type SVC
-    encodeParams.bPrefixNalAddingCtrl = 0;        // codec_type AVC
+    encParamBase.fMaxFrameRate = 30;
+    encParamBase.iPicHeight = video_max_height;
+    encParamBase.iPicWidth = video_max_width;
+    encParamBase.iTargetBitrate = video_max_bitrate;
+    encParamBase.iRCMode = RC_OFF_MODE;
+    encoder->Initialize(&encParamBase);
 
-    encodeParams.iPicWidth = video_max_width;
-    encodeParams.iPicHeight = video_max_height;
-    encodeParams.fMaxFrameRate = video_max_frame_rate;
-    encodeParams.iTargetBitrate = video_max_bitrate;        // bits/sec in base
-    encodeParams.bEnableFrameSkip = 1;
-
-    encodeParams.bEnableDenoise = false;        // disable denoise
-    encodeParams.bEnableSceneChangeDetect = 1;
-    encodeParams.bEnableBackgroundDetection = 1;
-    encodeParams.bEnableAdaptiveQuant = 0;
-    encodeParams.bEnableLongTermReference = 1;
-    encodeParams.iLtrMarkPeriod = 30;
-    encodeParams.iNumRefFrame = AUTO_REF_PIC_COUNT;
-
-    encoder->InitializeExt(&encodeParams);
-
-    encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &video_pixel_format);
 }
 
 H264Encoder::~H264Encoder()
@@ -53,6 +39,32 @@ H264Encoder::~H264Encoder()
         long ret = encoder->Uninitialize();
         encoder = nullptr;
     }
+}
+
+static std::string to_hex(const std::vector<uint8_t> &data)
+{
+    std::stringstream hex(std::ios_base::out);
+    hex.flags(std::ios::hex);
+    int i = 0;
+    for (const auto &byte : data)
+    {
+        hex << std::setw(2) << std::setfill('0') << int(byte);
+        i++;
+        if (i > 25)
+            break;
+    }
+    return hex.str();
+}
+
+static std::string to_hex(unsigned char* data, int stop)
+{
+    std::stringstream hex(std::ios_base::out);
+    hex.flags(std::ios::hex);
+    for (int i = 0; i < stop; i++)
+    {
+        hex << std::setw(2) << std::setfill('0') << int(data[i]);
+    }
+    return hex.str();
 }
 
 int H264Encoder::encode(const char *input_buffer,
@@ -90,9 +102,16 @@ int H264Encoder::encode(const char *input_buffer,
     sourcePicture.iStride[1] = (int) stride_uv;
     sourcePicture.iStride[2] = (int) stride_uv;
 
+    //assert(0);
     int videoFormat = videoFormatI420;
     encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &videoFormat);
 
+    if(genKeyFrame) {
+        auto ret = encoder->ForceIntraFrame(true);
+        std::cerr << "H264Enc: IDR Frame: " << ret << std::endl;
+    }
+
+    memset(&outputFrame, 0, sizeof (SFrameBSInfo));
     int ret = encoder->EncodeFrame(&sourcePicture, &outputFrame);
     if (ret == 0)
     {
@@ -106,34 +125,31 @@ int H264Encoder::encode(const char *input_buffer,
         }
     }
 
-    // encode worked
-    auto a = outputFrame.iFrameSizeInBytes;
-    auto b = outputFrame.sLayerInfo->pNalLengthInByte;
     output_bitstream.resize(outputFrame.iFrameSizeInBytes);
     unsigned char *out_bits = output_bitstream.data();
-    memcpy(out_bits,
-           outputFrame.sLayerInfo->pBsBuf,
-           outputFrame.iFrameSizeInBytes);
+    for(int i = 0; i < outputFrame.iLayerNum; i++) {
+        auto len = 0;
+        // pNalLengthInByte[0]+pNalLengthInByte[1]+…+pNalLengthInByte[iNalCount-1].
+        for(int j =0; j < outputFrame.sLayerInfo[i].iNalCount; j++) {
+            len += outputFrame.sLayerInfo[i].pNalLengthInByte[j];
+        }
+
+        memcpy(out_bits,
+               outputFrame.sLayerInfo[i].pBsBuf,
+               len);
+
+        auto stop = len;
+        if(len > 25)
+            stop = 25;
+        std::cerr << to_hex(out_bits, stop) << std::endl;
+
+        out_bits += len;
+    }
+
     total_bytes_encoded += output_bitstream.size();
     total_frames_encoded++;
 
-    /*
-    // Debug log for frame number, type, avg time in usec, avg size in bytes
-    if (((total_frames_encoded-1) & 31) == 0) { // every 32 frames, ~1 sec
-        std::cerr << std::endl << height << "p "
-            << (format ? "I420" : "NV12")
-            << (encodeParams.request_key_frame ? " I " : " P ")
-            << "Frame#" << (total_frames_encoded-1) << " "
-            << bitstream.size() << " bytes "
-            << encode_time << " usec, avg "
-            << (total_bytes_encoded/total_frames_encoded) << " bytes "
-            << (total_time_encoded/total_frames_encoded) << " usec" <<
-    std::endl;
-        //av1_encoder_stats_t stats = getStats(encoder);
-        //assert(0); // halt to check stats
-    }
-    */
 
     // success
-    return 0;
+    return outputFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
 }

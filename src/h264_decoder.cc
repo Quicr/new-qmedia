@@ -2,12 +2,18 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <fstream>
+#include <stdio.h>
 
 #include <string.h>        // memcpy , strncat
 
 #include "h264_decoder.hh"
 
 using namespace neo_media;
+using namespace std;
+
+FILE* video_input;
+FILE* video_output;
 
 H264Decoder::H264Decoder(std::uint32_t video_pixel_format)
 {
@@ -25,7 +31,6 @@ H264Decoder::H264Decoder(std::uint32_t video_pixel_format)
     dec_param.eEcActiveIdc = ERROR_CON_SLICE_MV_COPY_CROSS_IDR_FREEZE_RES_CHANGE;
     dec_param.sVideoProperty.size = sizeof(SVideoProperty);
     dec_param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_AVC;
-    // dec_param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_SVC;
 
     ret = decoder->Initialize(&dec_param);
     if (dsErrorFree != ret)
@@ -33,6 +38,16 @@ H264Decoder::H264Decoder(std::uint32_t video_pixel_format)
         decoder->Uninitialize();
         delete decoder;
         decoder = nullptr;
+        assert(0);
+    }
+
+    video_input = fopen("video_input", "wb");
+    if(!video_input){
+        assert(0);
+    }
+
+    video_output = fopen("video_output", "wb");
+    if(!video_input){
         assert(0);
     }
 }
@@ -44,6 +59,9 @@ H264Decoder::~H264Decoder()
         decoder->Uninitialize();
         decoder = nullptr;
     }
+
+    fclose(video_input);
+    fclose(video_output);
 }
 
 /** Wrap underlying async APIs to expose sync API to decode input bitstream to
@@ -65,34 +83,69 @@ int H264Decoder::decode(const char *input_buffer,
     unsigned char *dst[3];
     SBufferInfo dst_info;
 
-    auto ret = decoder->DecodeFrameNoDelay(
+    auto ret = decoder->DecodeFrame2(
         reinterpret_cast<const unsigned char *>(input_buffer),
         input_length,
         dst,
         &dst_info);
+
     if (dsErrorFree != ret)
     {
-        std::cerr << " 1st decode frame failed" << std::endl;
+        std::cerr << " H264 decode frame failed" << std::endl;
         // handle IDR request
+    } else {
+        std::cerr << "H264 Decode success " << std::endl;
     }
 
     if (dst_info.iBufferStatus == 1)
     {
+        width = dst_info.UsrData.sSystemBuffer.iWidth;
+        height = dst_info.UsrData.sSystemBuffer.iHeight;
+
+        auto color_fmt = dst_info.UsrData.sSystemBuffer.iFormat;
+#if 0
+        std::cerr << "Decoded Width : " << width << std::endl;
+        std::cerr << "Decoded height : " << height << std::endl;
+        std::cerr << "Decoded Format : " << color_fmt << std::endl;
+        std::cerr << "Decoded Stride 0  : " << dst_info.UsrData.sSystemBuffer.iStride[0] << std::endl;
+        std::cerr << "Decoded Stride 1 : " << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
+#endif
+        auto y_size = width * height;
+        auto uv_size = y_size >> 2;
+
+        output_frame.resize(y_size + 2 * uv_size);
+        uint8_t *outp = output_frame.data();
+
+        size_t i = 0;
+        auto pPtr = dst[0];
+        for(i = 0; i < height; i++)
+        {
+            memcpy(outp, pPtr, width);
+            outp += width;
+            pPtr += dst_info.UsrData.sSystemBuffer.iStride[0];
+        }
+
+        pPtr = dst[1];
+        for(i = 0; i < height/2; i++)
+        {
+            memcpy(outp, pPtr, width/2);
+            outp += width/2;
+            pPtr += dst_info.UsrData.sSystemBuffer.iStride[1];
+        }
+
+        pPtr = dst[2];
+        for(i = 0; i < height/2; i++)
+        {
+            memcpy(outp, pPtr, width/2);
+            outp += width/2;
+            pPtr += dst_info.UsrData.sSystemBuffer.iStride[1];
+        }
+
+        std::cerr << "Decoder wrote " << output_frame.size() << std::endl;
     }
 
-    width = dst_info.UsrData.sSystemBuffer.iWidth;
-    height = dst_info.UsrData.sSystemBuffer.iHeight;
 
-    const int y_size = width * height;
-    const int uv_size = y_size >> 2;        // YUV420
 
-    output_frame.resize(y_size + 2 * uv_size);
-    uint8_t *outp = output_frame.data();
-
-    // Copy Y plane
-    memcpy(outp, dst[0], y_size);
-    memcpy(outp + y_size, dst[1], uv_size);
-    memcpy(outp + y_size + uv_size, dst[2], uv_size);
 
     return 0;
 }
