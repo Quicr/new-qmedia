@@ -26,7 +26,7 @@ static bool recvMedia = false;
 static uint64_t recvClientID;
 static uint64_t recvSourceID;
 
-static const unsigned int remote_port = 5004;
+static const unsigned int remote_port = 7777;
 static const unsigned int sample_rate = 48000;
 static const unsigned int frames_per_buffer = 10 * 48;        // 10 ms
 static const unsigned int audio_channels = 1;
@@ -66,54 +66,44 @@ void recordThreadFunc(Neo *neo)
         PaError err;
         {
             std::lock_guard<std::mutex> lock(audioReadMutex);
-            err = Pa_ReadStream(audioStream, audioBuff, frames_per_buffer);
-        }
-        if (err)
-        {
-            logger->error << "Failed to read PA stream: "
-                          << Pa_GetErrorText(err) << std::flush;
-            continue;
-        }
+            while( ( err = Pa_IsStreamActive( audioStream ) ) == 1 )
+            {
+                long toRead = Pa_GetStreamReadAvailable(audioStream);
+                printf("available: %ld frames_per_buffer: %d\n", toRead, frames_per_buffer);
+                if (toRead == 0) {
+                    Pa_Sleep(10);
+                    continue;
+                }
+                if (toRead > frames_per_buffer)
+                    toRead = frames_per_buffer;
 
-        if (memcmp(audioBuff, zerobuff, buff_size) == 0)
-        {
-            logger->debug << "0" << std::flush;
-        }
+                if (toRead == frames_per_buffer) {
 
-        timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+                    // You may get underruns or overruns if the output is not primed by PortAudio.
+                    err = Pa_ReadStream( audioStream, audioBuff, toRead );
+                    if (err)
+                    {
+                        logger->error << "Failed to read PA stream: "
+                                      << Pa_GetErrorText(err) << std::flush;
+                        continue;
+                    }
+
+                    if (memcmp(audioBuff, zerobuff, buff_size) == 0)
+                    {
+                        logger->debug << "0" << std::flush;
+                    }
+
+                    timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
                         std::chrono::system_clock::now().time_since_epoch())
                         .count();
 
-        neo->sendAudio(audioBuff, buff_size, timestamp, sourceID);
-        logger->debug << "-" << std::flush;
+                    neo->sendAudio(audioBuff, buff_size, timestamp, sourceID);
+                    logger->debug << "-" << std::flush;
+                    Pa_Sleep(10);
+                }
 
-        if (outg_sound_file.is_open())
-        {
-            switch (sample_type_neo)
-            {
-                case Neo::audio_sample_type::Float32:
-                {
-                    float *fvalue = nullptr;
-                    for (int i = 0; i < (buff_size / sizeof(float));
-                         i += sizeof(float))
-                    {
-                        fvalue = (float *) &audioBuff[i];
-                        outg_sound_file << *fvalue << ",";
-                    }
-                    break;
-                }
-                case Neo::audio_sample_type::PCMint16:
-                {
-                    uint16_t *ivalue = nullptr;
-                    for (int i = 0; i < (buff_size / sizeof(uint16_t));
-                         i += sizeof(uint16_t))
-                    {
-                        ivalue = (uint16_t *) audioBuff[i];
-                        outg_sound_file << *ivalue << ",";
-                    }
-                    break;
-                }
             }
+
         }
         free(audioBuff);
     }
@@ -376,6 +366,7 @@ int main(int argc, char *argv[])
         assert(0);        // TODO
     }
 
+
     PaStreamParameters inputParameters;
     PaStreamParameters outputParameters;
 
@@ -424,6 +415,14 @@ int main(int argc, char *argv[])
         assert(0);        // TODO
     }
 
+
+    if(mode == "pub") {
+        std::thread recordThread(recordThreadFunc, &neo);
+    } else if (mode == "sub") {
+        std::thread playThread(playThreadFunc, &neo);
+        playThread.detach();
+    }
+
     std::cout << "Mode:" << mode << std::endl;
     if(mode == "pub")
     {
@@ -444,12 +443,6 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    if(mode == "pub") {
-        std::thread recordThread(recordThreadFunc, &neo);
-    } else if (mode == "sub") {
-        std::thread playThread(playThreadFunc, &neo);
-        playThread.detach();
-    }
 
     logger->info << "Starting" << std::flush;
     int count = 0;
@@ -460,7 +453,7 @@ int main(int argc, char *argv[])
         count++;
         if (count > 50 * 1)
         {
-            shutDown = true;
+            shutDown = false;
         }
     }
     logger->info << "Shutting down" << std::flush;
