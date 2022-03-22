@@ -171,6 +171,12 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
         }
 
         *data_length = pub_ctx->transportManager->hasDataToSendToNet();
+        if (*data_length > data_max_size) {
+            std::cout << "transport buffer size=" << data_max_size
+                      << ", " << "data size=" << *data_length;
+            *data_length = 0;
+            return 0;
+        }
         if (data != nullptr)
         {
             NetTransport::Data send_packet;
@@ -492,7 +498,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
     picoquic_set_key_log_file_from_env(quic);
 
     picoquic_set_mtu_max(quic, config.mtu_max);
-    config.qlog_dir = "/tmp/recv";
+    config.qlog_dir = "/tmp/logs";
     if (config.qlog_dir != NULL)
     {
         picoquic_set_qlog(quic, config.qlog_dir);
