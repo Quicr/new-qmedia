@@ -12,8 +12,7 @@
 using namespace neo_media;
 using namespace std;
 
-FILE* video_input;
-FILE* video_output;
+static bool debug = false;
 
 H264Decoder::H264Decoder(std::uint32_t video_pixel_format)
 {
@@ -40,16 +39,6 @@ H264Decoder::H264Decoder(std::uint32_t video_pixel_format)
         decoder = nullptr;
         assert(0);
     }
-
-    video_input = fopen("video_input", "wb");
-    if(!video_input){
-        assert(0);
-    }
-
-    video_output = fopen("video_output", "wb");
-    if(!video_input){
-        assert(0);
-    }
 }
 
 H264Decoder::~H264Decoder()
@@ -59,15 +48,8 @@ H264Decoder::~H264Decoder()
         decoder->Uninitialize();
         decoder = nullptr;
     }
-
-    fclose(video_input);
-    fclose(video_output);
 }
 
-/** Wrap underlying async APIs to expose sync API to decode input bitstream to
- * raw YUV frame. Returns 0 on success and fills output_frame with decoded
- * frame, or DAV1D_ERR(errno) if any error.
- */
 int H264Decoder::decode(const char *input_buffer,
                         std::uint32_t input_length,
                         std::uint32_t &width,
@@ -83,7 +65,7 @@ int H264Decoder::decode(const char *input_buffer,
     unsigned char *dst[3];
     SBufferInfo dst_info;
 
-    auto ret = decoder->DecodeFrame2(
+    auto ret = decoder->DecoderFame2(
         reinterpret_cast<const unsigned char *>(input_buffer),
         input_length,
         dst,
@@ -93,8 +75,6 @@ int H264Decoder::decode(const char *input_buffer,
     {
         std::cerr << " H264 decode frame failed" << std::endl;
         // handle IDR request
-    } else {
-        std::cerr << "H264 Decode success " << std::endl;
     }
 
     if (dst_info.iBufferStatus == 1)
@@ -103,13 +83,14 @@ int H264Decoder::decode(const char *input_buffer,
         height = dst_info.UsrData.sSystemBuffer.iHeight;
 
         auto color_fmt = dst_info.UsrData.sSystemBuffer.iFormat;
-#if 0
-        std::cerr << "Decoded Width : " << width << std::endl;
-        std::cerr << "Decoded height : " << height << std::endl;
-        std::cerr << "Decoded Format : " << color_fmt << std::endl;
-        std::cerr << "Decoded Stride 0  : " << dst_info.UsrData.sSystemBuffer.iStride[0] << std::endl;
-        std::cerr << "Decoded Stride 1 : " << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
-#endif
+        if (debug) {
+            std::cerr << "Decoded Width : " << width << std::endl;
+            std::cerr << "Decoded height : " << height << std::endl;
+            std::cerr << "Decoded Format : " << color_fmt << std::endl;
+            std::cerr << "Decoded Stride 0  : " << dst_info.UsrData.sSystemBuffer.iStride[0] << std::endl;
+            std::cerr << "Decoded Stride 1 : " << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
+        }
+
         auto y_size = width * height;
         auto uv_size = y_size >> 2;
 
@@ -140,12 +121,7 @@ int H264Decoder::decode(const char *input_buffer,
             outp += width/2;
             pPtr += dst_info.UsrData.sSystemBuffer.iStride[1];
         }
-
-        std::cerr << "Decoder wrote " << output_frame.size() << std::endl;
     }
-
-
-
 
     return 0;
 }

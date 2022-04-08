@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -9,6 +10,8 @@
 #include "h264_encoder.hh"
 
 using namespace neo_media;
+
+static bool debug = false;
 
 H264Encoder::H264Encoder(unsigned int video_max_width,
                          unsigned int video_max_height,
@@ -84,6 +87,35 @@ int H264Encoder::encode(const char *input_buffer,
     static std::uint64_t total_bytes_encoded = 0;
     static std::uint64_t total_time_encoded = 0;        // microseconds
 
+    // nv12 to i420 planar
+    auto* input = reinterpret_cast<unsigned char *>(const_cast<char *>(input_buffer));
+    auto *p = input + (stride_y * height); // data buffer of inpt UV plane (Y+Ystride*Yheight)
+    int w = width/2;
+    int h = height/2;    // width,height of input UV plane (Ywidth/2,Yheight/2)
+    int suv = stride_uv;  // stride of input UV plane (often same as Y)
+    int su  = stride_uv/2; // stride of output U plane (often half of Y)
+    int sv  = stride_uv/2; // stride of output V plane (often half of Y)
+
+    auto uv = (unsigned char*) malloc(suv*h); // temp buffer to copy input UV plane
+    auto *u=p;      // U plane of output (overwrites input)
+    auto orig_u = p;
+    auto *v=u+su*h; // V plane of output (overwrites input)
+    auto orig_v = orig_u+su*h;
+    memcpy(uv,p,suv*h); // copy input UV plane to temp buffer
+
+    // de-interleave UV plane
+    for (int y=0; y<h; y++) {
+        for (int x=0; x<w; x++) {
+            // copy the even bytes to U place
+            u[x]=uv[x*2];
+            // copy the odd bytes to V plane
+            v[x]=uv[x*2+1];
+        }
+        u+=su;
+        v+=sv;
+        uv+=suv;
+    }
+
     output_bitstream.clear();
 
     SSourcePicture sourcePicture;
@@ -94,13 +126,12 @@ int H264Encoder::encode(const char *input_buffer,
     sourcePicture.uiTimeStamp = timestamp * 9 / 100;
     sourcePicture.pData[0] = reinterpret_cast<unsigned char *>(
         const_cast<char *>(input_buffer));
-    sourcePicture.pData[1] = reinterpret_cast<unsigned char *>(
-        const_cast<char *>(input_buffer + offset_u));
-    sourcePicture.pData[2] = reinterpret_cast<unsigned char *>(
-        const_cast<char *>(input_buffer + offset_v));
+    sourcePicture.pData[1] = orig_u;
+    sourcePicture.pData[2] = orig_v;
     sourcePicture.iStride[0] = (int) stride_y;
-    sourcePicture.iStride[1] = (int) stride_uv;
-    sourcePicture.iStride[2] = (int) stride_uv;
+    sourcePicture.iStride[1] = (int) su;
+    sourcePicture.iStride[2] = (int) sv;
+
 
     //assert(0);
     int videoFormat = videoFormatI420;
@@ -125,6 +156,14 @@ int H264Encoder::encode(const char *input_buffer,
         }
     }
 
+    // encode worked
+    if(debug) {
+        std::cerr << "Encoded iFrameSizeInBytes: " << outputFrame.iFrameSizeInBytes << std::endl;
+        std::cerr << "Encoded num_layer: " << outputFrame.iLayerNum << std::endl;
+        std::cerr << "Frame Type: " << outputFrame.eFrameType << std::endl;
+    }
+
+    // move the encoded data to output bitstream
     output_bitstream.resize(outputFrame.iFrameSizeInBytes);
     unsigned char *out_bits = output_bitstream.data();
     for(int i = 0; i < outputFrame.iLayerNum; i++) {
@@ -138,17 +177,12 @@ int H264Encoder::encode(const char *input_buffer,
                outputFrame.sLayerInfo[i].pBsBuf,
                len);
 
-        auto stop = len;
-        if(len > 25)
-            stop = 25;
-        std::cerr << to_hex(out_bits, stop) << std::endl;
-
         out_bits += len;
     }
 
     total_bytes_encoded += output_bitstream.size();
+    // std::cerr << "Encoded len: " << output_bitstream.size() << std::endl;
     total_frames_encoded++;
-
 
     // success
     return outputFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
