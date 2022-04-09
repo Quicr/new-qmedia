@@ -498,7 +498,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
     picoquic_set_key_log_file_from_env(quic);
 
     picoquic_set_mtu_max(quic, config.mtu_max);
-    config.qlog_dir = "/tmp/logs";
+    config.qlog_dir = ".";
     if (config.qlog_dir != NULL)
     {
         picoquic_set_qlog(quic, config.qlog_dir);
