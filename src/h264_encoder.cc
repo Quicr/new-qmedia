@@ -17,12 +17,14 @@ H264Encoder::H264Encoder(unsigned int video_max_width,
                          unsigned int video_max_height,
                          unsigned int video_max_frame_rate,
                          unsigned int video_max_bitrate,
-                         std::uint32_t video_pixel_format)
+                         std::uint32_t video_pixel_format,
+                         const LoggerPointer& logger_in)
 {
+    logger = logger_in;
     int rv = WelsCreateSVCEncoder(&encoder);
     if (rv || !encoder)
     {
-        std::cerr << "H264 video encoder create failed" << std::endl;
+        logger->error << "H264 video encoder create failed" << std::flush;
         assert(0);        // todo: throw exception?
     }
 
@@ -138,8 +140,9 @@ int H264Encoder::encode(const char *input_buffer,
     encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &videoFormat);
 
     if(genKeyFrame) {
+        logger->info << "Encode: Force IDR" << std::flush;
         auto ret = encoder->ForceIntraFrame(true);
-        std::cerr << "H264Enc: IDR Frame: " << ret << std::endl;
+        logger->error << "Encode: IDR Frame Generation Error " << ret << std::flush;
     }
 
     memset(&outputFrame, 0, sizeof (SFrameBSInfo));
@@ -149,18 +152,19 @@ int H264Encoder::encode(const char *input_buffer,
         switch (outputFrame.eFrameType)
         {
             case videoFrameTypeSkip:
+                logger->debug << "Encode: videoFrameTypeSkip" << std::flush;
                 return 0;
             case videoFrameTypeInvalid:
-                std::cerr << "Encode failed" << std::endl;
+                logger->debug << "Encode failed: " << ret << std::flush;
                 return -1;
         }
     }
 
     // encode worked
     if(debug) {
-        std::cerr << "Encoded iFrameSizeInBytes: " << outputFrame.iFrameSizeInBytes << std::endl;
-        std::cerr << "Encoded num_layer: " << outputFrame.iLayerNum << std::endl;
-        std::cerr << "Frame Type: " << outputFrame.eFrameType << std::endl;
+        logger->debug << "Encoded iFrameSizeInBytes: " << outputFrame.iFrameSizeInBytes << std::flush;
+        logger->debug << "Encoded num_layer: " << outputFrame.iLayerNum << std::flush;
+        logger->debug << "Frame Type: " << outputFrame.eFrameType << std::flush;
     }
 
     // move the encoded data to output bitstream
@@ -181,7 +185,6 @@ int H264Encoder::encode(const char *input_buffer,
     }
 
     total_bytes_encoded += output_bitstream.size();
-    // std::cerr << "Encoded len: " << output_bitstream.size() << std::endl;
     total_frames_encoded++;
 
     // success

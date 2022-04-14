@@ -64,7 +64,7 @@ public:
             case NetTransport::QUICR:
                 name = "TransportQuicr";
                 transport = new NetTransportQUICR(
-                    transportManager, sfuName_in, sfuPort_in);
+                    transportManager, sfuName_in, sfuPort_in, logger);
                 break;
             case NetTransport::PICO_QUIC:
                 name = "TransportQUIC";

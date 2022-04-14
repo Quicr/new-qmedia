@@ -65,7 +65,7 @@ int H264Decoder::decode(const char *input_buffer,
     unsigned char *dst[3];
     SBufferInfo dst_info;
 
-    auto ret = decoder->DecoderFame2(
+    auto ret = decoder->DecodeFrame2(
         reinterpret_cast<const unsigned char *>(input_buffer),
         input_length,
         dst,

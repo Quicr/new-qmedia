@@ -21,6 +21,7 @@
 
 #include "netTransportUDP.hh"
 #include "transport.hh"
+#include "logger.hh"
 
 #include "picoquic.h"
 #include "picoquic_internal.h"
@@ -84,7 +85,8 @@ public:
     // Client
     NetTransportQUICR(TransportManager *manager,
                       std::string sfuName_in,
-                      uint16_t sfuPort_in);
+                      uint16_t sfuPort_in,
+                      const LoggerPointer& logger_in);
 
     virtual ~NetTransportQUICR();
 
@@ -143,6 +145,7 @@ public:
 
     void wake_up_all_sources();
 
+    LoggerPointer logger;
 private:
     const std::string alpn = "quicr-h00";
     TransportContext xport_ctx;

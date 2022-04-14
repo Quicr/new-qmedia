@@ -6,6 +6,7 @@
 #include <chrono>
 #include "codec.hh"
 #include <wels/codec_api.h>
+#include "logger.hh"
 
 namespace neo_media
 {
@@ -16,7 +17,8 @@ public:
                 unsigned int video_max_height,
                 unsigned int video_max_frame_rate,
                 unsigned int video_max_bitrate,
-                std::uint32_t video_pixel_format);
+                std::uint32_t video_pixel_format,
+                const LoggerPointer& logger);
 
     ~H264Encoder();
 
@@ -44,5 +46,6 @@ public:
     SEncParamBase encParamBase;
     SFrameBSInfo outputFrame{};
     SSourcePicture inputFrame{};
+    LoggerPointer logger;
 };
 }        // namespace neo_media

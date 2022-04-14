@@ -152,10 +152,12 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                                     size_t *data_length,
                                     int *is_last_segment,
                                     int *is_media_finished,
+                                    int *is_still_active,
                                     uint64_t current_time)
 {
     int ret = 0;
     auto pub_ctx = (PublisherContext *) media_ctx;
+    auto logger = pub_ctx->transport->logger;
     if (action == quicrq_media_source_get_data)
     {
         *is_media_finished = 0;
@@ -172,9 +174,10 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
 
         *data_length = pub_ctx->transportManager->hasDataToSendToNet();
         if (*data_length > data_max_size) {
-            std::cout << "transport buffer size=" << data_max_size
-                      << ", " << "data size=" << *data_length;
+            logger->info << "Transport Buffer Small: transport buffer size=" << data_max_size
+                      << ", " << "data size=" << *data_length << std::flush;
             *data_length = 0;
+            *is_still_active = 1;
             return 0;
         }
         if (data != nullptr)
@@ -188,7 +191,6 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
             {
                 std::copy(
                     send_packet.data.begin(), send_packet.data.end(), data);
-                // memcpy(data, send_packet.data.data(), *data_length);
                 *is_last_segment = 1;
             }
         }
@@ -201,7 +203,6 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
     else if (action == quicrq_media_source_close)
     {
         /* todo close the context */
-        std::cout << "publisher: quicrq_media_source_close\n";
     }
     return ret;
 }
@@ -329,7 +330,6 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
         switch (cb_mode)
         {
             case picoquic_packet_loop_ready:
-                std::cout << "Waiting  for packets\n";
                 if (callback_arg != NULL)
                 {
                     picoquic_packet_loop_options_t *options =
@@ -423,6 +423,7 @@ void NetTransportQUICR::publish(uint64_t source_id,
     auto pub_context = new PublisherContext{
         source_id, media_type, url, nullptr, transportManager, this};
     quicrq_media_source_ctx_t *src_ctx = nullptr;
+
     src_ctx = quicrq_publish_source(
         quicr_ctx,
         reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
@@ -436,7 +437,7 @@ void NetTransportQUICR::publish(uint64_t source_id,
 
     // save the source
     pub_context->source_ctx = src_ctx;
-    std::cout << "Added source [" << source_id << "]\n";
+    logger->info << "Added source [" << source_id << "]" << std::flush;
     publishers[source_id] = *pub_context;
 
     // enable publishing
@@ -477,12 +478,14 @@ void NetTransportQUICR::subscribe(Packet::MediaType media_type,
 
 NetTransportQUICR::NetTransportQUICR(TransportManager *t,
                                      std::string sfuName,
-                                     uint16_t sfuPort) :
+                                     uint16_t sfuPort,
+                                     const LoggerPointer& logger_in) :
     transportManager(t),
     quicConnectionReady(false),
-    quicr_ctx(quicrq_create_empty())
+    quicr_ctx(quicrq_create_empty()),
+    logger(logger_in)
 {
-    std::cout << "Quicr Client Transport" << std::endl;
+    logger->info << "Quicr Client Transport" << std::flush;
     picoquic_config_init(&config);
     picoquic_config_set_option(&config, picoquic_option_ALPN, alpn.c_str());
     debug_set_stream(stdout);
@@ -494,7 +497,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
         throw std::runtime_error("unable to create picoquic context");
     }
 
-    std::cout << "Created QUIC handle\n";
+    logger->info << "Created QUIC handle" << std::flush;
     picoquic_set_key_log_file_from_env(quic);
 
     picoquic_set_mtu_max(quic, config.mtu_max);
@@ -532,7 +535,6 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
         throw std::runtime_error("cannot create connection to the server");
     }
 
-    std::cout << " time : " << picoquic_current_time() << std::endl;
     xport_ctx.transport = this;
     xport_ctx.transportManager = transportManager;
     xport_ctx.qr_ctx = quicr_ctx;
@@ -559,7 +561,7 @@ bool NetTransportQUICR::ready()
     }
     if (ret)
     {
-        std::cout << "NetTransportQUICR::ready()" << std::endl;
+        logger->info << "NetTransportQUICR::ready()" << std::flush;
     }
     return ret;
 }
@@ -579,7 +581,7 @@ int NetTransportQUICR::runQuicProcess()
                                    quicrq_app_loop_cb,
                                    &xport_ctx);
 
-    std::cout << "Quicr loop Done " << std::endl;
+    logger->info << "Quicr loop Done " << std::flush;
     /* free all the media sources */
     // quicrq_app_free_sources(&quicr_client_context);
     /* Free the quicrq context */

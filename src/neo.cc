@@ -126,11 +126,12 @@ void Neo::init(const std::string &remote_address,
         video_max_height,
         video_max_frame_rate,
         video_max_bitrate,
-        (uint32_t) video_encode_pixel_format);
+        (uint32_t) video_encode_pixel_format,
+        log);
 
     if (!video_encoder)
     {
-        log->error << "AV1 video encoder init failed" << std::flush;
+        log->error << " video encoder init failed" << std::flush;
         return;
     }
 }
