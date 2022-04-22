@@ -14,4 +14,4 @@ target_compile_definitions(${PROJECT_NAME} INTERFACE -DDATA_PATH="${CMAKE_CURREN
 # Enable CTest
 include(doctest)
 enable_testing()
-doctest_discover_tests(${TEST_APP_NAME})
+doctest_discover_tests(${TEST_APP_NAME} ADD_LABELS 0)

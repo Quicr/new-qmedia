@@ -6,7 +6,6 @@
     "opus",
     "openssl",
     "doctest",
-    "dav1d",
     "libsamplerate",
     "curl",
     "openh264",
