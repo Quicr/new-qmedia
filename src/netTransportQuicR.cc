@@ -152,7 +152,6 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                                     size_t *data_length,
                                     int *is_last_segment,
                                     int *is_media_finished,
-                                    int *is_still_active,
                                     uint64_t current_time)
 {
     int ret = 0;
