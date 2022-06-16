@@ -1,4 +1,4 @@
-# Build QMedia
+# Build Pre-requisites for QMedia
 
 ## MacOS
 These instructions are for MacOS and have been validated on Apple Silicon/M1.
@@ -53,7 +53,7 @@ These instructions are for MacOS and have been validated on Apple Silicon/M1.
    ```
 
 
-### Building from Source
+### Setup vcpkg dependency
 
 #### 1) Clone QMedia Repo
 
@@ -82,25 +82,3 @@ For example:
 ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
 Downloading vcpkg-macos...
 ```
-
-### 2) CMake Init
-Create the build directory as ```build``` using current directory for source files
-
-```
-export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
-cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug
-```
-
-### 3) CMake Build
-
-
-```
-cmake --build build
-```
-
-## Build Troubleshooting 
-
-In most cases a ```rm -rf build``` in the repo directory will clear problems.
-
-In some cases the dependencies might have changed and introduced new functions/methods/etc.
-Rebuild the dependencies following the above steps to clear those issues up.

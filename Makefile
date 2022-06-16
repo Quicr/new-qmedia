@@ -12,15 +12,15 @@ CLANG_FORMAT=clang-format -i
 all: ${BUILD_DIR}
 	cmake --build ${BUILD_DIR}
 
-${BUILD_DIR}: CMakeLists.txt 
+${BUILD_DIR}: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
 	cmake -B${BUILD_DIR} -DBUILD_EXTERN=ON -DCMAKE_BUILD_TYPE=Debug .
-
-enable-quic:
-        cmake -B${BUILD_DIR} -DBUILD_WITH_QUIC=ON -DCMAKE_BUILD_TYPE=Debug .
 
 test: ${BUILD_DIR} test/*
 
 	cmake --build ${BUILD_DIR} --target neoMedia_test
+
+tidy:
+	cmake -B${BUILD_DIR} -DCLANG_TIDY=ON -DCMAKE_BUILD_TYPE=Debug .
 
 vcpkg-status:
 	less build/vcpkg_installed/vcpkg/status
