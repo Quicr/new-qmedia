@@ -118,10 +118,6 @@ set(LIBRARIES media_api gsl sframe)
 find_library(SAMPLE_RATE samplerate REQUIRED)
 list(APPEND LIBRARIES ${SAMPLE_RATE})
 
-# openh264
-find_library(openh264 openh264 REQUIRED)
-list(APPEND LIBRARIES ${openh264})
-
 # curl
 find_package(CURL REQUIRED)
 list(APPEND LIBRARIES ${CURL_LIBRARIES})
