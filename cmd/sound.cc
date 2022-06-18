@@ -94,8 +94,8 @@ void recordThreadFunc(Neo *neo)
                     }
 
                     timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::system_clock::now().time_since_epoch())
-                        .count();
+                                    std::chrono::system_clock::now().time_since_epoch())
+                                    .count();
 
                     neo->sendAudio(audioBuff, buff_size, timestamp, sourceID);
                     logger->debug << "-" << std::flush;
@@ -355,6 +355,7 @@ int main(int argc, char *argv[])
              conference_id,        // conferenceID
              streamCallBack,
              NetTransport::QUICR,
+             Neo::MediaDirection::publish_only,
              false);
 
     shutDown = false;
@@ -436,7 +437,7 @@ int main(int argc, char *argv[])
         auto url = "quicr://" + std::to_string(conference_id) + "/" + std::to_string(clientID)
                    + "/" + name + "/" + source;
         std::cout << "quicr subscribe url:" << url << std::endl;
-        neo.subscribe(Packet::MediaType::Opus, url);
+        neo.subscribe(1, Packet::MediaType::Opus, url);
     } else {
         // pub/sub mode
         std::cout << "Pub and Sub together isn't supported\n";

@@ -117,6 +117,7 @@ public:
                             NetTransport::PeerConnectionInfo *info,
                             socklen_t *addrLen);
 
+    bool getDataToSendToNet(NetTransport::Data& data);
     size_t hasDataToSendToNet();
 
     virtual bool transport_ready() const = 0;

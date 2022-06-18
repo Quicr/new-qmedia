@@ -43,6 +43,7 @@ build
 # IDEA
 .idea
 cmake-build-debug
+cmake-build-release
 
 # Editor files/directories
 .vscode
@@ -52,3 +53,7 @@ cmake-build-debug
 
 # vcpkg
 /vcpkg_installed
+
+.cmake
+.tmp.dprobes.h
+_deps

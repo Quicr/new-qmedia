@@ -38,6 +38,14 @@ public:
         I420
     };
 
+    enum struct MediaDirection
+    {
+        publish_only = 1,  // sendonly
+        subscribe_only, // recvonly
+        publish_subscribe, //sendrecv
+        unknown
+    };
+
     // Enable testing via various short-circuit
     enum struct LoopbackMode
     {
@@ -71,6 +79,7 @@ public:
               uint64_t conferenceID,
               callbackSourceId callback,
               NetTransport::Type transport_type,
+              MediaDirection direction,
               bool echo);
 
     std::atomic<bool> mutedAudioEmptyFrames = false;        // keyframe request
@@ -122,7 +131,9 @@ public:
     void publish(uint64_t source_id,
                  Packet::MediaType media_type,
                  std::string url);
-    void subscribe(Packet::MediaType mediaType, std::string url);
+    void subscribe(uint64_t source_id,
+                   Packet::MediaType mediaType,
+                   std::string url);
     void start_transport(NetTransport::Type transport_type);
 
 protected:
@@ -191,6 +202,7 @@ private:
     LoopbackMode loopbackMode = LoopbackMode::none;
     Metrics::MetricsPtr metrics = nullptr;
     NetTransport::Type transport_type;
+    MediaDirection media_dir = MediaDirection::unknown;
 };        // class Neo
 
 typedef std::shared_ptr<Neo> NeoPointer;

@@ -81,13 +81,23 @@ bool Jitter::push(PacketPointer packet,
             case Packet::MediaType::AV1:
             case Packet::MediaType::Raw:
             {
+                if (!video.sourceID) {
+                    new_stream = true;
+                    logger->info << "New video sourceID: " << sourceID << std::flush;
+                    video.sourceID = packet->sourceID;
+                }
+
+                if (packet->fragmentCount == 1) {
+                    // we got assembled frame, add it to jitter queue
+                    video.push(std::move(packet),
+                               sync.video_seq_popped,
+                               now);
+                    break;
+                }
+
                 if (video.assembler == nullptr)
                 {
                     video.assembler = std::make_shared<SimpleVideoAssembler>();
-                    new_stream = true;
-                    logger->info << "New video sourceID: " << sourceID
-                                 << std::flush;
-                    video.sourceID = packet->sourceID;
                 }
 
                 PacketPointer raw = video.assembler->push(std::move(packet));

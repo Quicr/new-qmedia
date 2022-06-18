@@ -101,6 +101,7 @@ PacketPointer TransportManager::recv()
             // send ack TODO: wire it through retrans module once we have it
             if (!isLoopback)
             {
+#if 0
                 PacketPointer content_ack = std::make_unique<Packet>();
                 content_ack->packetType = Packet::Type::StreamContentAck;
                 content_ack->transportSequenceNumber =
@@ -113,6 +114,7 @@ PacketPointer TransportManager::recv()
                 content_ack->peer_info.addrLen = ret->peer_info.addrLen;
                 content_ack->clientID = ret->clientID;
                 send(std::move(content_ack));
+#endif
             }
 
             break;
@@ -472,6 +474,47 @@ bool TransportManager::recvDataFromNet(
     }
     // Notify the client of data availability
     recv_cv.notify_all();
+    return true;
+}
+
+bool TransportManager::getDataToSendToNet(NetTransport::Data& data) {
+    // get packet to send from Q
+    PacketPointer packet = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(sendQMutex);
+        if (sendQ.empty())
+        {
+            return false;
+        }
+        packet = std::move(sendQ.front());
+        sendQ.pop();
+    }
+
+    assert(packet);
+
+    if (!packet->peer_info.transport_connection_id.empty())
+    {
+        auto &cnx_id = packet->peer_info.transport_connection_id;
+        std::copy(cnx_id.begin(),
+                  cnx_id.end(),
+                  std::back_inserter(data.peer.transport_connection_id));
+    }
+
+    data.source_id = packet->sourceID;
+    data.peer.addrLen = packet->peer_info.addrLen;
+
+    memcpy(&data.peer.addr,
+           &(packet->peer_info.addr),
+           packet->peer_info.addrLen);
+
+    if (packet->mediaType == Packet::MediaType::AV1)
+    {
+        logger->info << "[S]: SeqNo " <<  packet->transportSequenceNumber
+                     << " video_frame_type: " << (int) packet->videoFrameType
+                     << std::flush;
+    }
+    data.data = std::move(packet->encoded_data);
+
     return true;
 }
 

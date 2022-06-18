@@ -3,14 +3,17 @@
 #include <iomanip>
 #include <sstream>
 
+#include "neo_media_client.hh"
+#include "neo.hh"
+
 #include <transport_manager.hh>
 #include <transport.hh>
 
 using namespace neo_media;
+using namespace std::chrono_literals;
 
 uint64_t conference_id = 1234;
 bool done = false;
-
 ClientTransportManager *transportManager = nullptr;
 
 static std::string to_hex(const std::vector<uint8_t> &data)
@@ -26,7 +29,7 @@ static std::string to_hex(const std::vector<uint8_t> &data)
 
 void read_loop()
 {
-    std::cout << "Client read loop init\n";
+    std::cout << "Client read audio loop init\n";
     while (!done)
     {
         auto packet = transportManager->recv();
@@ -65,7 +68,7 @@ void send_loop(uint64_t client_id, uint64_t source_id)
         packet->conferenceID = conference_id;
         packet->packetType = neo_media::Packet::Type::StreamContent;
         packet->packetizeType = neo_media::Packet::PacketizeType::None;
-        packet->mediaType = neo_media::Packet::MediaType::AV1;
+        packet->mediaType = neo_media::Packet::MediaType::Opus;
         packet->videoFrameType = neo_media::Packet::VideoFrameType::Idr;
         packet->encodedSequenceNum = pkt_num;
         std::cout << "40B:Sending:" << to_hex(packet->data) << std::endl;
@@ -73,6 +76,7 @@ void send_loop(uint64_t client_id, uint64_t source_id)
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -94,7 +98,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+
     transport_type.assign(argv[1]);
+
+    LoggerPointer logger = std::make_shared<Logger>("FORTY_BYTES");
+    logger->SetLogFacility(LogFacility::CONSOLE);
+
 
     if (transport_type == "q")
     {
@@ -107,7 +116,8 @@ int main(int argc, char *argv[])
     {
         std::cout << "Transport is QuicR\n";
         transportManager = new ClientTransportManager(
-            neo_media::NetTransport::QUICR, "127.0.0.1", 7777);
+            neo_media::NetTransport::QUICR, "127.0.0.1", 7777, nullptr, logger);
+        transportManager->start();
     }
     else
     {
@@ -139,7 +149,8 @@ int main(int argc, char *argv[])
         std::weak_ptr<NetTransportQUICR> tmp =
             std::static_pointer_cast<NetTransportQUICR>(transport.lock());
         auto quicr_transport = tmp.lock();
-        quicr_transport->subscribe(Packet::MediaType::Opus,
+        quicr_transport->subscribe(source_id,
+                                   Packet::MediaType::Opus,
                                    "forty_bytes_alice");
 
         // start the transport
@@ -161,6 +172,7 @@ int main(int argc, char *argv[])
         auto quicr_transport = tmp.lock();
         quicr_transport->publish(
             source_id, Packet::MediaType::Opus, "forty_bytes_alice");
+
         // start the transport
         quicr_transport->start();
 
