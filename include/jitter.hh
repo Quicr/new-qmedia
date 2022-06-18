@@ -104,7 +104,7 @@ public:
                   std::chrono::steady_clock::time_point now);
         PacketPointer pop(std::chrono::steady_clock::time_point now);
         MetaQueue mq;
-        uint64_t sourceID;
+        uint64_t sourceID = 0;
         PopFrequencyCounter fps;
         std::shared_ptr<SimpleVideoAssembler> assembler;
         std::unique_ptr<VideoDecoder> decoder;

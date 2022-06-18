@@ -42,6 +42,7 @@ extern "C"
                                       SourceCallback callback,
                                       std::uint16_t transportType,
                                       ExternLogCallback log,
+                                      std::uint16_t media_direction,
                                       bool echo = false);
 
     EXPORT void CALL sendAudio(NeoMediaInstance instance,
@@ -101,9 +102,11 @@ extern "C"
 
     // Adds a subscriber for a given url and media type
     EXPORT void CALL subscribe(NeoMediaInstance instance,
+                               std::uint64_t source_id,
                                std::uint16_t media_type,
                                const char *url,
                                std::uint16_t url_length);
+
     // Explicit call to kick off the transport.
     // Needed for transports
     EXPORT void CALL start_transport(NeoMediaInstance instance,

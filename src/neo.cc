@@ -15,35 +15,37 @@ Neo::Neo(const LoggerPointer &parent_logger) :
 }
 
 void Neo::init(const std::string &remote_address,
-               const unsigned int remote_port,
-               unsigned int audio_sample_rate_,
-               unsigned int audio_channels_,
-               audio_sample_type audio_type,
-               unsigned int video_max_width_,
-               unsigned int video_max_height_,
-               unsigned int video_max_frame_rate_,
-               unsigned int video_max_bitrate_,
-               video_pixel_format video_encode_pixel_format_,
-               video_pixel_format video_decode_pixel_format_,
+               unsigned int remote_port,
+               unsigned int audio_sample_rate,
+               unsigned int audio_channels,
+               audio_sample_type type,
+               unsigned int video_max_width,
+               unsigned int video_max_height,
+               unsigned int video_max_frame_rate,
+               unsigned int video_max_bitrate,
+               video_pixel_format video_encode_pixel_format,
+               video_pixel_format video_decode_pixel_format,
                uint64_t clientID,
                uint64_t conferenceID,
                callbackSourceId callback,
-               NetTransport::Type xport_type,
+               NetTransport::Type transport_type_in,
+               MediaDirection media_dir_in,
                bool echo)
 {
     myClientID = clientID;
     myConferenceID = conferenceID;
-    audio_sample_rate = audio_sample_rate_;
-    audio_channels = audio_channels_;
-    type = audio_type;
-    video_max_width = video_max_width_;
-    video_max_height = video_max_height_;
-    video_max_frame_rate = video_max_frame_rate_;
-    video_max_bitrate = video_max_bitrate_;
-    video_encode_pixel_format = video_encode_pixel_format_;
-    video_decode_pixel_format = video_decode_pixel_format_;
+    audio_sample_rate = audio_sample_rate;
+    audio_channels = audio_channels;
+    type = type;
+    video_max_width = video_max_width;
+    video_max_height = video_max_height;
+    video_max_frame_rate = video_max_frame_rate;
+    video_max_bitrate = video_max_bitrate;
+    video_encode_pixel_format = video_encode_pixel_format;
+    video_decode_pixel_format = video_decode_pixel_format;
     newSources = callback;
-    transport_type = xport_type;
+    transport_type = transport_type_in;
+    media_dir = media_dir_in;
 
     if (transport_type == NetTransport::Type::PICO_QUIC)
     {
@@ -121,39 +123,54 @@ void Neo::init(const std::string &remote_address,
         return;
     }
 
-    video_encoder = std::make_unique<H264Encoder>(
-        video_max_width,
-        video_max_height,
-        video_max_frame_rate,
-        video_max_bitrate,
-        (uint32_t) video_encode_pixel_format,
-        log);
+    log->info << "MediaDirection:" << (int) media_dir << std::flush;
 
-    if (!video_encoder)
+    if (media_dir == MediaDirection::publish_only || media_dir == MediaDirection::publish_subscribe)
     {
-        log->error << " video encoder init failed" << std::flush;
-        return;
+        video_encoder = std::make_unique<H264Encoder>(
+            video_max_width,
+            video_max_height,
+            video_max_frame_rate,
+            video_max_bitrate,
+            (uint32_t) video_encode_pixel_format,
+            log);
+
+        if (!video_encoder)
+        {
+            log->error << " video encoder init failed" << std::flush;
+            return;
+        }
     }
+
+    log->info << "My ClientId: " << clientID << std::flush;
 }
 
 void Neo::publish(std::uint64_t source_id,
                   Packet::MediaType media_type,
                   std::string url)
 {
+    // Note: there is 1:1 mapping between source_id and object name
     auto pkt_transport = transport->transport();
     std::weak_ptr<NetTransportQUICR> tmp =
         std::static_pointer_cast<NetTransportQUICR>(pkt_transport.lock());
     auto quicr_transport = tmp.lock();
+
+    url += "/" + std::to_string((int) media_type);
     quicr_transport->publish(source_id, media_type, url);
+    log->info << "SourceID: " << source_id << ", Publish Url:" << url << std::flush;
 }
 
-void Neo::subscribe(Packet::MediaType mediaType, std::string url)
+void Neo::subscribe(uint64_t source_id, Packet::MediaType media_type, std::string url)
 {
     auto pkt_transport = transport->transport();
     std::weak_ptr<NetTransportQUICR> tmp =
         std::static_pointer_cast<NetTransportQUICR>(pkt_transport.lock());
     auto quicr_transport = tmp.lock();
-    quicr_transport->subscribe(mediaType, url);
+
+    url += "/" + std::to_string((int) media_type);
+    quicr_transport->subscribe(source_id, media_type, url);
+
+    log->info << " Subscribe Url:" << url << std::flush;
 }
 
 void Neo::start_transport(NetTransport::Type transport_type)
@@ -232,12 +249,15 @@ void Neo::sendAudio(const char *buffer,
                     uint64_t timestamp,
                     uint64_t sourceID)
 {
-    std::shared_ptr<AudioEncoder> audio_encoder = getAudioEncoder(sourceID);
-
-    if (audio_encoder != nullptr)
+    if (media_dir == MediaDirection::publish_only || media_dir == MediaDirection::publish_subscribe)
     {
-        audio_encoder->encodeFrame(
-            buffer, length, timestamp, mutedAudioEmptyFrames);
+        std::shared_ptr<AudioEncoder> audio_encoder = getAudioEncoder(sourceID);
+
+        if (audio_encoder != nullptr)
+        {
+            audio_encoder->encodeFrame(
+                buffer, length, timestamp, mutedAudioEmptyFrames);
+        }
     }
 }
 
@@ -283,11 +303,21 @@ void Neo::sendVideoFrame(const char *buffer,
         // encoder skipped this frame, nothing to send
         return;
     }
+
     video_seq_no++;
 
     if (loopbackMode == LoopbackMode::codec)
     {
         transport->loopback(std::move(packet));
+        return;
+    }
+
+    if (transport_type == NetTransport::Type::QUICR) {
+        // quicr transport handles its own fragmentation and reassemble
+        log->debug << "SendVideoFrame: Sending full object:"
+                   << packet->data.size() << std::flush;
+        packet->fragmentCount = 1;
+        transport->send(std::move(packet));
         return;
     }
 

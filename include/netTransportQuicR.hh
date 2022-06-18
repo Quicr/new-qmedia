@@ -42,6 +42,7 @@ struct TransportContext
 {
     uint16_t port;
     quicrq_ctx_t *qr_ctx;
+    quicrq_cnx_ctx_t *cn_ctx;
     TransportManager *transportManager;
     NetTransportQUICR *transport;
     bytes local_connection_id;
@@ -64,6 +65,7 @@ struct PublisherContext
     Packet::MediaType media_type;
     std::string url;
     quicrq_media_source_ctx_t *source_ctx;
+    quicrq_media_object_source_ctx_t *object_source_ctx; // used with object api
     TransportManager *transportManager;
     NetTransportQUICR *transport;
 };
@@ -71,8 +73,9 @@ struct PublisherContext
 struct ConsumerContext
 {
     Packet::MediaType media_type;
-    std::string url;
+    std::string url; // quicr name
     quicrq_reassembly_context_t reassembly_ctx;
+    quicrq_object_stream_consumer_ctx*  object_consumer_ctx; // used with object api
     quicrq_cnx_ctx_t *cnx_ctx;
     TransportManager *transportManager;
     NetTransportQUICR *transport;
@@ -107,7 +110,9 @@ public:
                  Packet::MediaType media_type,
                  const std::string &url);
     void remove_source(uint64_t source_id);
-    void subscribe(Packet::MediaType media_type, const std::string &url);
+    void subscribe(uint64_t source_id,
+                   Packet::MediaType media_type,
+                   const std::string &url);
 
     void start();
 
@@ -147,7 +152,7 @@ public:
 
     LoggerPointer logger;
 private:
-    const std::string alpn = "quicr-h00";
+    const std::string alpn = "quicrq-h10";
     TransportContext xport_ctx;
     QuicRClientContext quicr_client_ctx;
     picoquic_quic_config_t config;
@@ -155,9 +160,11 @@ private:
     // Quicr Connection Context
     quicrq_cnx_ctx_t *cnx_ctx = nullptr;
     picoquic_quic_t *quic = nullptr;
-    // todo: media_type as key is not a great choice
-    // esp when creating multiple sources of same type.
+    // source_id -> pub_ctx
     std::map<uint64_t, PublisherContext> publishers = {};
+    // source_id -> consumer_ctx
+    std::map<uint64_t, ConsumerContext> consumers = {};
+
 };
 
 }        // namespace neo_media

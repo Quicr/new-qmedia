@@ -20,6 +20,7 @@ public:
     {
         std::string data;
         PeerConnectionInfo peer;
+        uint64_t source_id = 0;
         bool empty() { return data.empty(); }
     };
 

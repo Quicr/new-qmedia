@@ -22,7 +22,7 @@
 #include <ws2tcpip.h>
 #endif
 
-#include "netTransportQuic.hh"
+#include "netTransportQuicR.hh"
 #include "transport_manager.hh"
 
 #include "picoquic.h"
@@ -39,6 +39,9 @@ using namespace neo_media;
 
 #define SERVER_CERT_FILE "cert.pem"
 #define SERVER_KEY_FILE "key.pem"
+
+// QuicrQ object api
+#define USE_OBJECT_API 1
 
 ///
 // Utility
@@ -96,14 +99,16 @@ int quicrq_app_loop_cb_check_fin(TransportContext *cb_ctx)
 
     /* if a client, exit the loop if connection is gone. */
     quicrq_cnx_ctx_t *cnx_ctx = quicrq_first_connection(cb_ctx->qr_ctx);
-    if (cnx_ctx == NULL || quicrq_is_cnx_disconnected(cnx_ctx))
+    if (cnx_ctx == nullptr || quicrq_is_cnx_disconnected(cnx_ctx))
     {
         ret = PICOQUIC_NO_ERROR_TERMINATE_PACKET_LOOP;
     }
     else if (!quicrq_cnx_has_stream(cnx_ctx))
     {
-        ret = quicrq_close_cnx(cnx_ctx);
+        // todo: don't close if no media has been posted yet
+        // ret = quicrq_close_cnx(cnx_ctx);
     }
+
     return ret;
 }
 
@@ -123,9 +128,11 @@ void quicrq_app_wake_up_sources(TransportContext *cb_ctx, uint64_t current_time)
 void quicrq_app_check_source_time(TransportContext *cb_ctx,
                                   packet_loop_time_check_arg_t *time_check_arg)
 {
+    // metric: log when this function gets called as influx point
     if (cb_ctx->transportManager->hasDataToSendToNet())
     {
         time_check_arg->delta_t = 0;
+        // log delta
         return;
     }
     else if (time_check_arg->delta_t > 5000)
@@ -133,6 +140,7 @@ void quicrq_app_check_source_time(TransportContext *cb_ctx,
         // is this a good choice?
         time_check_arg->delta_t = 5000;
     }
+    // log here delta
 }
 
 // invoked under following flows
@@ -152,11 +160,14 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                                     size_t *data_length,
                                     int *is_last_segment,
                                     int *is_media_finished,
+                                    int *is_still_active,
                                     uint64_t current_time)
 {
     int ret = 0;
     auto pub_ctx = (PublisherContext *) media_ctx;
     auto logger = pub_ctx->transport->logger;
+
+    // log the delta for processing
     if (action == quicrq_media_source_get_data)
     {
         *is_media_finished = 0;
@@ -165,6 +176,7 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
 
         if (pub_ctx->transportManager->shutDown)
         {
+            *is_still_active = 0;
             // todo handle gracefully.
             // todo handle media finished setting
             throw std::runtime_error("can't publish data, transport manager is "
@@ -173,7 +185,7 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
 
         *data_length = pub_ctx->transportManager->hasDataToSendToNet();
         if (*data_length > data_max_size) {
-            logger->info << "Transport Buffer Small: transport buffer size=" << data_max_size
+            logger->debug << "Transport Buffer Small: transport buffer size=" << data_max_size
                       << ", " << "data size=" << *data_length << std::flush;
             *data_length = 0;
             *is_still_active = 1;
@@ -188,13 +200,15 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                 send_packet.data, &send_packet.peer, &send_packet.peer.addrLen);
             if (got)
             {
+                logger->debug << "Copied data to the quicr transport:" << *data_length << std::flush;
                 std::copy(
                     send_packet.data.begin(), send_packet.data.end(), data);
                 *is_last_segment = 1;
+                *is_still_active = 1;
+            } else {
+                *is_still_active = 0;
             }
-        }
-        else
-        {
+        } else {
             *is_last_segment = 1;
         }
         ret = 0;
@@ -203,6 +217,7 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
     {
         /* todo close the context */
     }
+    // delta end
     return ret;
 }
 
@@ -212,10 +227,24 @@ media_consumer_frame_ready(void *media_ctx,
                            uint64_t frame_id,
                            const uint8_t *data,
                            size_t data_length,
-                           quicrq_reassembly_frame_mode_enum frame_mode)
+                           quicrq_reassembly_object_mode_enum frame_mode)
 {
+
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
+    auto logger = cons_ctx->transport->logger;
+
+    logger->debug << "[frame_ready: id:" << frame_id
+                 << ", frame_mode:" << (int) frame_mode
+                 << ",data_len:" << data_length << "]" << std::flush;
+
+    if (frame_mode == quicrq_reassembly_object_mode_enum::quicrq_reassembly_object_peek)
+    {
+        logger->debug << "[frame_ready:quicrq_reassembly_frame_peek, ignoring" << std::flush;
+        return 0;
+    }
+
+    // log the delta until the frame is handed over to the app
     struct sockaddr_storage stored_addr;
     struct sockaddr *peer_addr = nullptr;
     quicrq_get_peer_address(cons_ctx->cnx_ctx, &stored_addr);
@@ -224,11 +253,8 @@ media_consumer_frame_ready(void *media_ctx,
     // TODO: support IPV6
     memcpy(&peer_info.addr, (sockaddr *) &stored_addr, sizeof(sockaddr_in));
     peer_info.addrLen = sizeof(struct sockaddr_storage);
-    // auto cnx_id = picoquic_get_client_cnxid(cons_ctx->cnx_ctx->cnx);
     bytes cnx_id_bytes = {};
-    // print_sock_info("dg_callbk:", &peer_info.addr);
     peer_info.transport_connection_id = std::move(cnx_id_bytes);
-
     auto recv_data = std::string(data, data + data_length);
     cons_ctx->transportManager->recvDataFromNet(recv_data,
                                                 std::move(peer_info));
@@ -262,7 +288,7 @@ int media_consumer_learn_final_frame_id(void *media_ctx,
 {
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
-    ret = quicrq_reassembly_learn_final_frame_id(&cons_ctx->reassembly_ctx,
+    ret = quicrq_reassembly_learn_final_object_id(&cons_ctx->reassembly_ctx,
                                                  final_frame_id);
     return ret;
 }
@@ -273,6 +299,7 @@ int media_consumer_fn(quicrq_media_consumer_enum action,
                       const uint8_t *data,
                       uint64_t frame_id,
                       uint64_t offset,
+                      uint64_t queue_delay,
                       int is_last_segment,
                       size_t data_length)
 {
@@ -295,7 +322,7 @@ int media_consumer_fn(quicrq_media_consumer_enum action,
                 ret = quicrq_consumer_finished;
             }
             break;
-        case quicrq_media_final_frame_id:
+        case quicrq_media_final_object_id:
             media_consumer_learn_final_frame_id(media_ctx, frame_id);
             if (ret == 0 && cons_ctx->reassembly_ctx.is_finished)
             {
@@ -312,6 +339,58 @@ int media_consumer_fn(quicrq_media_consumer_enum action,
     return ret;
 }
 
+// media consumer object callback from quicr stack
+int object_stream_consumer_fn(
+    quicrq_media_consumer_enum action,
+    void* object_consumer_ctx,
+    uint64_t current_time,
+    uint64_t object_id,
+    const uint8_t* data,
+    size_t data_length,
+    quicrq_object_stream_consumer_properties_t* properties)
+{
+
+    auto cons_ctx = (ConsumerContext *) object_consumer_ctx;
+    auto& logger = cons_ctx->transport->logger;
+    logger->info << cons_ctx->url << ": object_stream_consumer_fn: action:"
+                 << (int) action << ",data_length:" << data_length<< std::flush;
+    int ret = 0;
+    switch (action) {
+        case quicrq_media_datagram_ready:
+        {
+           // logger->info << "quicrq_media_datagram_ready, object:" << object_id
+           //              << std::flush;
+            struct sockaddr_storage stored_addr;
+            struct sockaddr *peer_addr = nullptr;
+            quicrq_get_peer_address(cons_ctx->cnx_ctx, &stored_addr);
+            NetTransport::PeerConnectionInfo peer_info;
+            // TODO: support IPV6
+            memcpy(&peer_info.addr,
+                   (sockaddr *) &stored_addr,
+                   sizeof(sockaddr_in));
+            peer_info.addrLen = sizeof(struct sockaddr_storage);
+            bytes cnx_id_bytes = {};
+            peer_info.transport_connection_id = std::move(cnx_id_bytes);
+            auto recv_data = std::string(data, data + data_length);
+            cons_ctx->transportManager->recvDataFromNet(recv_data,
+                                                        std::move(peer_info));
+        }
+            break;
+        case quicrq_media_close:
+            /* Remove the reference to the media context, as the caller will free it. */
+            cons_ctx->object_consumer_ctx = nullptr;
+            /* Close streams and other resource */
+            assert(0);
+            break;
+        default:
+            ret = -1;
+            break;
+    }
+
+    return ret;
+}
+
+
 // main packet loop for the application
 int quicrq_app_loop_cb(picoquic_quic_t *quic,
                        picoquic_packet_loop_cb_enum cb_mode,
@@ -320,19 +399,20 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
 {
     int ret = 0;
     auto *cb_ctx = (TransportContext *) callback_ctx;
-    if (cb_ctx == NULL)
+    auto& logger = cb_ctx->transport->logger;
+
+    if (cb_ctx == nullptr)
     {
-        ret = PICOQUIC_ERROR_UNEXPECTED_ERROR;
+        return PICOQUIC_ERROR_UNEXPECTED_ERROR;
     }
     else
     {
         switch (cb_mode)
         {
             case picoquic_packet_loop_ready:
-                if (callback_arg != NULL)
+                if (callback_arg != nullptr)
                 {
-                    picoquic_packet_loop_options_t *options =
-                        (picoquic_packet_loop_options_t *) callback_arg;
+                    auto *options = (picoquic_packet_loop_options_t *) callback_arg;
                     options->do_time_check = 1;
                 }
                 if (cb_ctx->transport)
@@ -360,23 +440,50 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
             case picoquic_packet_loop_after_send:
                 /* Post send callback. Check whether sources need to be awakened
                  */
+#if not defined(USE_OBJECT_API)
                 quicrq_app_wake_up_sources(cb_ctx,
                                            picoquic_get_quic_time(quic));
+#endif
                 /* if a client, exit the loop if connection is gone. */
                 ret = quicrq_app_loop_cb_check_fin(cb_ctx);
                 break;
             case picoquic_packet_loop_port_update:
                 break;
             case picoquic_packet_loop_time_check:
+            {
                 /* check local test sources */
                 quicrq_app_check_source_time(
                     cb_ctx, (packet_loop_time_check_arg_t *) callback_arg);
-                break;
+
+#if defined(USE_OBJECT_API)
+                NetTransport::Data send_packet;
+                auto got = cb_ctx->transportManager->getDataToSendToNet(send_packet);
+                if (!got || send_packet.empty())
+                {
+                    break;
+                }
+                if (!send_packet.source_id)
+                {
+                    break;
+                }
+                auto &publish_ctx = cb_ctx->transport->get_publisher_context(
+                    send_packet.source_id);
+                assert(publish_ctx.object_source_ctx);
+                ret = quicrq_publish_object(
+                    publish_ctx.object_source_ctx,
+                    reinterpret_cast<uint8_t *>(send_packet.data.data()),
+                    send_packet.data.size(),
+                    nullptr);
+                assert(ret == 0);
+#endif
+            }
+                    break;
             default:
                 ret = PICOQUIC_ERROR_UNEXPECTED_ERROR;
                 break;
         }
     }
+
 
     return ret;
 }
@@ -398,6 +505,38 @@ bool NetTransportQUICR::doRecvs()
 
 bool NetTransportQUICR::doSends()
 {
+    // todo : put it on the quicrq thread.
+#if defined(USE_OBJECT_API)
+    NetTransport::Data send_packet;
+    auto got = transportManager->getDataToSendToNet(send_packet);
+    if (!got || send_packet.empty()) {
+        return false;
+    }
+
+    // extract the source context
+    auto& publish_ctx = publishers.at(send_packet.source_id);
+    logger->debug << "doSends: source_id:" << send_packet.source_id << std::flush;
+    assert(publish_ctx.object_source_ctx);
+    logger->debug << "doSends: Copied data to the quicr transport:" << send_packet.data.size()
+                  <<  ", for source: " << publish_ctx.url <<std::flush;
+
+    auto ret = quicrq_publish_object(publish_ctx.object_source_ctx,
+                          reinterpret_cast<uint8_t *>(send_packet.data.data()),
+                          send_packet.data.size(),
+                          nullptr);
+    assert(ret == 0);
+
+    ret = quicrq_cnx_post_media(
+        cnx_ctx,
+        reinterpret_cast<uint8_t *>(const_cast<char *>(publish_ctx.url.data())),
+        publish_ctx.url.length(),
+        true);
+
+    assert(ret == 0);
+
+    return true;
+#endif
+    // not supported for old api
     return false;
 }
 
@@ -420,9 +559,25 @@ void NetTransportQUICR::publish(uint64_t source_id,
     }
 
     auto pub_context = new PublisherContext{
-        source_id, media_type, url, nullptr, transportManager, this};
-    quicrq_media_source_ctx_t *src_ctx = nullptr;
+        source_id, media_type, url, nullptr, nullptr, transportManager, this};
 
+#if defined(USE_OBJECT_API)
+    // TODO: Set object source property
+    auto obj_src_context = quicrq_publish_object_source(quicr_ctx,
+                                                        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+                                                        url.length(),
+                                                        nullptr);
+    assert(obj_src_context);
+    pub_context->object_source_ctx = obj_src_context;
+    // enable publishing
+        auto ret = quicrq_cnx_post_media(
+        cnx_ctx,
+        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+        url.length(),
+        true);
+    assert(ret == 0);
+#else
+    quicrq_media_source_ctx_t *src_ctx = nullptr;
     src_ctx = quicrq_publish_source(
         quicr_ctx,
         reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
@@ -431,14 +586,9 @@ void NetTransportQUICR::publish(uint64_t source_id,
         media_publisher_subscribe,
         media_frame_publisher_fn,
         [](void *pub_ctx) { free(pub_ctx); });
-
     assert(src_ctx);
-
     // save the source
     pub_context->source_ctx = src_ctx;
-    logger->info << "Added source [" << source_id << "]" << std::flush;
-    publishers[source_id] = *pub_context;
-
     // enable publishing
     auto ret = quicrq_cnx_post_media(
         cnx_ctx,
@@ -446,14 +596,28 @@ void NetTransportQUICR::publish(uint64_t source_id,
         url.length(),
         true);
     assert(ret == 0);
+#endif
+    logger->info << "Added source [" << source_id
+                 << " Url: " << url
+                 << "]" << std::flush;
+    publishers[source_id] = *pub_context;
 }
 
 void NetTransportQUICR::remove_source(uint64_t source_id)
 {
+#if defined (USE_OBJECT_API)
+    auto src_ctx = publishers[source_id];
+    if (src_ctx.object_source_ctx) {
+        quicrq_publish_object_fin(src_ctx.object_source_ctx);
+        quicrq_delete_object_source(src_ctx.object_source_ctx);
+        logger->info << "Removed source [" << source_id << std::flush;
+    }
+#else
     throw std::runtime_error("unimplemented");
+#endif
 }
 
-void NetTransportQUICR::subscribe(Packet::MediaType media_type,
+void NetTransportQUICR::subscribe(uint64_t source_id, Packet::MediaType media_type,
                                   const std::string &url)
 {
     auto consumer_media_ctx = new ConsumerContext{};
@@ -463,6 +627,19 @@ void NetTransportQUICR::subscribe(Packet::MediaType media_type,
     consumer_media_ctx->transport = this;
     consumer_media_ctx->transportManager = transportManager;
     consumer_media_ctx->cnx_ctx = cnx_ctx;
+#if defined(USE_OBJECT_API)
+    constexpr auto use_datagram = true;
+    constexpr auto in_order = true;
+    consumer_media_ctx->object_consumer_ctx =
+        quicrq_subscribe_object_stream(cnx_ctx,
+                                       reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+                                       url.length(),
+                                       use_datagram,
+                                       in_order,
+                                       object_stream_consumer_fn,
+                                       consumer_media_ctx);
+    assert(consumer_media_ctx->object_consumer_ctx);
+#else
     quicrq_reassembly_init(&consumer_media_ctx->reassembly_ctx);
 
     auto ret = quicrq_cnx_subscribe_media(
@@ -472,7 +649,8 @@ void NetTransportQUICR::subscribe(Packet::MediaType media_type,
         true,
         media_consumer_fn,
         consumer_media_ctx);
-    assert(ret == 0);
+#endif
+    consumers[source_id] = *consumer_media_ctx;
 }
 
 NetTransportQUICR::NetTransportQUICR(TransportManager *t,
@@ -486,7 +664,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
 {
     logger->info << "Quicr Client Transport" << std::flush;
     picoquic_config_init(&config);
-    picoquic_config_set_option(&config, picoquic_option_ALPN, alpn.c_str());
+    picoquic_config_set_option(&config, picoquic_option_ALPN, QUICRQ_ALPN);
     debug_set_stream(stdout);
     quic = picoquic_create_and_configure(
         &config, quicrq_callback, quicr_ctx, picoquic_current_time(), NULL);
@@ -500,7 +678,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
     picoquic_set_key_log_file_from_env(quic);
 
     picoquic_set_mtu_max(quic, config.mtu_max);
-    config.qlog_dir = ".";
+    config.qlog_dir = "/Users/snandaku/Downloads/logs";
     if (config.qlog_dir != NULL)
     {
         picoquic_set_qlog(quic, config.qlog_dir);
@@ -537,6 +715,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
     xport_ctx.transport = this;
     xport_ctx.transportManager = transportManager;
     xport_ctx.qr_ctx = quicr_ctx;
+    xport_ctx.cn_ctx = cnx_ctx;
     xport_ctx.port = sfuPort;
 
     quicr_client_ctx.port = sfuPort;
