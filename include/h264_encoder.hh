@@ -1,12 +1,12 @@
 #pragma once
 
-#pragma once
 #include <stdint.h>
 #include <vector>
 #include <chrono>
-#include "codec.hh"
 #include <wels/codec_api.h>
+
 #include "logger.hh"
+#include "codec.hh"
 
 namespace neo_media
 {
@@ -42,10 +42,10 @@ public:
     unsigned int idr_interval = 30;
     const unsigned int mtu_size = 1300;
 
-    ISVCEncoder *encoder{};
-    SEncParamBase encParamBase;
-    SFrameBSInfo outputFrame{};
-    SSourcePicture inputFrame{};
+    ISVCEncoder *encoder = nullptr;
+    SEncParamExt encParmExt;
+    SFrameBSInfo encodedFrame;
+    SSourcePicture inputFrame;
     LoggerPointer logger;
 };
 }        // namespace neo_media

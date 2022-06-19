@@ -4,7 +4,6 @@
 #include <cassert>
 
 #include <string.h>        // memcpy , strncat
-#include <sstream>
 #include <iomanip>
 
 #include "h264_encoder.hh"
@@ -12,54 +11,6 @@
 using namespace neo_media;
 
 static bool debug = false;
-
-H264Encoder::H264Encoder(unsigned int video_max_width,
-                         unsigned int video_max_height,
-                         unsigned int video_max_frame_rate,
-                         unsigned int video_max_bitrate,
-                         std::uint32_t video_pixel_format,
-                         const LoggerPointer& logger_in)
-{
-    logger = logger_in;
-    int rv = WelsCreateSVCEncoder(&encoder);
-    if (rv || !encoder)
-    {
-        logger->error << "H264 video encoder create failed" << std::flush;
-        assert(0);        // todo: throw exception?
-    }
-
-    encParamBase.fMaxFrameRate = 30;
-    encParamBase.iPicHeight = video_max_height;
-    encParamBase.iPicWidth = video_max_width;
-    encParamBase.iTargetBitrate = video_max_bitrate;
-    encParamBase.iRCMode = RC_OFF_MODE;
-    encoder->Initialize(&encParamBase);
-
-}
-
-H264Encoder::~H264Encoder()
-{
-    if (encoder)
-    {
-        long ret = encoder->Uninitialize();
-        encoder = nullptr;
-    }
-}
-
-static std::string to_hex(const std::vector<uint8_t> &data)
-{
-    std::stringstream hex(std::ios_base::out);
-    hex.flags(std::ios::hex);
-    int i = 0;
-    for (const auto &byte : data)
-    {
-        hex << std::setw(2) << std::setfill('0') << int(byte);
-        i++;
-        if (i > 25)
-            break;
-    }
-    return hex.str();
-}
 
 static std::string to_hex(unsigned char* data, int stop)
 {
@@ -71,6 +22,86 @@ static std::string to_hex(unsigned char* data, int stop)
     }
     return hex.str();
 }
+
+
+H264Encoder::H264Encoder(unsigned int video_max_width,
+                         unsigned int video_max_height,
+                         unsigned int video_max_frame_rate,
+                         unsigned int video_max_bitrate,
+                         std::uint32_t video_pixel_format,
+                         const LoggerPointer& logger_in)
+{
+    logger = logger_in;
+    int rv = WelsCreateSVCEncoder(&encoder);
+
+    assert(rv == cmResultSuccess && encoder);
+
+    // for debugging openH264
+    int logLevel = WELS_LOG_ERROR;
+    encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &logLevel);
+
+
+    // ./h264enc -org your_input_I420.yuv -numl 1 numtl 1 -sw 1280 -sh 720 -dw 0 1280 -dh 0 720 -frin 30 -frout 0 30 -rc -1 -lqp 0 24 -utype 0 -iper 128 -nalSize 1300 -complexity 1 -denoise -1 -bf test.264
+    rv = encoder->GetDefaultParams(&encParmExt);
+    assert(rv == cmResultSuccess);
+
+    encParmExt.iUsageType = CAMERA_VIDEO_REAL_TIME;
+    encParmExt.iPicWidth = video_max_width;
+    encParmExt.iPicHeight = video_max_height;
+    encParmExt.iTargetBitrate = video_max_bitrate;
+    encParmExt.fMaxFrameRate = 30;
+    encParmExt.bEnableDenoise = 1;
+    encParmExt.iRCMode = RC_OFF_MODE;
+    encParmExt.iComplexityMode = HIGH_COMPLEXITY;
+
+    // only one layer
+    encParmExt.iSpatialLayerNum = 1;
+    encParmExt.sSpatialLayers[0].iVideoWidth = video_max_width;
+    encParmExt.sSpatialLayers[0].iVideoHeight = video_max_height;
+    encParmExt.sSpatialLayers[0].fFrameRate = 30;
+    encParmExt.sSpatialLayers[0].iSpatialBitrate = video_max_bitrate;
+    encParmExt.sSpatialLayers[0].sSliceArgument.uiSliceMode = SM_SINGLE_SLICE;
+    encParmExt.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint = 1300;
+    encParmExt.sSpatialLayers[0].iDLayerQp = 24;
+    //encParmExt.iMultipleThreadIdc = 1;           // multi-threading not tested for mode SM_SIZELIMITED_SLICE
+    encParmExt.uiMaxNalSize = 1300;   // max NAL size must fit in MTU limit
+
+    rv = encoder->InitializeExt(&encParmExt);
+    assert(rv == cmResultSuccess);
+
+    int videoFormat = videoFormatI420;  // openH264 only supports I420
+    rv = encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &videoFormat);
+    assert(rv == cmResultSuccess);
+
+    // set periodic I-frame interval
+    auto idrInterval = 64;
+    rv = encoder->SetOption(ENCODER_OPTION_IDR_INTERVAL, &idrInterval);
+    assert(rv == cmResultSuccess);
+
+    // set up data buffers
+    memset(&encodedFrame, 0, sizeof(SFrameBSInfo));
+
+    memset(&inputFrame, 0, sizeof(SSourcePicture));
+    inputFrame.iPicWidth = video_max_width;
+    inputFrame.iPicHeight = video_max_height;
+    inputFrame.iColorFormat = videoFormatI420;
+    inputFrame.iStride[0] = inputFrame.iPicWidth;
+    inputFrame.iStride[1] = inputFrame.iStride[2] = inputFrame.iPicWidth >> 1;
+
+    logger->info << "H264Encoder Created: w:" << video_max_width
+                 << ",h:" << video_max_height << std::flush;
+}
+
+H264Encoder::~H264Encoder()
+{
+    if (encoder)
+    {
+        long ret = encoder->Uninitialize();
+        assert(ret == cmResultSuccess);
+        encoder = nullptr;
+    }
+}
+
 
 int H264Encoder::encode(const char *input_buffer,
                         std::uint32_t input_length,
@@ -88,6 +119,16 @@ int H264Encoder::encode(const char *input_buffer,
     static std::uint64_t total_frames_encoded = 0;
     static std::uint64_t total_bytes_encoded = 0;
     static std::uint64_t total_time_encoded = 0;        // microseconds
+    static unsigned char uv_array[1280 * 720]  = {0};
+
+    if (stride_uv != 1280 || height != 720) {
+        logger->warning << "!!!! image dimension change: stride_uv:"
+                        << stride_uv << ", height:" << height
+                        << std::flush;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
     // nv12 to i420 planar
     auto* input = reinterpret_cast<unsigned char *>(const_cast<char *>(input_buffer));
@@ -98,7 +139,8 @@ int H264Encoder::encode(const char *input_buffer,
     int su  = stride_uv/2; // stride of output U plane (often half of Y)
     int sv  = stride_uv/2; // stride of output V plane (often half of Y)
 
-    auto uv = (unsigned char*) malloc(suv*h); // temp buffer to copy input UV plane
+    //auto uv = (unsigned char*) malloc(suv*h); // temp buffer to copy input UV plane
+    auto uv = uv_array;
     auto *u=p;      // U plane of output (overwrites input)
     auto orig_u = p;
     auto *v=u+su*h; // V plane of output (overwrites input)
@@ -125,7 +167,7 @@ int H264Encoder::encode(const char *input_buffer,
     sourcePicture.iColorFormat = videoFormatI420;
     sourcePicture.iPicHeight = (int) height;
     sourcePicture.iPicWidth = (int) width;
-    sourcePicture.uiTimeStamp = timestamp * 9 / 100;
+    sourcePicture.uiTimeStamp = timestamp;
     sourcePicture.pData[0] = reinterpret_cast<unsigned char *>(
         const_cast<char *>(input_buffer));
     sourcePicture.pData[1] = orig_u;
@@ -134,51 +176,55 @@ int H264Encoder::encode(const char *input_buffer,
     sourcePicture.iStride[1] = (int) su;
     sourcePicture.iStride[2] = (int) sv;
 
-
-    //assert(0);
-    int videoFormat = videoFormatI420;
-    encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &videoFormat);
-
-    if(genKeyFrame) {
-        logger->info << "Encode: Force IDR" << std::flush;
+    bool idr_frame = total_frames_encoded & 63 ? false : true;
+    if(genKeyFrame || idr_frame) {
+        logger->info << "h264Encoder:: Force IDR, total_frames_encoded: " << total_frames_encoded << std::flush;
         auto ret = encoder->ForceIntraFrame(true);
-        logger->error << "Encode: IDR Frame Generation Error " << ret << std::flush;
+        logger->error << "h264Encoder:: IDR Frame Generation Result " << ret << std::flush;
     }
 
-    memset(&outputFrame, 0, sizeof (SFrameBSInfo));
-    int ret = encoder->EncodeFrame(&sourcePicture, &outputFrame);
+    auto now_2 = std::chrono::system_clock::now();
+    auto now_ms_2 = std::chrono::duration_cast<std::chrono::milliseconds>(now_2.time_since_epoch()).count();
+    logger->info << "h264Encoder:DeInterleave Delta:" << (now_ms_2 - now_ms) << std::flush;
+
+    memset(&encodedFrame, 0, sizeof (SFrameBSInfo));
+    int ret = encoder->EncodeFrame(&sourcePicture, &encodedFrame);
     if (ret == 0)
     {
-        switch (outputFrame.eFrameType)
+        switch (encodedFrame.eFrameType)
         {
             case videoFrameTypeSkip:
-                logger->debug << "Encode: videoFrameTypeSkip" << std::flush;
+                logger->info << "h264Encoder:: videoFrameTypeSkip" << std::flush;
                 return 0;
             case videoFrameTypeInvalid:
-                logger->debug << "Encode failed: " << ret << std::flush;
+                logger->info << "h264Encoder: failed: " << ret << std::flush;
                 return -1;
         }
     }
 
+    auto now_3 = std::chrono::system_clock::now();
+    auto now_ms_3 = std::chrono::duration_cast<std::chrono::milliseconds>(now_3.time_since_epoch()).count();
+    logger->info << "h264Encoder: encode delta:" << (now_ms_3 - now_ms) << std::flush;
+
     // encode worked
     if(debug) {
-        logger->debug << "Encoded iFrameSizeInBytes: " << outputFrame.iFrameSizeInBytes << std::flush;
-        logger->debug << "Encoded num_layer: " << outputFrame.iLayerNum << std::flush;
-        logger->debug << "Frame Type: " << outputFrame.eFrameType << std::flush;
+        logger->debug << "Encoded iFrameSizeInBytes: " << encodedFrame.iFrameSizeInBytes << std::flush;
+        logger->debug << "Encoded num_layer: " << encodedFrame.iLayerNum << std::flush;
+        logger->debug << "Frame Type: " << encodedFrame.eFrameType << std::flush;
     }
 
     // move the encoded data to output bitstream
-    output_bitstream.resize(outputFrame.iFrameSizeInBytes);
+    output_bitstream.resize(encodedFrame.iFrameSizeInBytes);
     unsigned char *out_bits = output_bitstream.data();
-    for(int i = 0; i < outputFrame.iLayerNum; i++) {
+    for(int i = 0; i < encodedFrame.iLayerNum; i++) {
         auto len = 0;
         // pNalLengthInByte[0]+pNalLengthInByte[1]+…+pNalLengthInByte[iNalCount-1].
-        for(int j =0; j < outputFrame.sLayerInfo[i].iNalCount; j++) {
-            len += outputFrame.sLayerInfo[i].pNalLengthInByte[j];
+        for(int j =0; j < encodedFrame.sLayerInfo[i].iNalCount; j++) {
+            len += encodedFrame.sLayerInfo[i].pNalLengthInByte[j];
         }
 
         memcpy(out_bits,
-               outputFrame.sLayerInfo[i].pBsBuf,
+               encodedFrame.sLayerInfo[i].pBsBuf,
                len);
 
         out_bits += len;
@@ -187,6 +233,9 @@ int H264Encoder::encode(const char *input_buffer,
     total_bytes_encoded += output_bitstream.size();
     total_frames_encoded++;
 
+    logger->info << "h264Encoder: Output Frame type: "
+                 << encodedFrame.eFrameType
+                 << std::flush;
     // success
-    return outputFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
+    return encodedFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
 }

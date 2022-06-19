@@ -118,10 +118,6 @@ set(LIBRARIES media_api gsl sframe)
 find_library(SAMPLE_RATE samplerate REQUIRED)
 list(APPEND LIBRARIES ${SAMPLE_RATE})
 
-# openh264
-find_library(openh264 openh264 REQUIRED)
-list(APPEND LIBRARIES ${openh264})
-
 # curl
 find_package(CURL REQUIRED)
 list(APPEND LIBRARIES ${CURL_LIBRARIES})
@@ -146,7 +142,11 @@ endif(WIN32)
 
 find_package(OpenSSL 1.1 REQUIRED)
 
-
+# custom openh264
+set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
+set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
+message(STATUS "openh64: ${OpenH264_LIB_DIR}")
+message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
 
 ###
 ### Library Source
@@ -164,13 +164,14 @@ file(GLOB_RECURSE LIB_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/inc
 file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
 
 add_library(${LIB_NAME} ${LIB_HEADERS} ${LIB_SOURCES})
-target_link_directories(${LIB_NAME} PUBLIC ${PROJECT_LIBS_LIBRARY_DIR})
-target_link_libraries(${LIB_NAME} ${LIBRARIES} OpenSSL::Crypto)
+target_link_directories(${LIB_NAME} PUBLIC ${PROJECT_LIBS_LIBRARY_DIR} ${OpenH264_LIB_DIR})
+target_link_libraries(${LIB_NAME} ${LIBRARIES} OpenSSL::Crypto openh264)
 target_include_directories(${LIB_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         ${CMAKE_CURRENT_BINARY_DIR}
         ${Protobuf_INCLUDE_DIRS}
+        ${OpenH264_INCLUDE_DIR}
         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
         )
 
