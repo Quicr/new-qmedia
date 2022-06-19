@@ -405,7 +405,6 @@ bool TransportManager::netEncode(Packet *packet, std::string &data_out)
 bool TransportManager::netDecode(const std::string &data_in, Packet *packet_out)
 {
     assert(data_in.size() > 0);
-    assert(data_in.size() < 1500);
 
     auto result = Packet::decode(data_in, packet_out);
     if (!result)
