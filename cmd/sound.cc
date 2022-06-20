@@ -66,21 +66,24 @@ void recordThreadFunc(Neo *neo)
         PaError err;
         {
             std::lock_guard<std::mutex> lock(audioReadMutex);
-            while( ( err = Pa_IsStreamActive( audioStream ) ) == 1 )
+            while ((err = Pa_IsStreamActive(audioStream)) == 1)
             {
                 long toRead = Pa_GetStreamReadAvailable(audioStream);
-                printf("available: %ld frames_per_buffer: %d\n", toRead, frames_per_buffer);
-                if (toRead == 0) {
+                printf("available: %ld frames_per_buffer: %d\n",
+                       toRead,
+                       frames_per_buffer);
+                if (toRead == 0)
+                {
                     Pa_Sleep(10);
                     continue;
                 }
-                if (toRead > frames_per_buffer)
-                    toRead = frames_per_buffer;
+                if (toRead > frames_per_buffer) toRead = frames_per_buffer;
 
-                if (toRead == frames_per_buffer) {
-
-                    // You may get underruns or overruns if the output is not primed by PortAudio.
-                    err = Pa_ReadStream( audioStream, audioBuff, toRead );
+                if (toRead == frames_per_buffer)
+                {
+                    // You may get underruns or overruns if the output is not
+                    // primed by PortAudio.
+                    err = Pa_ReadStream(audioStream, audioBuff, toRead);
                     if (err)
                     {
                         logger->error << "Failed to read PA stream: "
@@ -93,17 +96,16 @@ void recordThreadFunc(Neo *neo)
                         logger->debug << "0" << std::flush;
                     }
 
-                    timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-                                    std::chrono::system_clock::now().time_since_epoch())
-                                    .count();
+                    timestamp =
+                        std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
 
                     neo->sendAudio(audioBuff, buff_size, timestamp, sourceID);
                     logger->debug << "-" << std::flush;
                     Pa_Sleep(10);
                 }
-
             }
-
         }
         free(audioBuff);
     }
@@ -281,7 +283,7 @@ void streamCallBack(uint64_t clientID,
 
 int main(int argc, char *argv[])
 {
-    const uint64_t  conference_id = 123456;
+    const uint64_t conference_id = 123456;
 #if defined(_WIN32)
     timeBeginPeriod(1);        // timerstonk - push minimum resolution down to 1
                                // ms
@@ -292,11 +294,9 @@ int main(int argc, char *argv[])
         std::cerr << "Usage: sound <remote-address> <mode> <name> <source-id> "
                   << std::endl;
         std::cerr << "Mode: pub/sub/pubsub" << std::endl;
-        std::cerr << ""
-                  << std::endl;
+        std::cerr << "" << std::endl;
         return -1;
     }
-
 
     std::string remote_address;
     remote_address.assign(argv[1]);
@@ -324,7 +324,6 @@ int main(int argc, char *argv[])
         std::cout << "SourceId is missing .. Bye\n";
         exit(-1);
     }
-
 
     std::ostringstream oss;
     std::chrono::steady_clock::time_point timePoint =
@@ -366,7 +365,6 @@ int main(int argc, char *argv[])
     {
         assert(0);        // TODO
     }
-
 
     PaStreamParameters inputParameters;
     PaStreamParameters outputParameters;
@@ -416,34 +414,38 @@ int main(int argc, char *argv[])
         assert(0);        // TODO
     }
 
-
-    if(mode == "pub") {
+    if (mode == "pub")
+    {
         std::thread recordThread(recordThreadFunc, &neo);
-    } else if (mode == "sub") {
+    }
+    else if (mode == "sub")
+    {
         std::thread playThread(playThreadFunc, &neo);
         playThread.detach();
     }
 
     std::cout << "Mode:" << mode << std::endl;
-    if(mode == "pub")
+    if (mode == "pub")
     {
         // todo : use stringstream inseatd
-        auto url = "quicr://" + std::to_string(conference_id) + "/" + std::to_string(clientID)
-                   + "/" + name + "/" + source;
+        auto url = "quicr://" + std::to_string(conference_id) + "/" +
+                   std::to_string(clientID) + "/" + name + "/" + source;
         std::cout << "quicr publish url:" << url << std::endl;
         neo.publish(1, Packet::MediaType::Opus, url);
-    } else if (mode == "sub")
+    }
+    else if (mode == "sub")
     {
-        auto url = "quicr://" + std::to_string(conference_id) + "/" + std::to_string(clientID)
-                   + "/" + name + "/" + source;
+        auto url = "quicr://" + std::to_string(conference_id) + "/" +
+                   std::to_string(clientID) + "/" + name + "/" + source;
         std::cout << "quicr subscribe url:" << url << std::endl;
         neo.subscribe(1, Packet::MediaType::Opus, url);
-    } else {
+    }
+    else
+    {
         // pub/sub mode
         std::cout << "Pub and Sub together isn't supported\n";
         exit(-1);
     }
-
 
     logger->info << "Starting" << std::flush;
     int count = 0;
@@ -459,9 +461,8 @@ int main(int argc, char *argv[])
     }
     logger->info << "Shutting down" << std::flush;
 
-
-    //recordThread.join();
-    //playThread.join();
+    // recordThread.join();
+    // playThread.join();
 
     err = Pa_StopStream(audioStream);
     if (err != paNoError)

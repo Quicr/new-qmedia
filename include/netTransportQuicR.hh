@@ -66,7 +66,8 @@ struct PublisherContext
     Packet::MediaType media_type;
     std::string url;
     quicrq_media_source_ctx_t *source_ctx;
-    quicrq_media_object_source_ctx_t *object_source_ctx; // used with object api
+    quicrq_media_object_source_ctx_t *object_source_ctx;        // used with
+                                                                // object api
     TransportManager *transportManager;
     NetTransportQUICR *transport;
 };
@@ -74,9 +75,10 @@ struct PublisherContext
 struct ConsumerContext
 {
     Packet::MediaType media_type;
-    std::string url; // quicr name
+    std::string url;        // quicr name
     quicrq_reassembly_context_t reassembly_ctx;
-    quicrq_object_stream_consumer_ctx*  object_consumer_ctx; // used with object api
+    quicrq_object_stream_consumer_ctx *object_consumer_ctx;        // used with
+                                                                   // object api
     quicrq_cnx_ctx_t *cnx_ctx;
     TransportManager *transportManager;
     NetTransportQUICR *transport;
@@ -90,7 +92,7 @@ public:
     NetTransportQUICR(TransportManager *manager,
                       std::string sfuName_in,
                       uint16_t sfuPort_in,
-                      const LoggerPointer& logger_in);
+                      const LoggerPointer &logger_in);
 
     virtual ~NetTransportQUICR();
 
@@ -152,6 +154,7 @@ public:
     void wake_up_all_sources();
 
     LoggerPointer logger;
+
 private:
     const std::string alpn = "quicrq-h10";
     TransportContext xport_ctx;
@@ -165,7 +168,6 @@ private:
     std::map<uint64_t, PublisherContext> publishers = {};
     // source_id -> consumer_ctx
     std::map<uint64_t, ConsumerContext> consumers = {};
-
 };
 
 }        // namespace neo_media

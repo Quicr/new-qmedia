@@ -183,9 +183,11 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
         }
 
         *data_length = pub_ctx->transportManager->hasDataToSendToNet();
-        if (*data_length > data_max_size) {
-            logger->debug << "Transport Buffer Small: transport buffer size=" << data_max_size
-                      << ", " << "data size=" << *data_length << std::flush;
+        if (*data_length > data_max_size)
+        {
+            logger->debug << "Transport Buffer Small: transport buffer size="
+                          << data_max_size << ", "
+                          << "data size=" << *data_length << std::flush;
             *data_length = 0;
             *is_still_active = 1;
             return 0;
@@ -199,15 +201,21 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                 send_packet.data, &send_packet.peer, &send_packet.peer.addrLen);
             if (got)
             {
-                logger->debug << "Copied data to the quicr transport:" << *data_length << std::flush;
+                logger->debug
+                    << "Copied data to the quicr transport:" << *data_length
+                    << std::flush;
                 std::copy(
                     send_packet.data.begin(), send_packet.data.end(), data);
                 *is_last_segment = 1;
                 *is_still_active = 1;
-            } else {
+            }
+            else
+            {
                 *is_still_active = 0;
             }
-        } else {
+        }
+        else
+        {
             *is_last_segment = 1;
         }
         ret = 0;
@@ -228,18 +236,19 @@ media_consumer_frame_ready(void *media_ctx,
                            size_t data_length,
                            quicrq_reassembly_object_mode_enum frame_mode)
 {
-
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
     auto logger = cons_ctx->transport->logger;
 
     logger->debug << "[frame_ready: id:" << frame_id
-                 << ", frame_mode:" << (int) frame_mode
-                 << ",data_len:" << data_length << "]" << std::flush;
+                  << ", frame_mode:" << (int) frame_mode
+                  << ",data_len:" << data_length << "]" << std::flush;
 
-    if (frame_mode == quicrq_reassembly_object_mode_enum::quicrq_reassembly_object_peek)
+    if (frame_mode ==
+        quicrq_reassembly_object_mode_enum::quicrq_reassembly_object_peek)
     {
-        logger->debug << "[frame_ready:quicrq_reassembly_frame_peek, ignoring" << std::flush;
+        logger->debug << "[frame_ready:quicrq_reassembly_frame_peek, ignoring"
+                      << std::flush;
         return 0;
     }
 
@@ -288,7 +297,7 @@ int media_consumer_learn_final_frame_id(void *media_ctx,
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
     ret = quicrq_reassembly_learn_final_object_id(&cons_ctx->reassembly_ctx,
-                                                 final_frame_id);
+                                                  final_frame_id);
     return ret;
 }
 
@@ -341,24 +350,26 @@ int media_consumer_fn(quicrq_media_consumer_enum action,
 // media consumer object callback from quicr stack
 int object_stream_consumer_fn(
     quicrq_media_consumer_enum action,
-    void* object_consumer_ctx,
+    void *object_consumer_ctx,
     uint64_t current_time,
     uint64_t object_id,
-    const uint8_t* data,
+    const uint8_t *data,
     size_t data_length,
-    quicrq_object_stream_consumer_properties_t* properties)
+    quicrq_object_stream_consumer_properties_t *properties)
 {
-
     auto cons_ctx = (ConsumerContext *) object_consumer_ctx;
-    auto& logger = cons_ctx->transport->logger;
-    logger->info << cons_ctx->url << ": object_stream_consumer_fn: action:"
-                 << (int) action << ",data_length:" << data_length<< std::flush;
+    auto &logger = cons_ctx->transport->logger;
+    logger->info << cons_ctx->url
+                 << ": object_stream_consumer_fn: action:" << (int) action
+                 << ",data_length:" << data_length << std::flush;
     int ret = 0;
-    switch (action) {
+    switch (action)
+    {
         case quicrq_media_datagram_ready:
         {
-           // logger->info << "quicrq_media_datagram_ready, object:" << object_id
-           //              << std::flush;
+            // logger->info << "quicrq_media_datagram_ready, object:" <<
+            // object_id
+            //              << std::flush;
             struct sockaddr_storage stored_addr;
             struct sockaddr *peer_addr = nullptr;
             quicrq_get_peer_address(cons_ctx->cnx_ctx, &stored_addr);
@@ -374,9 +385,10 @@ int object_stream_consumer_fn(
             cons_ctx->transportManager->recvDataFromNet(recv_data,
                                                         std::move(peer_info));
         }
-            break;
+        break;
         case quicrq_media_close:
-            /* Remove the reference to the media context, as the caller will free it. */
+            /* Remove the reference to the media context, as the caller will
+             * free it. */
             cons_ctx->object_consumer_ctx = nullptr;
             /* Close streams and other resource */
             assert(0);
@@ -389,7 +401,6 @@ int object_stream_consumer_fn(
     return ret;
 }
 
-
 // main packet loop for the application
 int quicrq_app_loop_cb(picoquic_quic_t *quic,
                        picoquic_packet_loop_cb_enum cb_mode,
@@ -398,7 +409,7 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
 {
     int ret = 0;
     auto *cb_ctx = (TransportContext *) callback_ctx;
-    auto& logger = cb_ctx->transport->logger;
+    auto &logger = cb_ctx->transport->logger;
 
     if (cb_ctx == nullptr)
     {
@@ -411,7 +422,8 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
             case picoquic_packet_loop_ready:
                 if (callback_arg != nullptr)
                 {
-                    auto *options = (picoquic_packet_loop_options_t *) callback_arg;
+                    auto *options = (picoquic_packet_loop_options_t *)
+                        callback_arg;
                     options->do_time_check = 1;
                 }
                 if (cb_ctx->transport)
@@ -456,7 +468,8 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
 
 #if defined(USE_OBJECT_API)
                 NetTransport::Data send_packet;
-                auto got = cb_ctx->transportManager->getDataToSendToNet(send_packet);
+                auto got = cb_ctx->transportManager->getDataToSendToNet(
+                    send_packet);
                 if (!got || send_packet.empty())
                 {
                     break;
@@ -476,13 +489,12 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
                 assert(ret == 0);
 #endif
             }
-                    break;
+            break;
             default:
                 ret = PICOQUIC_ERROR_UNEXPECTED_ERROR;
                 break;
         }
     }
-
 
     return ret;
 }
@@ -530,19 +542,20 @@ void NetTransportQUICR::publish(uint64_t source_id,
 
 #if defined(USE_OBJECT_API)
     // TODO: Set object source property
-    auto obj_src_context = quicrq_publish_object_source(quicr_ctx,
-                                                        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
-                                                        url.length(),
-                                                        nullptr);
+    auto obj_src_context = quicrq_publish_object_source(
+        quicr_ctx,
+        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+        url.length(),
+        nullptr);
     assert(obj_src_context);
     pub_context->object_source_ctx = obj_src_context;
     // enable publishing
     auto ret = quicrq_cnx_post_media(
-    cnx_ctx,
-    reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
-    url.length(),
-    true);
-assert(ret == 0);
+        cnx_ctx,
+        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+        url.length(),
+        true);
+    assert(ret == 0);
 #else
     quicrq_media_source_ctx_t *src_ctx = nullptr;
     src_ctx = quicrq_publish_source(
@@ -564,17 +577,17 @@ assert(ret == 0);
         true);
     assert(ret == 0);
 #endif
-    logger->info << "Added source [" << source_id
-                 << " Url: " << url
-                 << "]" << std::flush;
+    logger->info << "Added source [" << source_id << " Url: " << url << "]"
+                 << std::flush;
     publishers[source_id] = *pub_context;
 }
 
 void NetTransportQUICR::remove_source(uint64_t source_id)
 {
-#if defined (USE_OBJECT_API)
+#if defined(USE_OBJECT_API)
     auto src_ctx = publishers[source_id];
-    if (src_ctx.object_source_ctx) {
+    if (src_ctx.object_source_ctx)
+    {
         quicrq_publish_object_fin(src_ctx.object_source_ctx);
         quicrq_delete_object_source(src_ctx.object_source_ctx);
         logger->info << "Removed source [" << source_id << std::flush;
@@ -584,7 +597,8 @@ void NetTransportQUICR::remove_source(uint64_t source_id)
 #endif
 }
 
-void NetTransportQUICR::subscribe(uint64_t source_id, Packet::MediaType media_type,
+void NetTransportQUICR::subscribe(uint64_t source_id,
+                                  Packet::MediaType media_type,
                                   const std::string &url)
 {
     auto consumer_media_ctx = new ConsumerContext{};
@@ -597,14 +611,14 @@ void NetTransportQUICR::subscribe(uint64_t source_id, Packet::MediaType media_ty
 #if defined(USE_OBJECT_API)
     constexpr auto use_datagram = true;
     constexpr auto in_order = true;
-    consumer_media_ctx->object_consumer_ctx =
-        quicrq_subscribe_object_stream(cnx_ctx,
-                                       reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
-                                       url.length(),
-                                       use_datagram,
-                                       in_order,
-                                       object_stream_consumer_fn,
-                                       consumer_media_ctx);
+    consumer_media_ctx->object_consumer_ctx = quicrq_subscribe_object_stream(
+        cnx_ctx,
+        reinterpret_cast<uint8_t *>(const_cast<char *>(url.data())),
+        url.length(),
+        use_datagram,
+        in_order,
+        object_stream_consumer_fn,
+        consumer_media_ctx);
     assert(consumer_media_ctx->object_consumer_ctx);
 #else
     quicrq_reassembly_init(&consumer_media_ctx->reassembly_ctx);
@@ -623,7 +637,7 @@ void NetTransportQUICR::subscribe(uint64_t source_id, Packet::MediaType media_ty
 NetTransportQUICR::NetTransportQUICR(TransportManager *t,
                                      std::string sfuName,
                                      uint16_t sfuPort,
-                                     const LoggerPointer& logger_in) :
+                                     const LoggerPointer &logger_in) :
     transportManager(t),
     quicConnectionReady(false),
     quicr_ctx(quicrq_create_empty()),

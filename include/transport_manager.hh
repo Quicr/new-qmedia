@@ -44,7 +44,8 @@ public:
         NetTransport *transport = nullptr;
         switch (type)
         {
-            case NetTransport::QUICR:{
+            case NetTransport::QUICR:
+            {
                 transport = new NetTransportQUICR(
                     transportManager, sfuName_in, sfuPort_in, logger);
                 transport->setLogger("TransportQuicR", logger);
@@ -85,7 +86,7 @@ public:
                             NetTransport::PeerConnectionInfo *info,
                             socklen_t *addrLen);
 
-    bool getDataToSendToNet(NetTransport::Data& data);
+    bool getDataToSendToNet(NetTransport::Data &data);
     size_t hasDataToSendToNet();
 
     virtual bool transport_ready() const = 0;

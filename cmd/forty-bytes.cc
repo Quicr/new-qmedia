@@ -77,7 +77,6 @@ void send_loop(uint64_t client_id, uint64_t source_id)
     }
 }
 
-
 int main(int argc, char *argv[])
 {
     std::string mode;
@@ -99,11 +98,8 @@ int main(int argc, char *argv[])
     LoggerPointer logger = std::make_shared<Logger>("FORTY_BYTES");
     logger->SetLogFacility(LogFacility::CONSOLE);
 
-
-    transportManager = new ClientTransportManager( neo_media::NetTransport::QUICR,
-                                                  "127.0.0.1",
-                                                  7777,
-                                                  nullptr, logger);
+    transportManager = new ClientTransportManager(
+        neo_media::NetTransport::QUICR, "127.0.0.1", 7777, nullptr, logger);
     transportManager->start();
 
     mode.assign(argv[1]);
@@ -128,9 +124,8 @@ int main(int argc, char *argv[])
         std::weak_ptr<NetTransportQUICR> tmp =
             std::static_pointer_cast<NetTransportQUICR>(transport.lock());
         auto quicr_transport = tmp.lock();
-        quicr_transport->subscribe(source_id,
-                                   Packet::MediaType::Opus,
-                                   "forty_bytes_alice");
+        quicr_transport->subscribe(
+            source_id, Packet::MediaType::Opus, "forty_bytes_alice");
 
         // start the transport
         quicr_transport->start();

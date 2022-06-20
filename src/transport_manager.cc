@@ -168,7 +168,11 @@ void TransportManager::runNetSend()
 
 // Used for testing only
 ClientTransportManager::ClientTransportManager() :
-    TransportManager(NetTransport::Type::QUICR, "localhost", -1, nullptr, nullptr),
+    TransportManager(NetTransport::Type::QUICR,
+                     "localhost",
+                     -1,
+                     nullptr,
+                     nullptr),
     current_epoch(0)
 {
     rtx_mgr = std::make_unique<RtxManager>(false, this, nullptr);
@@ -184,7 +188,8 @@ ClientTransportManager::ClientTransportManager(
     sfuName(std::move(sfuName_in)),
     sfuPort(sfuPort_in),
     current_epoch(0)
-{}
+{
+}
 
 void ClientTransportManager::start()
 {
@@ -422,7 +427,8 @@ bool TransportManager::recvDataFromNet(
         return false;
     }
 
-    logger->info << "[R]: Type:" << packet->packetType << "," << packet->encodedSequenceNum << std::flush;
+    logger->info << "[R]: Type:" << packet->packetType << ","
+                 << packet->encodedSequenceNum << std::flush;
 #if 0
     // decrypt if its client transportManager
     if (Type::Client == type() && !packet->data.empty())  {
@@ -458,7 +464,8 @@ bool TransportManager::recvDataFromNet(
     return true;
 }
 
-bool TransportManager::getDataToSendToNet(NetTransport::Data& data) {
+bool TransportManager::getDataToSendToNet(NetTransport::Data &data)
+{
     // get packet to send from Q
     PacketPointer packet = nullptr;
     {
@@ -484,13 +491,12 @@ bool TransportManager::getDataToSendToNet(NetTransport::Data& data) {
     data.source_id = packet->sourceID;
     data.peer.addrLen = packet->peer_info.addrLen;
 
-    memcpy(&data.peer.addr,
-           &(packet->peer_info.addr),
-           packet->peer_info.addrLen);
+    memcpy(
+        &data.peer.addr, &(packet->peer_info.addr), packet->peer_info.addrLen);
 
     if (packet->mediaType == Packet::MediaType::AV1)
     {
-        logger->info << "[S]: SeqNo " <<  packet->transportSequenceNumber
+        logger->info << "[S]: SeqNo " << packet->transportSequenceNumber
                      << " video_frame_type: " << (int) packet->videoFrameType
                      << std::flush;
     }
@@ -553,7 +559,8 @@ bool TransportManager::getDataToSendToNet(
     memcpy(
         &peer_info->addr, &(packet->peer_info.addr), packet->peer_info.addrLen);
     *addrLen = peer_info->addrLen;
-    logger->info << "[S]: Type:" << packet->packetType << ", " << packet->encodedSequenceNum << std::flush;
+    logger->info << "[S]: Type:" << packet->packetType << ", "
+                 << packet->encodedSequenceNum << std::flush;
 
     data_out = std::move(packet->encoded_data);
 

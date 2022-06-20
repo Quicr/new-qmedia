@@ -18,7 +18,7 @@ public:
                 unsigned int video_max_frame_rate,
                 unsigned int video_max_bitrate,
                 std::uint32_t video_pixel_format,
-                const LoggerPointer& logger);
+                const LoggerPointer &logger);
 
     ~H264Encoder();
 

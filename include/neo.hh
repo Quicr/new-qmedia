@@ -40,9 +40,9 @@ public:
 
     enum struct MediaDirection
     {
-        publish_only = 1,  // sendonly
-        subscribe_only, // recvonly
-        publish_subscribe, //sendrecv
+        publish_only = 1,         // sendonly
+        subscribe_only,           // recvonly
+        publish_subscribe,        // sendrecv
         unknown
     };
 
