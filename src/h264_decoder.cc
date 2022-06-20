@@ -83,12 +83,15 @@ int H264Decoder::decode(const char *input_buffer,
         height = dst_info.UsrData.sSystemBuffer.iHeight;
 
         auto color_fmt = dst_info.UsrData.sSystemBuffer.iFormat;
-        if (debug) {
+        if (debug)
+        {
             std::cerr << "Decoded Width : " << width << std::endl;
             std::cerr << "Decoded height : " << height << std::endl;
             std::cerr << "Decoded Format : " << color_fmt << std::endl;
-            std::cerr << "Decoded Stride 0  : " << dst_info.UsrData.sSystemBuffer.iStride[0] << std::endl;
-            std::cerr << "Decoded Stride 1 : " << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
+            std::cerr << "Decoded Stride 0  : "
+                      << dst_info.UsrData.sSystemBuffer.iStride[0] << std::endl;
+            std::cerr << "Decoded Stride 1 : "
+                      << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
         }
 
         auto y_size = width * height;
@@ -99,7 +102,7 @@ int H264Decoder::decode(const char *input_buffer,
 
         size_t i = 0;
         auto pPtr = dst[0];
-        for(i = 0; i < height; i++)
+        for (i = 0; i < height; i++)
         {
             memcpy(outp, pPtr, width);
             outp += width;
@@ -107,18 +110,18 @@ int H264Decoder::decode(const char *input_buffer,
         }
 
         pPtr = dst[1];
-        for(i = 0; i < height/2; i++)
+        for (i = 0; i < height / 2; i++)
         {
-            memcpy(outp, pPtr, width/2);
-            outp += width/2;
+            memcpy(outp, pPtr, width / 2);
+            outp += width / 2;
             pPtr += dst_info.UsrData.sSystemBuffer.iStride[1];
         }
 
         pPtr = dst[2];
-        for(i = 0; i < height/2; i++)
+        for (i = 0; i < height / 2; i++)
         {
-            memcpy(outp, pPtr, width/2);
-            outp += width/2;
+            memcpy(outp, pPtr, width / 2);
+            outp += width / 2;
             pPtr += dst_info.UsrData.sSystemBuffer.iStride[1];
         }
     }

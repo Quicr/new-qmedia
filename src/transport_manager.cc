@@ -4,10 +4,8 @@
 #include <cassert>
 #include <ostream>
 #include <iomanip>
-#include <sstream>
 
 #include "transport_manager.hh"
-#include "netTransportUDP.hh"
 
 namespace neo_media
 {
@@ -170,9 +168,11 @@ void TransportManager::runNetSend()
 
 // Used for testing only
 ClientTransportManager::ClientTransportManager() :
-    TransportManager(NetTransport::Type::UDP, "localhost", -1, nullptr, nullptr),
-    senderId(sframe::MLSContext::SenderID(0x0000)),
-    mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
+    TransportManager(NetTransport::Type::QUICR,
+                     "localhost",
+                     -1,
+                     nullptr,
+                     nullptr),
     current_epoch(0)
 {
     rtx_mgr = std::make_unique<RtxManager>(false, this, nullptr);
@@ -187,16 +187,8 @@ ClientTransportManager::ClientTransportManager(
     TransportManager(type, sfuName_in, sfuPort_in, metricsPtr, parent_logger),
     sfuName(std::move(sfuName_in)),
     sfuPort(sfuPort_in),
-    senderId(sframe::MLSContext::SenderID(0x1234)),
-    mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
     current_epoch(0)
 {
-    if (type == NetTransport::Type::UDP)
-    {
-        // quic/quicr have their own rtx mechanisms, hence enable rtx
-        // just for udp transport.
-        rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
-    }
 }
 
 void ClientTransportManager::start()
@@ -256,21 +248,16 @@ void ClientTransportManager::setCryptoKey(uint64_t epoch,
                                           const bytes &epoch_secret)
 {
     current_epoch = epoch;
-    mls_context.add_epoch(epoch, epoch_secret);
 }
 
 bytes ClientTransportManager::protect(const bytes &plaintext)
 {
-    auto ct_out = bytes(plaintext.size() + sframe::max_overhead);
-    auto ct = mls_context.protect(current_epoch, senderId, ct_out, plaintext);
-    return bytes(ct.begin(), ct.end());
+    throw std::runtime_error("Protect Not Supported");
 }
 
 bytes ClientTransportManager::unprotect(const bytes &ciphertext)
 {
-    auto pt_out = bytes(ciphertext.size());
-    auto pt = mls_context.unprotect(pt_out, ciphertext);
-    return bytes(pt.begin(), pt.end());
+    throw std::runtime_error("Unprotect Not Supported");
 }
 
 ///
@@ -440,7 +427,8 @@ bool TransportManager::recvDataFromNet(
         return false;
     }
 
-    logger->info << "[R]: Type:" << packet->packetType << "," << packet->encodedSequenceNum << std::flush;
+    logger->info << "[R]: Type:" << packet->packetType << ","
+                 << packet->encodedSequenceNum << std::flush;
 #if 0
     // decrypt if its client transportManager
     if (Type::Client == type() && !packet->data.empty())  {
@@ -476,7 +464,8 @@ bool TransportManager::recvDataFromNet(
     return true;
 }
 
-bool TransportManager::getDataToSendToNet(NetTransport::Data& data) {
+bool TransportManager::getDataToSendToNet(NetTransport::Data &data)
+{
     // get packet to send from Q
     PacketPointer packet = nullptr;
     {
@@ -502,13 +491,12 @@ bool TransportManager::getDataToSendToNet(NetTransport::Data& data) {
     data.source_id = packet->sourceID;
     data.peer.addrLen = packet->peer_info.addrLen;
 
-    memcpy(&data.peer.addr,
-           &(packet->peer_info.addr),
-           packet->peer_info.addrLen);
+    memcpy(
+        &data.peer.addr, &(packet->peer_info.addr), packet->peer_info.addrLen);
 
     if (packet->mediaType == Packet::MediaType::AV1)
     {
-        logger->info << "[S]: SeqNo " <<  packet->transportSequenceNumber
+        logger->info << "[S]: SeqNo " << packet->transportSequenceNumber
                      << " video_frame_type: " << (int) packet->videoFrameType
                      << std::flush;
     }
@@ -571,7 +559,8 @@ bool TransportManager::getDataToSendToNet(
     memcpy(
         &peer_info->addr, &(packet->peer_info.addr), packet->peer_info.addrLen);
     *addrLen = peer_info->addrLen;
-    logger->info << "[S]: Type:" << packet->packetType << ", " << packet->encodedSequenceNum << std::flush;
+    logger->info << "[S]: Type:" << packet->packetType << ", "
+                 << packet->encodedSequenceNum << std::flush;
 
     data_out = std::move(packet->encoded_data);
 

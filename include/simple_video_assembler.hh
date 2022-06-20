@@ -1,4 +1,6 @@
 #pragma once
+
+#include <map>
 #include "frame_assembler.hh"
 #include "modulus_deque.hh"
 

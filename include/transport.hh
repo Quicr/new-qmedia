@@ -26,8 +26,6 @@ public:
 
     enum Type
     {
-        UDP,
-        PICO_QUIC,
         QUICR
     };
 

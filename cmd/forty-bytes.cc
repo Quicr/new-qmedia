@@ -77,7 +77,6 @@ void send_loop(uint64_t client_id, uint64_t source_id)
     }
 }
 
-
 int main(int argc, char *argv[])
 {
     std::string mode;
@@ -90,44 +89,20 @@ int main(int argc, char *argv[])
         std::cerr << "Must provide mode of operation" << std::endl;
         std::cerr << "Usage: forty <transport> <mode> <client-id> "
                   << std::endl;
-        std::cerr << "Transport: q (for quic), r (udp),  qr(quicr)"
-                  << std::endl;
         std::cerr << "Mode: sendrecv/send/recv" << std::endl;
         std::cerr << "ClientID - a sensible +ve 32 bit integer value"
                   << std::endl;
         return -1;
     }
 
-
-    transport_type.assign(argv[1]);
-
     LoggerPointer logger = std::make_shared<Logger>("FORTY_BYTES");
     logger->SetLogFacility(LogFacility::CONSOLE);
 
+    transportManager = new ClientTransportManager(
+        neo_media::NetTransport::QUICR, "127.0.0.1", 7777, nullptr, logger);
+    transportManager->start();
 
-    if (transport_type == "q")
-    {
-        std::cout << "Transport is Quic [ !!! Not under active developmenr "
-                     "!!!]\n";
-        transportManager = new ClientTransportManager(
-            neo_media::NetTransport::PICO_QUIC, "localhost", 5004);
-    }
-    else if (transport_type == "qr")
-    {
-        std::cout << "Transport is QuicR\n";
-        transportManager = new ClientTransportManager(
-            neo_media::NetTransport::QUICR, "127.0.0.1", 7777, nullptr, logger);
-        transportManager->start();
-    }
-    else
-    {
-        std::cout << "Transport is UDP\n";
-        transportManager = new ClientTransportManager(
-            neo_media::NetTransport::UDP, "localhost", 5004);
-        transportManager->start();
-    }
-
-    mode.assign(argv[2]);
+    mode.assign(argv[1]);
     if (mode != "send" && mode != "recv" && mode != "sendrecv")
     {
         std::cout << "Bad choice for mode.. Bye" << std::endl;
@@ -135,7 +110,7 @@ int main(int argc, char *argv[])
     }
 
     std::string client_id_str;
-    client_id_str.assign(argv[3]);
+    client_id_str.assign(argv[2]);
     if (client_id_str.empty())
     {
         std::cout << "Bad choice for clientId .. Bye" << std::endl;
@@ -149,9 +124,8 @@ int main(int argc, char *argv[])
         std::weak_ptr<NetTransportQUICR> tmp =
             std::static_pointer_cast<NetTransportQUICR>(transport.lock());
         auto quicr_transport = tmp.lock();
-        quicr_transport->subscribe(source_id,
-                                   Packet::MediaType::Opus,
-                                   "forty_bytes_alice");
+        quicr_transport->subscribe(
+            source_id, Packet::MediaType::Opus, "forty_bytes_alice");
 
         // start the transport
         quicr_transport->start();

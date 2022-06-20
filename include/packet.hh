@@ -12,9 +12,7 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #endif
-#include <sframe/sframe.h>
 #include "transport.hh"
-using namespace sframe;
 
 namespace neo_media
 {

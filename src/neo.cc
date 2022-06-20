@@ -47,58 +47,16 @@ void Neo::init(const std::string &remote_address,
     transport_type = xport_type;
     media_dir = dir;
 
-    if (transport_type == NetTransport::Type::PICO_QUIC)
-    {
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::PICO_QUIC,
-            remote_address,
-            remote_port,
-            metrics,
-            log);
-        while (!transport->transport_ready())
-        {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-        }
-    }
-    else if (transport_type == NetTransport::Type::QUICR)
-    {
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::QUICR,
-            remote_address,
-            remote_port,
-            metrics,
-            log);
-        transport->start();
-    }
-    else
-    {
-        // UDP
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::UDP, remote_address, remote_port, metrics, log);
-        transport->start();
-    }
+    log->info << "Transport Type " << (int) transport_type << std::flush;
+    transport = std::make_unique<ClientTransportManager>(
+        transport_type, remote_address, remote_port, metrics, log);
+
+    transport->start();
 
     int64_t epoch_id = 1;
     transport->setCryptoKey(epoch_id, bytes(8, uint8_t(epoch_id)));
 
-    // Construct and send a Join Packet
-    if (transport_type != NetTransport::Type::QUICR)
-    {
-        PacketPointer joinPacket = std::make_unique<Packet>();
-        assert(joinPacket);
-        joinPacket->packetType = neo_media::Packet::Type::Join;
-        joinPacket->clientID = myClientID;
-        joinPacket->conferenceID = myConferenceID;
-        joinPacket->echo = echo;
-        transport->send(std::move(joinPacket));
-    }
-
-    // TODO: add audio_encoder
-
     workThread = std::thread(neoWorkThread, this);
-
-    // Init video pipeline unless disabled with zero width or height or bad
-    // format
 
     if (!video_max_width || !video_max_height)
     {
@@ -124,7 +82,8 @@ void Neo::init(const std::string &remote_address,
 
     log->info << "MediaDirection:" << (int) media_dir << std::flush;
 
-    if (media_dir == MediaDirection::publish_only) {
+    if (media_dir == MediaDirection::publish_only)
+    {
         video_encoder = std::make_unique<H264Encoder>(
             video_max_width,
             video_max_height,
@@ -155,10 +114,13 @@ void Neo::publish(std::uint64_t source_id,
 
     url += "/" + std::to_string((int) media_type);
     quicr_transport->publish(source_id, media_type, url);
-    log->info << "SourceID: " << source_id << ", Publish Url:" << url << std::flush;
+    log->info << "SourceID: " << source_id << ", Publish Url:" << url
+              << std::flush;
 }
 
-void Neo::subscribe(uint64_t source_id, Packet::MediaType media_type, std::string url)
+void Neo::subscribe(uint64_t source_id,
+                    Packet::MediaType media_type,
+                    std::string url)
 {
     auto pkt_transport = transport->transport();
     std::weak_ptr<NetTransportQUICR> tmp =
@@ -247,15 +209,15 @@ void Neo::sendAudio(const char *buffer,
                     uint64_t timestamp,
                     uint64_t sourceID)
 {
-
-    if (media_dir == MediaDirection::publish_only || media_dir == MediaDirection::publish_subscribe)
+    if (media_dir == MediaDirection::publish_only ||
+        media_dir == MediaDirection::publish_subscribe)
     {
         std::shared_ptr<AudioEncoder> audio_encoder = getAudioEncoder(sourceID);
 
         if (audio_encoder != nullptr)
         {
             log->debug << "sendAudio: SourceId:" << sourceID
-                      << ", length:" << length << std::flush;
+                       << ", length:" << length << std::flush;
             audio_encoder->encodeFrame(
                 buffer, length, timestamp, mutedAudioEmptyFrames);
         }
@@ -274,7 +236,8 @@ void Neo::sendVideoFrame(const char *buffer,
                          uint64_t timestamp,
                          uint64_t sourceID)
 {
-    if (video_encoder == nullptr) {
+    if (video_encoder == nullptr)
+    {
         log->debug << "Video Encoder, unavailable" << std::flush;
     }
     // TODO:implement clone()
@@ -292,7 +255,9 @@ void Neo::sendVideoFrame(const char *buffer,
                                   Packet::MediaType::AV1;
 
     auto now = std::chrono::system_clock::now();
-    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      now.time_since_epoch())
+                      .count();
 
     // encode and packetize
     encodeVideoFrame(buffer,
@@ -312,9 +277,10 @@ void Neo::sendVideoFrame(const char *buffer,
         return;
     }
 
-
     auto now_2 = std::chrono::system_clock::now();
-    auto now_ms_2 = std::chrono::duration_cast<std::chrono::milliseconds>(now_2.time_since_epoch()).count();
+    auto now_ms_2 = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now_2.time_since_epoch())
+                        .count();
 
     video_seq_no++;
 
@@ -324,10 +290,11 @@ void Neo::sendVideoFrame(const char *buffer,
         return;
     }
 
-    if (transport_type == NetTransport::Type::QUICR) {
+    if (transport_type == NetTransport::Type::QUICR)
+    {
         // quicr transport handles its own fragmentation and reassemble
         log->debug << "SendVideoFrame: Sending full object:"
-                  << packet->data.size() << std::flush;
+                   << packet->data.size() << std::flush;
         packet->fragmentCount = 1;
         transport->send(std::move(packet));
         return;
@@ -485,7 +452,8 @@ int Neo::getAudio(uint64_t clientID,
 
     PacketPointer packet;
     JitterInterface::JitterIntPtr jitter = getJitter(clientID);
-    if (jitter == nullptr) {
+    if (jitter == nullptr)
+    {
         return 0;
     }
 
@@ -511,7 +479,8 @@ std::uint32_t Neo::getVideoFrame(uint64_t clientID,
 {
     int recv_length = 0;
     JitterInterface::JitterIntPtr jitter_instance = getJitter(clientID);
-    if (jitter_instance == nullptr) {
+    if (jitter_instance == nullptr)
+    {
         return 0;
     }
 
@@ -558,7 +527,8 @@ void Neo::audioEncoderCallback(PacketPointer packet)
     }
 
     // send it over the network
-    log->debug << "Opus Encoded Audio Size:" << packet->data.size() << std::flush;
+    log->debug << "Opus Encoded Audio Size:" << packet->data.size()
+               << std::flush;
     transport->send(std::move(packet));
 }
 

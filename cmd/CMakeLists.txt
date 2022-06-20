@@ -1,10 +1,10 @@
 add_executable(forty forty-bytes.cc)
-target_link_libraries( forty PUBLIC neoMedia)
+target_link_libraries( forty PUBLIC qmedia)
 
 find_package(portaudio QUIET)
 if(portaudio_FOUND)
     add_executable( sound sound.cc)
-    target_link_libraries( sound PUBLIC neoMedia)
+    target_link_libraries( sound PUBLIC qmedia)
 
     if (WIN32)
         target_link_libraries( sound PUBLIC portaudio)

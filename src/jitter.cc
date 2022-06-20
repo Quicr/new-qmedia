@@ -33,7 +33,6 @@ Jitter::~Jitter()
     video.mq.flushPackets();
 }
 
-
 void Jitter::recordMetrics(MetaQueue &q,
                            MetaQueue::media_type type,
                            uint64_t clientID,
@@ -49,14 +48,15 @@ void Jitter::recordMetrics(MetaQueue &q,
 
         if (measurement != nullptr)
         {
-            try {
+            try
+            {
                 measurement->set(std::chrono::system_clock::now(),
                                  q.getMetricFields(type));
-            } catch (std::exception & e) {
+            }
+            catch (std::exception &e)
+            {
                 logger->warning << "metrics exception, ignore" << std::flush;
             }
-
-
         }
     }
 }
@@ -90,20 +90,21 @@ bool Jitter::push(PacketPointer packet,
             case Packet::MediaType::AV1:
             case Packet::MediaType::Raw:
             {
-
-                if (!video.sourceID) {
+                if (!video.sourceID)
+                {
                     new_stream = true;
-                    logger->info << "New video sourceID: " << sourceID << std::flush;
+                    logger->info << "New video sourceID: " << sourceID
+                                 << std::flush;
                     video.sourceID = packet->sourceID;
                 }
 
-                if (packet->fragmentCount == 1) {
+                if (packet->fragmentCount == 1)
+                {
                     // packet wasn't fragmented by us
-                    logger->info << "[jitter-v: no assembly needed:" << std::flush;
+                    logger->info << "[jitter-v: no assembly needed:"
+                                 << std::flush;
                     // we got assembled frame, add it to jitter queue
-                    video.push(std::move(packet),
-                               sync.video_seq_popped,
-                               now);
+                    video.push(std::move(packet), sync.video_seq_popped, now);
                     break;
                 }
 
@@ -115,7 +116,8 @@ bool Jitter::push(PacketPointer packet,
                 PacketPointer raw = video.assembler->push(std::move(packet));
                 if (raw != nullptr)
                 {
-                    logger->info << "[jitter-v: assembled full frame:" << std::flush;
+                    logger->info << "[jitter-v: assembled full frame:"
+                                 << std::flush;
                     // we got assembled frame, add it to jitter queue
                     video.push(std::move(raw), sync.video_seq_popped, now);
                 }
@@ -171,7 +173,8 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
     PacketPointer packet = nullptr;
     bool unableToThrowSilence = false;
 
-    if (idle_client) {
+    if (idle_client)
+    {
         idle_client = false;
     }
 
@@ -182,10 +185,14 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
         return nullptr;
     }
 
-    logger->info << "[J-PopAudio: Q-depth:" << audio.getMsInQueue() << "]" << std::flush;
-    logger->info << "[J-PopAudio: Jitter-ms:" << audio_jitter.getJitterMs() << "]" << std::flush;
-    logger->info << "[J-PopAudio: Asking Length:" << length << "]" << std::flush;
-    logger->info << "[J-PopAudio: Playing total in buffers" << audio.playout.getTotalInBuffers() << "]" << std::flush;
+    logger->info << "[J-PopAudio: Q-depth:" << audio.getMsInQueue() << "]"
+                 << std::flush;
+    logger->info << "[J-PopAudio: Jitter-ms:" << audio_jitter.getJitterMs()
+                 << "]" << std::flush;
+    logger->info << "[J-PopAudio: Asking Length:" << length << "]"
+                 << std::flush;
+    logger->info << "[J-PopAudio: Playing total in buffers"
+                 << audio.playout.getTotalInBuffers() << "]" << std::flush;
 
     QueueMonitor(now);
     int num_depth_adjustments = 1;
@@ -257,8 +264,8 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
                         sync.audio_popped(packet->sourceRecordTime,
                                           packet->encodedSequenceNum,
                                           now);
-                            logger->info << "[A:" << packet->encodedSequenceNum
-                                          << "]" << std::flush;
+                        logger->info << "[A:" << packet->encodedSequenceNum
+                                     << "]" << std::flush;
                     }
                 }
             }
@@ -294,7 +301,8 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
     audio.playout.fill(packet->data, length, timestamp);
     packet->encodedSequenceNum = sync.audio_seq_popped;
     packet->sourceRecordTime = timestamp;
-    logger->info << "PopAudio-final- encoded-seq-no" << packet->encodedSequenceNum << std::flush;
+    logger->info << "PopAudio-final- encoded-seq-no"
+                 << packet->encodedSequenceNum << std::flush;
     logger->info << "[QA: " << audio.mq.size() << "]" << std::flush;
     return packet;
 }
@@ -408,10 +416,11 @@ int Jitter::popVideo(uint64_t sourceID,
         return len;
     }
 
-    logger->info << "[Jitter: popVideo: queue has: "
-                 << video.mq.size() << " ]" << std::flush;
+    logger->info << "[Jitter: popVideo: queue has: " << video.mq.size() << " ]"
+                 << std::flush;
 
-    if (idle_client) {
+    if (idle_client)
+    {
         idle_client = false;
     }
 
@@ -462,7 +471,8 @@ int Jitter::popVideo(uint64_t sourceID,
             for (unsigned int pops = 0; pops < num_pop; pops++)
             {
                 packet = video.pop(now);
-                if (packet) {
+                if (packet)
+                {
                     sourceRecordTime = packet->sourceRecordTime;
                     packet.reset(nullptr);
                 }
@@ -524,16 +534,17 @@ void Jitter::QueueMonitor(std::chrono::steady_clock::time_point now)
     unsigned int plcs = 0;
     unsigned int lost_in_queue = audio.mq.lostInQueue(plcs,
                                                       sync.audio_seq_popped);
-    logger->debug <<"[JQM: lostInQueue:" <<  lost_in_queue << ",plcs:" << plcs <<  "]" << std::flush;
+    logger->debug << "[JQM: lostInQueue:" << lost_in_queue << ",plcs:" << plcs
+                  << "]" << std::flush;
     // total number of audio frames in queue
     unsigned int queue_size = audio.getMsInQueue();
-    logger->debug <<"[JQM: Q-Size:" <<  queue_size  << "]" << std::flush;
+    logger->debug << "[JQM: Q-Size:" << queue_size << "]" << std::flush;
     // unsigned int queue_size = audio.mq.size();
     // average jitter since the last pop
     unsigned int jitter_ms = audio_jitter.getJitterMs();
-    logger->debug <<"[JQM: audio-jitter-ms:" <<  jitter_ms << "]" << std::flush;
+    logger->debug << "[JQM: audio-jitter-ms:" << jitter_ms << "]" << std::flush;
     unsigned int ms_per_audio = audio.getMsPerAudioPacket();
-    logger->debug <<"[JQM: ms_per_audio:" <<  ms_per_audio << "]" << std::flush;
+    logger->debug << "[JQM: ms_per_audio:" << ms_per_audio << "]" << std::flush;
     unsigned int client_fps = audio.fps.getFps();
     bucket.tick(
         now, queue_size, lost_in_queue, jitter_ms, ms_per_audio, client_fps);
