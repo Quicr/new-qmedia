@@ -8,7 +8,6 @@
 #include <mutex>
 #include <cassert>
 #include <memory>
-#include <sframe/sframe.h>
 #include <ostream>
 #include <iostream>
 
@@ -21,8 +20,6 @@
 
 #include "packet.hh"
 #include "transport.hh"
-#include "netTransportUDP.hh"
-#include "netTransportQuic.hh"
 #include "netTransportQuicR.hh"
 #include "logger.hh"
 #include "metrics.hh"
@@ -45,47 +42,18 @@ public:
                                         const LoggerPointer &logger)
     {
         NetTransport *transport = nullptr;
-        std::string name = "";
         switch (type)
         {
-            case NetTransport::UDP:
-                name = "TransportUDP";
-                if (sfuName_in.empty())
-                {
-                    transport = new NetTransportUDP(transportManager,
-                                                    sfuPort_in);
-                }
-                else
-                {
-                    transport = new NetTransportUDP(
-                        transportManager, sfuName_in, sfuPort_in);
-                }
-                break;
-            case NetTransport::QUICR:
-                name = "TransportQuicr";
+            case NetTransport::QUICR:{
                 transport = new NetTransportQUICR(
                     transportManager, sfuName_in, sfuPort_in, logger);
-                break;
-            case NetTransport::PICO_QUIC:
-                name = "TransportQUIC";
-#ifdef ENABLE_QUIC
-                if (sfuName_in.empty())
-                {
-                    // server
-                    transport = NetTransportQUIC(transportManager, sfuPort_in);
-                }
-                else
-                {
-                    // client
-                    transport = NetTransportQUIC(
-                        transportManager, sfuName_in, sfuPort_in);
-                }
-#else
-                throw std::runtime_error("PICO_QUIC transport support isn't "
-                                         "enabled");
-#endif
+                transport->setLogger("TransportQuicR", logger);
+            }
+            break;
+            default:
+                throw std::runtime_error("Invalid Transport");
         }
-        transport->setLogger(name, logger);
+
         return transport;
     }
 
@@ -180,7 +148,6 @@ protected:
     // Decode bytes to Packet, return nullptr on decode error
     bool netDecode(const std::string &data_in, Packet *packet_out);
 
-    std::unique_ptr<sframe::MLSContext> mls_context;
     LoggerPointer logger;
     bool isLoopback = false;
 
@@ -227,8 +194,6 @@ private:
     struct sockaddr_in sfuAddr;        // struct sockaddr_storage sfuAddr;
     socklen_t sfuAddrLen;
     int64_t current_epoch = 0;
-    sframe::MLSContext::SenderID senderId;
-    sframe::MLSContext mls_context;
     LoggerPointer logger;
 };
 

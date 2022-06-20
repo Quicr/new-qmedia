@@ -4,10 +4,8 @@
 #include <cassert>
 #include <ostream>
 #include <iomanip>
-#include <sstream>
 
 #include "transport_manager.hh"
-#include "netTransportUDP.hh"
 
 namespace neo_media
 {
@@ -170,9 +168,7 @@ void TransportManager::runNetSend()
 
 // Used for testing only
 ClientTransportManager::ClientTransportManager() :
-    TransportManager(NetTransport::Type::UDP, "localhost", -1, nullptr, nullptr),
-    senderId(sframe::MLSContext::SenderID(0x0000)),
-    mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
+    TransportManager(NetTransport::Type::QUICR, "localhost", -1, nullptr, nullptr),
     current_epoch(0)
 {
     rtx_mgr = std::make_unique<RtxManager>(false, this, nullptr);
@@ -187,17 +183,8 @@ ClientTransportManager::ClientTransportManager(
     TransportManager(type, sfuName_in, sfuPort_in, metricsPtr, parent_logger),
     sfuName(std::move(sfuName_in)),
     sfuPort(sfuPort_in),
-    senderId(sframe::MLSContext::SenderID(0x1234)),
-    mls_context(sframe::CipherSuite::AES_GCM_128_SHA256, 8),
     current_epoch(0)
-{
-    if (type == NetTransport::Type::UDP)
-    {
-        // quic/quicr have their own rtx mechanisms, hence enable rtx
-        // just for udp transport.
-        rtx_mgr = std::make_unique<RtxManager>(true, this, metricsPtr);
-    }
-}
+{}
 
 void ClientTransportManager::start()
 {
@@ -256,21 +243,16 @@ void ClientTransportManager::setCryptoKey(uint64_t epoch,
                                           const bytes &epoch_secret)
 {
     current_epoch = epoch;
-    mls_context.add_epoch(epoch, epoch_secret);
 }
 
 bytes ClientTransportManager::protect(const bytes &plaintext)
 {
-    auto ct_out = bytes(plaintext.size() + sframe::max_overhead);
-    auto ct = mls_context.protect(current_epoch, senderId, ct_out, plaintext);
-    return bytes(ct.begin(), ct.end());
+    throw std::runtime_error("Protect Not Supported");
 }
 
 bytes ClientTransportManager::unprotect(const bytes &ciphertext)
 {
-    auto pt_out = bytes(ciphertext.size());
-    auto pt = mls_context.unprotect(pt_out, ciphertext);
-    return bytes(pt.begin(), pt.end());
+    throw std::runtime_error("Unprotect Not Supported");
 }
 
 ///

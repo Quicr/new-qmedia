@@ -1,4 +1,3 @@
-#ifdef ENABLE_QUICR
 #include <cassert>
 #include <iomanip>
 #include <iostream>
@@ -734,5 +733,3 @@ int NetTransportQUICR::runQuicProcess()
     quicrq_delete(quicr_client_ctx.qr_ctx);
     return 0;
 }
-
-#endif

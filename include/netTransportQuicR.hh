@@ -19,9 +19,10 @@
 #include <ws2tcpip.h>
 #endif
 
-#include "netTransportUDP.hh"
+#include <map>
 #include "transport.hh"
 #include "logger.hh"
+#include "packet.hh"
 
 #include "picoquic.h"
 #include "picoquic_internal.h"

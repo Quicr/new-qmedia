@@ -47,58 +47,20 @@ void Neo::init(const std::string &remote_address,
     transport_type = xport_type;
     media_dir = dir;
 
-    if (transport_type == NetTransport::Type::PICO_QUIC)
-    {
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::PICO_QUIC,
-            remote_address,
-            remote_port,
-            metrics,
-            log);
-        while (!transport->transport_ready())
-        {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-        }
-    }
-    else if (transport_type == NetTransport::Type::QUICR)
-    {
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::QUICR,
-            remote_address,
-            remote_port,
-            metrics,
-            log);
-        transport->start();
-    }
-    else
-    {
-        // UDP
-        transport = std::make_unique<ClientTransportManager>(
-            NetTransport::Type::UDP, remote_address, remote_port, metrics, log);
-        transport->start();
-    }
+
+    transport = std::make_unique<ClientTransportManager>(
+        transport_type,
+        remote_address,
+        remote_port,
+        metrics,
+        log);
+
+    transport->start();
 
     int64_t epoch_id = 1;
     transport->setCryptoKey(epoch_id, bytes(8, uint8_t(epoch_id)));
 
-    // Construct and send a Join Packet
-    if (transport_type != NetTransport::Type::QUICR)
-    {
-        PacketPointer joinPacket = std::make_unique<Packet>();
-        assert(joinPacket);
-        joinPacket->packetType = neo_media::Packet::Type::Join;
-        joinPacket->clientID = myClientID;
-        joinPacket->conferenceID = myConferenceID;
-        joinPacket->echo = echo;
-        transport->send(std::move(joinPacket));
-    }
-
-    // TODO: add audio_encoder
-
     workThread = std::thread(neoWorkThread, this);
-
-    // Init video pipeline unless disabled with zero width or height or bad
-    // format
 
     if (!video_max_width || !video_max_height)
     {
