@@ -12,12 +12,12 @@ cmake_minimum_required(VERSION 3.10)
 # the dependencies that we need without much knowledge that vcpkg actually
 # exists.
 set(CMAKE_TOOLCHAIN_FILE
-    ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
-    CACHE STRING "Vcpkg toolchain file")
+        ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        CACHE STRING "Vcpkg toolchain file")
 if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
     message(WARNING
-        "Missing vcpkg toolchain! Do you forget to initialize the vcpkg "
-        "submodule?")
+            "Missing vcpkg toolchain! Do you forget to initialize the vcpkg "
+            "submodule?")
 endif(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
 
 ################################################################################
@@ -97,11 +97,6 @@ include_directories( include src/extern )
 ### Dependencies
 ###
 
-# Internal libraries
-add_subdirectory(lib)
-add_subdirectory( proto )
-
-# Third-Party libraries
 find_package(Picoquic REQUIRED)
 message(STATUS "Picoquic/include: ${Picoquic_INCLUDE_DIRS}" )
 message(STATUS "Picoquic library: ${Picoquic_LIBRARIES}" )
@@ -114,17 +109,20 @@ find_package(Quicr REQUIRED)
 message(STATUS "quicr/include: ${QUICR_INCLUDE_DIRS}" )
 message(STATUS "quicr libraries: ${QUICR_LIBRARIES}" )
 
-# custom openh264
-set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
-set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
-message(STATUS "openh64: ${OpenH264_LIB_DIR}")
-message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
+include_directories(include lib tests
+        ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
 
+set(LIBRARIES media_api gsl sframe)
 
-# External libraries
+# samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)
 list(APPEND LIBRARIES ${SAMPLE_RATE})
 
+# curl
+find_package(CURL REQUIRED)
+list(APPEND LIBRARIES ${CURL_LIBRARIES})
+
+# opus
 if (APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(opus REQUIRED IMPORTED_TARGET opus)
@@ -134,18 +132,26 @@ else(APPLE)
     list(APPEND LIBRARIES Opus::opus)
 endif(APPLE)
 
+add_subdirectory( proto )
 find_package(Opus REQUIRED)
+
+# Windows sockets.
+if (WIN32)
+    list(APPEND LIBRARIES Ws2_32)
+endif(WIN32)
 
 find_package(OpenSSL 1.1 REQUIRED)
 
-include_directories(include lib tests
-        ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
-
-set(LIBRARIES media_api gsl sframe)
+# custom openh264
+set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
+set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
+message(STATUS "openh64: ${OpenH264_LIB_DIR}")
+message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
 
 ###
 ### Library Source
 ###
+add_subdirectory(lib)
 
 add_subdirectory(src)
 
