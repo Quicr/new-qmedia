@@ -15,6 +15,13 @@ all: ${BUILD_DIR}
 ${BUILD_DIR}: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
 	cmake -B${BUILD_DIR} -DBUILD_EXTERN=ON -DCMAKE_BUILD_TYPE=Debug .
 
+libs: ${BUILD_DIR}
+	cmake --build ${BUILD_DIR} --target metrics
+
+test-libs: ${BUILD_DIR}
+	cmake --build ${BUILD_DIR} --target metrics_test
+	cd build/lib/metrics/test/ && ctest
+
 test: ${BUILD_DIR} test/*
 
 	cmake --build ${BUILD_DIR} --target neoMedia_test

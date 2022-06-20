@@ -97,6 +97,11 @@ include_directories( include src/extern )
 ### Dependencies
 ###
 
+# Internal libraries
+add_subdirectory(lib)
+add_subdirectory( proto )
+
+# Third-Party libraries
 find_package(Picoquic REQUIRED)
 message(STATUS "Picoquic/include: ${Picoquic_INCLUDE_DIRS}" )
 message(STATUS "Picoquic library: ${Picoquic_LIBRARIES}" )
@@ -109,20 +114,17 @@ find_package(Quicr REQUIRED)
 message(STATUS "quicr/include: ${QUICR_INCLUDE_DIRS}" )
 message(STATUS "quicr libraries: ${QUICR_LIBRARIES}" )
 
-include_directories(include lib tests
-        ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+# custom openh264
+set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
+set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
+message(STATUS "openh64: ${OpenH264_LIB_DIR}")
+message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
 
-set(LIBRARIES media_api gsl sframe)
 
-# samplerate
+# External libraries
 find_library(SAMPLE_RATE samplerate REQUIRED)
 list(APPEND LIBRARIES ${SAMPLE_RATE})
 
-# curl
-find_package(CURL REQUIRED)
-list(APPEND LIBRARIES ${CURL_LIBRARIES})
-
-# opus
 if (APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(opus REQUIRED IMPORTED_TARGET opus)
@@ -132,21 +134,14 @@ else(APPLE)
     list(APPEND LIBRARIES Opus::opus)
 endif(APPLE)
 
-add_subdirectory( proto ) 
 find_package(Opus REQUIRED)
-
-# Windows sockets.
-if (WIN32)
-    list(APPEND LIBRARIES Ws2_32)
-endif(WIN32)
 
 find_package(OpenSSL 1.1 REQUIRED)
 
-# custom openh264
-set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
-set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
-message(STATUS "openh64: ${OpenH264_LIB_DIR}")
-message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
+include_directories(include lib tests
+        ${QUICR_INCLUDE_DIRS} ${Picoquic_INCLUDE_DIRS} ${PTLS_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+
+set(LIBRARIES media_api gsl sframe)
 
 ###
 ### Library Source
