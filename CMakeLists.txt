@@ -23,7 +23,7 @@ endif(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
 ################################################################################
 # top-level project name, version, and languages - this project will have
 # several projects, but this is declared as the top level project.
-project(neoMedia VERSION 0.1 LANGUAGES C CXX)
+project(qmedia VERSION 0.1 LANGUAGES C CXX)
 
 ################################################################################
 # If this is a Makefile generator and the build type was not defined, then the
@@ -44,8 +44,6 @@ option(BUILD_EXTERN "build external library" ON)
 option(BUILD_TESTS  "build tests" ON)
 option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
-option(BUILD_WITH_QUIC "Build with quic transport" OFF)
-option(BUILD_WITH_QUICR "Build with quicr transport" ON)
 
 ################################################################################
 # dependencies
@@ -176,27 +174,7 @@ target_include_directories(${LIB_NAME}
         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
         )
 
-if(BUILD_WITH_QUIC)
-    # picoquic and friends
-    if (WIN32)
-        target_link_libraries(${LIB_NAME} picotls-openssl picotls-core picotls-fusion picoquic)
-    else(WIN32)
-        target_link_libraries(${LIB_NAME} picotls-openssl picotls-core picotls-fusion picoquic-core)
-    endif(WIN32)
-    add_compile_definitions(${LIB_NAME} ENABLE_QUIC)
-endif()
-
-if(BUILD_WITH_QUICR)
-    message(STATUS "PICO = ${Picoquic_LIBRARIES}")
-    message(STATUS "PICO_TLS = ${PTLS_LIBRARIES}")
-    # picoquic and friends
-    if (WIN32)
-        target_link_libraries(${LIB_NAME} ${QUICR_LIBRARIES} ${Picoquic_LIBRARIES} ${PTLS_LIBRARIES})
-    else(WIN32)
-        target_link_libraries(${LIB_NAME} ${QUICR_LIBRARIES} ${Picoquic_LIBRARIES} ${PTLS_LIBRARIES})
-    endif(WIN32)
-    add_compile_definitions(${LIB_NAME} ENABLE_QUICR)
-endif()
+target_link_libraries(${LIB_NAME} ${QUICR_LIBRARIES} ${Picoquic_LIBRARIES} ${PTLS_LIBRARIES})
 
 
 ###
