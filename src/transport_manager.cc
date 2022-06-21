@@ -427,7 +427,7 @@ bool TransportManager::recvDataFromNet(
         return false;
     }
 
-    logger->info << "[R]: Type:" << packet->packetType << ","
+    logger->debug << "[R]: Type:" << packet->packetType << ","
                  << packet->encodedSequenceNum << std::flush;
 #if 0
     // decrypt if its client transportManager
