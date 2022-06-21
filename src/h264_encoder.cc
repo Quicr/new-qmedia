@@ -194,13 +194,6 @@ int H264Encoder::encode(const char *input_buffer,
                       << std::flush;
     }
 
-    auto now_2 = std::chrono::system_clock::now();
-    auto now_ms_2 = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        now_2.time_since_epoch())
-                        .count();
-    logger->info << "h264Encoder:DeInterleave Delta:" << (now_ms_2 - now_ms)
-                 << std::flush;
-
     memset(&encodedFrame, 0, sizeof(SFrameBSInfo));
     int ret = encoder->EncodeFrame(&sourcePicture, &encodedFrame);
     if (ret == 0)
@@ -216,13 +209,6 @@ int H264Encoder::encode(const char *input_buffer,
                 return -1;
         }
     }
-
-    auto now_3 = std::chrono::system_clock::now();
-    auto now_ms_3 = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        now_3.time_since_epoch())
-                        .count();
-    logger->info << "h264Encoder: encode delta:" << (now_ms_3 - now_ms)
-                 << std::flush;
 
     // encode worked
     if (debug)
@@ -255,8 +241,6 @@ int H264Encoder::encode(const char *input_buffer,
     total_bytes_encoded += output_bitstream.size();
     total_frames_encoded++;
 
-    logger->info << "h264Encoder: Output Frame type: "
-                 << encodedFrame.eFrameType << std::flush;
     // success
     return encodedFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
 }

@@ -82,7 +82,7 @@ void Neo::init(const std::string &remote_address,
 
     log->info << "MediaDirection:" << (int) media_dir << std::flush;
 
-    if (media_dir == MediaDirection::publish_only)
+    if (media_dir == MediaDirection::publish_only || media_dir == MediaDirection::publish_subscribe)
     {
         video_encoder = std::make_unique<H264Encoder>(
             video_max_width,
@@ -240,6 +240,8 @@ void Neo::sendVideoFrame(const char *buffer,
     {
         log->debug << "Video Encoder, unavailable" << std::flush;
     }
+
+    log->info << "Send Video Frame" << std::flush;
     // TODO:implement clone()
     // TODO: remove assert
     int sendRaw = 0;        // 1 will send Raw YUV video instead of AV1
@@ -484,6 +486,7 @@ std::uint32_t Neo::getVideoFrame(uint64_t clientID,
         return 0;
     }
 
+    log->info << "Get Video Frame " << std::flush;
     Packet::IdrRequestData idr_data = {clientID, 0, 0};
     recv_length = jitter_instance->popVideo(
         sourceID, width, height, format, timestamp, buffer, idr_data);
@@ -494,7 +497,7 @@ std::uint32_t Neo::getVideoFrame(uint64_t clientID,
         idr->packetType = Packet::Type::IdrRequest;
         idr->transportSequenceNumber = 0;
         idr->idrRequestData = std::move(idr_data);
-        transport->send(std::move(idr));
+        //transport->send(std::move(idr));
     }
     return recv_length;
 }
