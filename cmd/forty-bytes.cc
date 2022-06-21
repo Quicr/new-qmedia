@@ -12,6 +12,7 @@
 using namespace neo_media;
 using namespace std::chrono_literals;
 
+
 uint64_t conference_id = 1234;
 bool done = false;
 ClientTransportManager *transportManager = nullptr;
@@ -39,9 +40,7 @@ void read_loop()
         }
         if (packet->packetType == neo_media::Packet::Type::StreamContent)
         {
-            std::cout << "VideoFrameType: " << (int) packet->videoFrameType
-                      << "\n";
-            std::cout << "40B:Received:" << to_hex(packet->data) << "\n";
+            std::cout << "40B:<<<<<<<" << to_hex(packet->data) << "\n";
         }
         else
         {
@@ -71,27 +70,34 @@ void send_loop(uint64_t client_id, uint64_t source_id)
         packet->mediaType = neo_media::Packet::MediaType::Opus;
         packet->videoFrameType = neo_media::Packet::VideoFrameType::Idr;
         packet->encodedSequenceNum = pkt_num;
-        std::cout << "40B:Sending:" << to_hex(packet->data) << std::endl;
+        std::cout << "40B:>>>>>>>>:" << to_hex(packet->data) << std::endl;
         transportManager->send(std::move(packet));
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
+}
+
+std::shared_ptr<NetTransportQUICR> getTransportHandle(ClientTransportManager*&  transportManager) {
+    auto transport = transportManager->transport();
+    std::weak_ptr<NetTransportQUICR> tmp =
+        std::static_pointer_cast<NetTransportQUICR>(transport.lock());
+    return tmp.lock();
 }
 
 int main(int argc, char *argv[])
 {
     std::string mode;
     std::string transport_type;
-    uint32_t client_id;
+    std::string me;
+    std::string you;
     uint64_t source_id = 0x1000;
 
-    if (argc < 4)
+    if (argc < 3)
     {
-        std::cerr << "Must provide mode of operation" << std::endl;
-        std::cerr << "Usage: forty <transport> <mode> <client-id> "
+        std::cerr << "Usage: forty <mode> <self-client-id> <other-client-id>"
                   << std::endl;
-        std::cerr << "Mode: sendrecv/send/recv" << std::endl;
-        std::cerr << "ClientID - a sensible +ve 32 bit integer value"
-                  << std::endl;
+        std::cerr << "mode: sendrecv/send/recv" << std::endl;
+        std::cerr << "self-client-id: some string" << std::endl;
+        std::cerr << "other-client-id: some string that is not self" << std::endl;
         return -1;
     }
 
@@ -109,24 +115,19 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    std::string client_id_str;
-    client_id_str.assign(argv[2]);
-    if (client_id_str.empty())
-    {
-        std::cout << "Bad choice for clientId .. Bye" << std::endl;
-        exit(-1);
-    }
-    client_id = std::stoi(argv[3], nullptr);
+    me.assign(argv[2]);
+    you.assign(argv[3]);
 
     if (mode == "recv")
     {
-        auto transport = transportManager->transport();
-        std::weak_ptr<NetTransportQUICR> tmp =
-            std::static_pointer_cast<NetTransportQUICR>(transport.lock());
-        auto quicr_transport = tmp.lock();
-        quicr_transport->subscribe(
-            source_id, Packet::MediaType::Opus, "forty_bytes_alice");
+        if(you.empty()) {
+            std::cout << "Bad choice for other-client-id" << std::endl;
+            exit(-1);
+        }
 
+        auto quicr_transport = getTransportHandle(transportManager);
+        quicr_transport->subscribe(
+            source_id, Packet::MediaType::Opus, you);
         // start the transport
         quicr_transport->start();
 
@@ -140,12 +141,13 @@ int main(int argc, char *argv[])
     }
     else if (mode == "send")
     {
-        auto transport = transportManager->transport();
-        std::weak_ptr<NetTransportQUICR> tmp =
-            std::static_pointer_cast<NetTransportQUICR>(transport.lock());
-        auto quicr_transport = tmp.lock();
+        if(me.empty()) {
+            std::cout << "Bad choice for self-client-id" << std::endl;
+            exit(-1);
+        }
+        auto quicr_transport = getTransportHandle(transportManager);
         quicr_transport->publish(
-            source_id, Packet::MediaType::Opus, "forty_bytes_alice");
+            source_id, Packet::MediaType::Opus, me);
 
         // start the transport
         quicr_transport->start();
@@ -157,10 +159,24 @@ int main(int argc, char *argv[])
 
         std::cout << "Transport is ready" << std::endl;
 
-        send_loop(client_id, source_id);
+        send_loop(1111, source_id);
     }
     else
     {
+        if (me.empty() || you.empty()) {
+            std::cout << "Bad choice for clientId(s)" << std::endl;
+            exit(-1);
+        }
+
+        auto quicr_transport = getTransportHandle(transportManager);
+        quicr_transport->subscribe(
+            source_id, Packet::MediaType::Opus, you);
+
+        quicr_transport->publish(
+            source_id, Packet::MediaType::Opus, me);
+
+        quicr_transport->start();
+
         while (!transportManager->transport_ready())
         {
             std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -169,20 +185,7 @@ int main(int argc, char *argv[])
         std::cout << "Transport is ready" << std::endl;
 
         std::thread reader(read_loop);
-        send_loop(client_id, source_id);
-    }
-
-    if (transport_type != "qr")
-    {
-        // send a subscribe
-        PacketPointer join = std::make_unique<Packet>();
-        assert(join);
-
-        join->clientID = client_id;
-        join->packetType = neo_media::Packet::Type::Join;
-        join->conferenceID = conference_id;
-        std::cout << "40B:Sending Join:" << std::endl;
-        transportManager->send(std::move(join));
+        send_loop(1111, source_id);
     }
 
     return 0;
