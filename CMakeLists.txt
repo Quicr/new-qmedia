@@ -45,6 +45,7 @@ option(BUILD_TESTS  "build tests" ON)
 option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
 
+
 ################################################################################
 # dependencies
 include(dependencies)
@@ -141,10 +142,25 @@ endif(WIN32)
 find_package(OpenSSL 1.1 REQUIRED)
 
 # custom openh264
-set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
-set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib)
-message(STATUS "openh64: ${OpenH264_LIB_DIR}")
-message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
+if (APPLE)
+     execute_process(
+      COMMAND uname -m
+      RESULT_VARIABLE result
+      OUTPUT_VARIABLE OSX_NATIVE_ARCHITECTURE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if(OSX_NATIVE_ARCHITECTURE STREQUAL "arm64")
+      set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
+      set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib/arm64)
+  else()
+      set(OpenH264_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/include)
+      set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib/x86_64)
+  endif()
+
+    message(STATUS "openh64: ${OpenH264_LIB_DIR}")
+    message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
+endif()
 
 ###
 ### Library Source
