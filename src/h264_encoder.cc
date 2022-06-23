@@ -91,6 +91,8 @@ H264Encoder::H264Encoder(unsigned int video_max_width,
 
     logger->info << "H264Encoder Created: w:" << video_max_width
                  << ",h:" << video_max_height << std::flush;
+    max_width = video_max_width;
+    max_height = video_max_height;
 }
 
 H264Encoder::~H264Encoder()
@@ -119,9 +121,10 @@ int H264Encoder::encode(const char *input_buffer,
     static std::uint64_t total_frames_encoded = 0;
     static std::uint64_t total_bytes_encoded = 0;
     static std::uint64_t total_time_encoded = 0;        // microseconds
-    static unsigned char uv_array[1280 * 720] = {0};
+    // static unsigned char uv_array[max_width * max_height] = {0};
+    static auto uv_array = (unsigned char*) malloc(stride_uv * stride_y);
 
-    if (stride_uv != 1280 || height != 720)
+    if (stride_uv != max_width || height != max_height)
     {
         logger->warning << "!!!! image dimension change: stride_uv:"
                         << stride_uv << ", height:" << height << std::flush;

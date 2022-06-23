@@ -59,6 +59,7 @@ endif(BUILD_EXTERN)
 ### Global Config
 ###
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+#set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 ################################################################################
 # update the general compiler configuration

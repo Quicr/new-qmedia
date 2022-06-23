@@ -35,8 +35,8 @@ public:
                std::vector<std::uint8_t> &output_bitstream,
                bool genKeyFrame) override;
 
-    int width;
-    int height;
+    int max_width;
+    int max_height;
     float fps;
     int rate;
     unsigned int idr_interval = 30;

@@ -91,10 +91,12 @@ int main(int argc, char *argv[])
     std::string you;
     uint64_t source_id = 0x1000;
     uint16_t server_port = 7777;
-    if (argc < 4)
+    std::string server_ip;
+    if (argc < 5)
     {
-        std::cerr << "Usage: forty <port> <mode> <self-client-id> <other-client-id>"
+        std::cerr << "Usage: forty <server> <port> <mode> <self-client-id> <other-client-id>"
                   << std::endl;
+        std::cerr << "port: server ip for quicr origin/relay" << std::endl;
         std::cerr << "port: server port for quicr origin/relay" << std::endl;
         std::cerr << "mode: sendrecv/send/recv" << std::endl;
         std::cerr << "self-client-id: some string" << std::endl;
@@ -102,16 +104,18 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    server_ip.assign(argv[1]);
+
     std::string port_str;
-    port_str.assign(argv[1]);
+    port_str.assign(argv[2]);
     if (port_str.empty())
     {
         std::cout << "Port is empty" << std::endl;
         exit(-1);
     }
-    server_port = std::stoi(argv[1], nullptr);
+    server_port = std::stoi(argv[2], nullptr);
 
-    mode.assign(argv[2]);
+    mode.assign(argv[3]);
     if (mode != "send" && mode != "recv" && mode != "sendrecv")
     {
         std::cout << "Bad choice for mode.. Bye" << std::endl;
@@ -119,14 +123,14 @@ int main(int argc, char *argv[])
     }
 
     // names
-    me.assign(argv[3]);
-    you.assign(argv[4]);
+    me.assign(argv[4]);
+    you.assign(argv[5]);
 
     LoggerPointer logger = std::make_shared<Logger>("FORTY_BYTES");
     logger->SetLogFacility(LogFacility::CONSOLE);
 
     transportManager = new ClientTransportManager(
-        neo_media::NetTransport::QUICR, "127.0.0.1", server_port, nullptr, logger);
+        neo_media::NetTransport::QUICR, server_ip, server_port, nullptr, logger);
     transportManager->start();
 
     if (mode == "recv")
