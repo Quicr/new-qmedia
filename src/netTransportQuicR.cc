@@ -360,8 +360,8 @@ int object_stream_consumer_fn(
     auto cons_ctx = (ConsumerContext *) object_consumer_ctx;
     auto &logger = cons_ctx->transport->logger;
     logger->debug << cons_ctx->url
-                 << ": object_stream_consumer_fn: action:" << (int) action
-                 << ",data_length:" << data_length << std::flush;
+                  << ": object_stream_consumer_fn: action:" << (int) action
+                  << ",data_length:" << data_length << std::flush;
     int ret = 0;
     switch (action)
     {

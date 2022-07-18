@@ -13,10 +13,10 @@
 #include "packet.hh"
 #include <iostream>
 #include <ostream>
-#include "logger.hh"
+#include "qmedia/logger.hh"
 #include "codec.hh"
 #include "jitter_interface.hh"
-#include "metrics.hh"
+#include "qmedia/metrics.hh"
 
 namespace neo_media
 {

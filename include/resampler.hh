@@ -1,6 +1,6 @@
 #pragma once
 #include <samplerate.h>
-#include "packet.hh"
+#include "../src/packet.hh"
 
 namespace neo_media
 {

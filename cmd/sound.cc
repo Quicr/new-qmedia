@@ -12,7 +12,7 @@
 
 #include "neo.hh"
 #include "resampler.hh"
-#include "logger.hh"
+#include "qmedia/logger.hh"
 
 using namespace neo_media;
 

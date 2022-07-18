@@ -1,5 +1,3 @@
-add_executable(forty forty-bytes.cc)
-target_link_libraries( forty PUBLIC qmedia)
 
 find_package(portaudio QUIET)
 if(portaudio_FOUND)

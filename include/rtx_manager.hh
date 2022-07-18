@@ -12,8 +12,8 @@
 #include <memory>
 #include <chrono>
 
-#include "packet.hh"
-#include "metrics.hh"
+#include "../src/packet.hh"
+#include "qmedia/metrics.hh"
 
 namespace neo_media
 {

@@ -3,12 +3,12 @@
 #include <stdint.h>
 #include <vector>
 #include <chrono>
-#include <wels/codec_api.h>
+#include "wels/codec_api.h"
 
-#include "logger.hh"
+#include <qmedia/logger.hh>
 #include "codec.hh"
 
-namespace neo_media
+namespace qmedia
 {
 class H264Encoder : public VideoEncoder
 {
@@ -48,4 +48,4 @@ public:
     SSourcePicture inputFrame;
     LoggerPointer logger;
 };
-}        // namespace neo_media
+}        // namespace qmedia

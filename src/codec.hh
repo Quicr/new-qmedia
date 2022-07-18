@@ -3,8 +3,9 @@
 #include <stdint.h>
 #include <vector>
 
-namespace neo_media
+namespace qmedia
 {
+
 // Video Encoder Interface
 class VideoEncoder
 {
@@ -37,4 +38,4 @@ public:
                        std::vector<std::uint8_t> &output_frame) = 0;
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

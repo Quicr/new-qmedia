@@ -38,4 +38,4 @@ protected:
 
 // This allows the template object to be implemented in a separate cpp file
 // without receiving linker errors
-#include "../src/modulus_deque.cc"
+#include "modulus_deque.cc"

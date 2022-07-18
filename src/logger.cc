@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include "logger.hh"
+#include "qmedia/logger.hh"
 
 Logger::Logger(bool output_to_console) :
     Logger("", "", nullptr, output_to_console)

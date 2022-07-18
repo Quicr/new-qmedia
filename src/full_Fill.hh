@@ -4,7 +4,7 @@
 #include <vector>
 #include <mutex>
 
-namespace neo_media
+namespace qmedia
 {
 /**
  * Class to match application buffer requests
@@ -14,6 +14,7 @@ class fullFill
 public:
     fullFill();
     ~fullFill() = default;
+
     unsigned int getTotalInBuffers();
     void addBuffer(const uint8_t *buffer,
                    unsigned int length,
@@ -38,4 +39,4 @@ public:
                                                         // translated to
                                                         // microseconds
 };
-}        // namespace neo_media
+}        // namespace qmedia

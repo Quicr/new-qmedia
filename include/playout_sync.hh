@@ -2,7 +2,7 @@
 
 // Lip sync
 
-#include "jitter_queues.hh"
+#include "../src/jitter_queues.hh"
 #include <chrono>
 
 namespace neo_media

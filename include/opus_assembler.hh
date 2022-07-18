@@ -1,6 +1,6 @@
 #pragma once
 #include <mutex>
-#include "frame_assembler.hh"
+#include "../src/frame_assembler.hh"
 #include "opus.h"
 
 namespace neo_media

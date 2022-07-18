@@ -6,21 +6,23 @@
 #include <iostream>
 #include <atomic>
 
-#include "transport_manager.hh"
-#include "metrics.hh"
+#include "../src/media_transport.hh"
+
+#include "../src/transport_manager.hh"
+#include "qmedia/metrics.hh"
 // todo: need a single class for handling incoming packet with and without
 // jitter
-#include "jitter.hh"
-#include "jitter_interface.hh"
-#include "loopback-jitter.hh"
+#include "../src/jitter.hh"
+#include "../src/jitter_interface.hh"
+#include "../src/loopback-jitter.hh"
 #include "simple_packetize.hh"
 
 // todo: refactor all codec dependencies out of main interface
-#include "codec.hh"
+#include "../src/codec.hh"
 #include "opus.h"
-#include "audio_encoder.hh"
-#include "logger.hh"
-#include "metrics.hh"
+#include "../src/audio_encoder.hh"
+#include "qmedia/logger.hh"
+#include "qmedia/metrics.hh"
 
 namespace neo_media
 {
@@ -203,6 +205,9 @@ private:
     Metrics::MetricsPtr metrics = nullptr;
     NetTransport::Type transport_type;
     MediaDirection media_dir = MediaDirection::unknown;
+
+    // quicr transport interface
+
 };        // class Neo
 
 typedef std::shared_ptr<Neo> NeoPointer;

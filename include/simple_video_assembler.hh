@@ -1,8 +1,8 @@
 #pragma once
 
 #include <map>
-#include "frame_assembler.hh"
-#include "modulus_deque.hh"
+#include "../src/frame_assembler.hh"
+#include "../src/modulus_deque.hh"
 
 namespace neo_media
 {

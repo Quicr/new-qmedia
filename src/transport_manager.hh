@@ -21,8 +21,8 @@
 #include "packet.hh"
 #include "transport.hh"
 #include "netTransportQuicR.hh"
-#include "logger.hh"
-#include "metrics.hh"
+#include "qmedia/logger.hh"
+#include "qmedia/metrics.hh"
 #include "rtx_manager.hh"
 
 namespace neo_media

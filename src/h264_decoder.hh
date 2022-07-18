@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include <wels/codec_api.h>
+#include "wels/codec_api.h"
 #include "codec.hh"
 
-namespace neo_media
+namespace qmedia
 {
 class H264Decoder : public VideoDecoder
 {
@@ -25,4 +25,4 @@ private:
     unsigned char fakeNal[6];        // HACK for openH264
     SBufferInfo decodedInfo;
 };
-}        // namespace neo_media
+}        // namespace qmedia

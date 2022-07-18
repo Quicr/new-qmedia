@@ -9,7 +9,7 @@
 
 #include "h264_decoder.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 using namespace std;
 
 static bool debug = false;

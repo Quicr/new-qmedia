@@ -1,7 +1,7 @@
 #pragma once
 
-#include "metrics.hh"
-#include "logger.hh"
+#include "qmedia/metrics.hh"
+#include "qmedia/logger.hh"
 #include "packet.hh"
 
 namespace neo_media

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-#include "metrics.hh"
+#include "qmedia/metrics.hh"
 
 using namespace neo_media;
 

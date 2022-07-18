@@ -20,9 +20,9 @@
 #endif
 
 #include <map>
-#include "transport.hh"
-#include "logger.hh"
-#include "packet.hh"
+#include "../src/transport.hh"
+#include "qmedia/logger.hh"
+#include "../src/packet.hh"
 
 #include "picoquic.h"
 #include "picoquic_internal.h"

@@ -4,7 +4,7 @@
 #include <mutex>
 #include <deque>
 
-#include "jitter_queues.hh"
+#include "../src/jitter_queues.hh"
 
 namespace neo_media
 {

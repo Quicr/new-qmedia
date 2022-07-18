@@ -8,7 +8,7 @@
 
 #include "h264_encoder.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 static bool debug = false;
 
@@ -122,7 +122,7 @@ int H264Encoder::encode(const char *input_buffer,
     static std::uint64_t total_bytes_encoded = 0;
     static std::uint64_t total_time_encoded = 0;        // microseconds
     // static unsigned char uv_array[max_width * max_height] = {0};
-    static auto uv_array = (unsigned char*) malloc(stride_uv * stride_y);
+    static auto uv_array = (unsigned char *) malloc(stride_uv * stride_y);
 
     if (stride_uv != max_width || height != max_height)
     {

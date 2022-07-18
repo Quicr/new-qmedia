@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "packet.hh"
+#include "../src/packet.hh"
 
 using namespace neo_media;
 

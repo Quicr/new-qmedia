@@ -1,6 +1,7 @@
 #include "full_Fill.hh"
 
-using namespace neo_media;
+namespace qmedia
+{
 
 fullFill::fullFill() : read_front(0)
 {
@@ -92,3 +93,5 @@ bool fullFill::fill(std::vector<uint8_t> &fill_buffer,
 
     return (fill_buffer.size() == fill_length);
 }
+
+}        // namespace qmedia

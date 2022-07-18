@@ -82,7 +82,8 @@ void Neo::init(const std::string &remote_address,
 
     log->info << "MediaDirection:" << (int) media_dir << std::flush;
 
-    if (media_dir == MediaDirection::publish_only || media_dir == MediaDirection::publish_subscribe)
+    if (media_dir == MediaDirection::publish_only ||
+        media_dir == MediaDirection::publish_subscribe)
     {
         video_encoder = std::make_unique<H264Encoder>(
             video_max_width,
@@ -497,7 +498,7 @@ std::uint32_t Neo::getVideoFrame(uint64_t clientID,
         idr->packetType = Packet::Type::IdrRequest;
         idr->transportSequenceNumber = 0;
         idr->idrRequestData = std::move(idr_data);
-        //transport->send(std::move(idr));
+        // transport->send(std::move(idr));
     }
     return recv_length;
 }
