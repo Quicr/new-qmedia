@@ -9,7 +9,8 @@ namespace qmedia
 
 MediaClient::MediaClient(NewSourceCallback stream_callback,
                          const LoggerPointer &parent_logger) :
-    new_stream_callback(stream_callback), log(parent_logger)
+    new_stream_callback(stream_callback),
+    log(std::make_shared<Logger>("qmedia", parent_logger))
 {
 }
 
@@ -28,7 +29,7 @@ MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
 {
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_audio_stream(
-        domain, conference_id, client_id, media_config);
+        domain, conference_id, client_id, media_config, log);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
 }
@@ -40,7 +41,7 @@ MediaStreamId MediaClient::add_video_stream(uint64_t domain,
 {
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_video_stream(
-        domain, conference_id, client_id, media_config);
+        domain, conference_id, client_id, media_config, log);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
 }

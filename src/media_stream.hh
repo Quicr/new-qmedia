@@ -23,10 +23,11 @@ public:
     explicit MediaStream(uint64_t domain_in,
                          uint64_t conference_id_in,
                          uint64_t client_id_in,
-                         const LoggerPointer &logger = nullptr) :
+                         LoggerPointer logger_in) :
         domain(domain_in),
         conference_id(conference_id_in),
-        client_id(client_id_in)
+        client_id(client_id_in),
+        logger(logger_in)
     {
     }
 
@@ -68,7 +69,8 @@ struct AudioStream : public MediaStream
 {
     explicit AudioStream(uint64_t domain,
                          uint64_t conference_id,
-                         uint64_t client_idm);
+                         uint64_t client_id,
+                         LoggerPointer logger_in);
     ~AudioStream() = default;
     void set_config(const MediaConfig &config);
 
@@ -100,7 +102,8 @@ struct VideoStream : public MediaStream
 {
     explicit VideoStream(uint64_t domain,
                          uint64_t conference_id,
-                         uint64_t client_id);
+                         uint64_t client_id,
+                         LoggerPointer logger_in);
     ~VideoStream() = default;
 
     virtual MediaStreamId id() override;
@@ -135,10 +138,11 @@ struct MediaStreamFactory
     create_audio_stream(uint64_t domain,
                         uint64_t conference_id,
                         uint64_t client_id,
-                        const MediaConfig &media_config)
+                        const MediaConfig &media_config,
+                        LoggerPointer logger_in)
     {
         auto stream = std::make_shared<AudioStream>(
-            domain, conference_id, client_id);
+            domain, conference_id, client_id, logger_in);
         stream->set_config(media_config);
         return stream;
     }
@@ -147,10 +151,11 @@ struct MediaStreamFactory
     create_video_stream(uint64_t domain,
                         uint64_t conference_id,
                         uint64_t client_id,
-                        const MediaConfig &media_config)
+                        const MediaConfig &media_config,
+                        LoggerPointer logger)
     {
         auto stream = std::make_shared<VideoStream>(
-            domain, conference_id, client_id);
+            domain, conference_id, client_id, logger);
         stream->set_config(media_config);
         return stream;
     }

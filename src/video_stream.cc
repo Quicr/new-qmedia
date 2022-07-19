@@ -6,8 +6,9 @@ namespace qmedia
 
 VideoStream::VideoStream(uint64_t domain,
                          uint64_t conference_id,
-                         uint64_t client_id) :
-    MediaStream(domain, conference_id, client_id)
+                         uint64_t client_id,
+                         LoggerPointer logger_in) :
+    MediaStream(domain, conference_id, client_id, logger_in)
 {
 }
 

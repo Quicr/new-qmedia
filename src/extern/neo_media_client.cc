@@ -11,7 +11,7 @@ extern "C"
                                  std::uint16_t remote_port,
                                  void **media_client)
     {
-        if (!media_client || *media_client || !remote_address)
+        if (!media_client || !remote_address)
         {
             return;
         }
