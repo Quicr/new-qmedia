@@ -30,6 +30,7 @@ struct AudioConfig
         Float32,
         PCMint16
     };
+
     SampleType sample_type;
     unsigned int sample_rate;
     unsigned int channels;
@@ -90,7 +91,8 @@ public:
     using NewSourceCallback = std::function<
         void(const uint64_t, const uint64_t, const uint64_t, const MediaType)>;
 
-    explicit MediaClient(const LoggerPointer &s = nullptr);
+    explicit MediaClient(NewSourceCallback stream_callback,
+                         const LoggerPointer &s = nullptr);
 
     // configure transport for this client
     void init_transport(TransportType transport_type,
@@ -134,8 +136,7 @@ public:
                   unsigned char **buffer,
                   unsigned int max_len);
 
-    std::uint32_t get_video(uint64_t clientID,
-                            uint64_t sourceID,
+    std::uint32_t get_video(MediaStreamId streamId,
                             uint64_t &timestamp,
                             uint32_t &width,
                             uint32_t &height,
@@ -154,7 +155,7 @@ private:
         return 0;
     }
 
-    NewSourceCallback newSources;
+    NewSourceCallback new_stream_callback;
     LoggerPointer log;
 
     // list of media streams

@@ -10,11 +10,11 @@
 #include <sstream>
 #include <chrono>
 
-#include "neo.yy"
+#include <qmedia/media_client.hh>
 #include "../src/resampler.hh"
 #include "qmedia/logger.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 static bool shutDown;
 
@@ -31,15 +31,15 @@ static const unsigned int sample_rate = 48000;
 static const unsigned int frames_per_buffer = 10 * 48;        // 10 ms
 static const unsigned int audio_channels = 1;
 static const unsigned int bytesPerSample = 4;
-static const Neo::audio_sample_type sample_type_neo =
-    Neo::audio_sample_type::Float32;
+static const AudioConfig::SampleType sample_type_neo =
+    AudioConfig::SampleType::Float32;
 static const double resample_ratio = 1.0;
 static Resampler resampler;
 
 static std::ofstream outg_sound_file;
 static LoggerPointer logger = std::make_shared<Logger>("Sound", true);
 
-void recordThreadFunc(Neo *neo)
+void recordThreadFunc(MediaClient *client)
 {
     assert(audioStream);
 

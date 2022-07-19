@@ -23,13 +23,13 @@ void Delegate::on_connection_close(const std::string &name)
     // trigger a resubscribe
 }
 
-void Delegate::on_object_published(const std::string &name,
-                                   uint64_t group_id,
-                                   uint64_t object_id)
+void Delegate::on_object_published(const std::string & /*name*/,
+                                   uint64_t /*group_id*/,
+                                   uint64_t /*object_id*/)
 {
 }
 
-void Delegate::log(quicr::LogLevel level, const std::string &message)
+void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
 {
     // todo: add support for inserting logger
     // std::clog << message << std::endl;

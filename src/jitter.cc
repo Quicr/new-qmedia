@@ -37,8 +37,11 @@ void Jitter::set_video_params(uint32_t video_max_width,
     video.last_decoded_width = video_max_width;
     video.last_decoded_height = video_max_height;
     video.last_decoded_format = video_decode_pixel_format;
-    video.lastDecodedFrame.resize(video_max_width * video_max_width * 12 /8);        // YUV420 12 bits/pixel
-    memset(video.lastDecodedFrame.data(), 0x80, video.lastDecodedFrame.size());        // Gray
+    video.lastDecodedFrame.resize(video_max_width * video_max_width * 12 /
+                                  8);        // YUV420 12 bits/pixel
+    memset(video.lastDecodedFrame.data(),
+           0x80,
+           video.lastDecodedFrame.size());        // Gray
 }
 
 void Jitter::recordMetrics(MetaQueue &q,

@@ -7,8 +7,9 @@
 namespace qmedia
 {
 
-MediaClient::MediaClient(const LoggerPointer &parent_logger) :
-    log(parent_logger)
+MediaClient::MediaClient(NewSourceCallback stream_callback,
+                         const LoggerPointer &parent_logger) :
+    new_stream_callback(stream_callback), log(parent_logger)
 {
 }
 
@@ -130,4 +131,23 @@ void MediaClient::do_work()
         }
     }
 }
+
+int MediaClient::get_audio(MediaStreamId streamId,
+                           uint64_t &timestamp,
+                           unsigned char **buffer,
+                           unsigned int max_len)
+{
+    return -1;
+}
+
+std::uint32_t MediaClient::get_video(MediaStreamId streamId,
+                                     uint64_t &timestamp,
+                                     uint32_t &width,
+                                     uint32_t &height,
+                                     uint32_t &format,
+                                     unsigned char **buffer)
+{
+    return -1;
+}
+
 }        // namespace qmedia

@@ -121,10 +121,10 @@ void AudioStream::handle_media(uint64_t /*group_id*/,
         new_stream = jitter_instance->push(std::move(packet));
         // jitter assembles packets to frames, decodes, conceals
         // and makes frames available to client
-        //if (new_stream && newSources)
-       // {
+        // if (new_stream && newSources)
+        // {
         //    newSources(clientID, sourceID, sourceTS, sourceType);
-       // }
+        // }
     }
 }
 ///

@@ -4,6 +4,13 @@
 namespace qmedia
 {
 
+VideoStream::VideoStream(uint64_t domain,
+                         uint64_t conference_id,
+                         uint64_t client_id) :
+    MediaStream(domain, conference_id, client_id)
+{
+}
+
 MediaStreamId VideoStream::id()
 {
     if (media_stream_id)
@@ -105,6 +112,12 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
     }
 }
 
+void VideoStream::handle_media(uint64_t group_id,
+                               uint64_t object_id,
+                               std::vector<uint8_t> &&bytes)
+{
+}
+
 ///
 /// Private
 ///
@@ -124,7 +137,8 @@ std::vector<uint8_t> VideoStream::encode_h264(uint8_t *buffer,
 
     int sendRaw = 0;
     // bool keyFrame = reqKeyFrame;
-    auto encoded_frame_type = encoder->encode(reinterpret_cast<const char*>(buffer),
+    auto encoded_frame_type = encoder->encode(
+        reinterpret_cast<const char *>(buffer),
         length,
         media_config.video_max_width,
         media_config.video_max_height,
