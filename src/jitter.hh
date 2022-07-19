@@ -5,39 +5,36 @@
 #include <thread>
 #include <cmath>
 #include "packet.hh"
-#include "frame_assembler.hh"
 #include "opus_assembler.hh"
-#include "simple_video_assembler.hh"
 #include "resampler.hh"
 #include "qmedia/logger.hh"
 #include "full_Fill.hh"
-#include "qmedia/metrics.hh"
+#include "metrics.hh"
 #include "jitter_queues.hh"
 #include "playout_tools.hh"
 #include "playout_leakybucket.hh"
 #include "playout_sync.hh"
-#include "jitter_interface.hh"
 #include "jitter_silence.hh"
 #include "codec.hh"
 
-namespace neo_media
+namespace qmedia
 {
-class Jitter : public JitterInterface
+class Jitter
 {
 public:
-    using JitterPtr = std::shared_ptr<Jitter>;
-
-    Jitter(unsigned int audio_sample_rate,
-           unsigned int audio_channels,
-           Packet::MediaType audio_decode_type,
-           uint32_t video_max_width,
-           uint32_t video_max_height,
-           uint32_t video_decode_pixel_format,
-           const LoggerPointer &parent_logger = nullptr,
+    Jitter(const LoggerPointer &parent_logger = nullptr,
            Metrics::MetricsPtr metricsPtr = nullptr);
+
+    void set_audio_params(unsigned int audio_sample_rate,
+                          unsigned int audio_channels,
+                          Packet::MediaType audio_decode_type);
+    void set_video_params(uint32_t video_max_width,
+                          uint32_t video_max_height,
+                          uint32_t video_decode_pixel_format);
+
     ~Jitter();
 
-    bool push(PacketPointer packet) override;
+    bool push(PacketPointer packet);
     bool push(PacketPointer raw_packet,
               std::chrono::steady_clock::time_point now);
     int popVideo(uint64_t sourceID,
@@ -45,17 +42,16 @@ public:
                  uint32_t &height,
                  uint32_t &format,
                  uint64_t &timestamp,
-                 unsigned char **buffer,
-                 Packet::IdrRequestData &idr_data_out) override;
+                 unsigned char **buffer);
     int popVideo(uint64_t sourceID,
                  uint32_t &width,
                  uint32_t &height,
                  uint32_t &format,
                  uint64_t &timestamp,
                  unsigned char **buffer,
-                 std::chrono::steady_clock::time_point now,
-                 Packet::IdrRequestData &idr_data_out);
-    PacketPointer popAudio(uint64_t sourceID, unsigned int length) override;
+                 std::chrono::steady_clock::time_point now);
+
+    PacketPointer popAudio(uint64_t sourceID, unsigned int length);
     PacketPointer popAudio(uint64_t sourceID,
                            unsigned int length,
                            std::chrono::steady_clock::time_point now);
@@ -63,7 +59,6 @@ public:
     class Audio
     {
     public:
-        Audio(unsigned int sample_rate, unsigned int channels);
         void push(PacketPointer raw_packet,
                   uint64_t last_seq_popped,
                   std::chrono::steady_clock::time_point now);
@@ -86,8 +81,8 @@ public:
         uint64_t sourceID;
         PopFrequencyCounter fps;
         unsigned int ms_per_audio_packet;
-        unsigned int audio_channels;
-        unsigned int audio_sample_rate;
+        unsigned int audio_channels = 1;
+        unsigned int audio_sample_rate = 48000;
         std::shared_ptr<OpusAssembler> opus_assembler;
         Silence silence;
 
@@ -98,7 +93,6 @@ public:
     class Video
     {
     public:
-        Video(uint32_t max_width, uint32_t max_height, uint32_t pixel_format);
         void push(PacketPointer raw_packet,
                   uint64_t last_seq_popped,
                   std::chrono::steady_clock::time_point now);
@@ -106,7 +100,6 @@ public:
         MetaQueue mq;
         uint64_t sourceID = 0;
         PopFrequencyCounter fps;
-        std::shared_ptr<SimpleVideoAssembler> assembler;
         std::unique_ptr<VideoDecoder> decoder;
         std::vector<std::uint8_t> lastDecodedFrame;
         uint32_t last_decoded_width;
@@ -152,4 +145,4 @@ private:
     void idleClientPruneAudio(std::chrono::steady_clock::time_point now);
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

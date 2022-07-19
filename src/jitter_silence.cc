@@ -1,7 +1,7 @@
 #include "jitter_silence.hh"
 #include <assert.h>
 
-using namespace neo_media;
+using namespace qmedia;
 
 void Silence::init(int buffersize_, int samplerate_, int channels_)
 {

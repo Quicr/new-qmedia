@@ -6,15 +6,15 @@ namespace qmedia
 
 MediaStreamId VideoStream::id()
 {
-    if (media_stream_id) {
-        return  media_stream_id;
+    if (media_stream_id)
+    {
+        return media_stream_id;
     }
 
     auto name = QuicrName::name_for_client(domain, conference_id, client_id);
-    auto quality_id = "video/"
-                      + std::to_string((int)config.media_codec) + "/"
-                      + std::to_string(config.video_max_frame_rate) + "/"
-                      + std::to_string(config.video_max_bitrate);
+    auto quality_id = "video/" + std::to_string((int) config.media_codec) +
+                      "/" + std::to_string(config.video_max_frame_rate) + "/" +
+                      std::to_string(config.video_max_bitrate);
     name += quality_id;
     std::hash<std::string> hasher;
     media_stream_id = hasher(name);
@@ -60,7 +60,7 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                                uint8_t *buffer,
                                unsigned int length,
                                uint64_t timestamp,
-                               const MediaConfig& media_config)
+                               const MediaConfig &media_config)
 {
     if (!buffer || !length || !timestamp)
     {
@@ -72,25 +72,29 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
     {
         case MediaConfig::CodecType::h264:
         {
-            if (encoder != nullptr) {
-                auto encoded = encode_h264(buffer, length, timestamp, media_config);
+            if (encoder != nullptr)
+            {
+                auto encoded = encode_h264(
+                    buffer, length, timestamp, media_config);
                 auto packet = std::make_unique<Packet>();
                 packet->data = std::move(encoded);
                 packet->clientID = client_id;
                 // todo : fix this to not be hardcoded
                 packet->mediaType = Packet::MediaType::H264;
-                packet->sourceID = id(); // same as streamId
+                packet->sourceID = id();        // same as streamId
                 auto ret = Packet::encode(packet.get(), packet->encoded_data);
-                if(!ret) {
+                if (!ret)
+                {
                     // log err
                     return;
                 }
 
-                media_transport->send_data(id(), std::move(packet->encoded_data));
+                media_transport->send_data(id(),
+                                           std::move(packet->encoded_data));
             }
         }
         break;
-            case MediaConfig::CodecType::raw:
+        case MediaConfig::CodecType::raw:
         {
             // decode and send to render
             // decode(codec_type, *buffer, length, timestamp)
@@ -108,7 +112,7 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
 std::vector<uint8_t> VideoStream::encode_h264(uint8_t *buffer,
                                               unsigned int length,
                                               uint64_t timestamp,
-                                              const MediaConfig& media_config)
+                                              const MediaConfig &media_config)
 {
     std::vector<uint8_t> output;
 
@@ -120,20 +124,20 @@ std::vector<uint8_t> VideoStream::encode_h264(uint8_t *buffer,
 
     int sendRaw = 0;
     // bool keyFrame = reqKeyFrame;
-    auto encoded_frame_type = encoder->encode(buffer,
-                                              length,
-                                              media_config.video_max_width,
-                                              media_config.video_max_height,
-                                              media_config.stride_y,
-                                              media_config.stride_uv,
-                                              media_config.offset_u,
-                                              media_config.offset_v,
-                                              (unsigned  int) media_config.video_encode_pixel_format,
-                                              timestamp,
-                                              output.data(),
-                                              false);
+    auto encoded_frame_type = encoder->encode(reinterpret_cast<const char*>(buffer),
+        length,
+        media_config.video_max_width,
+        media_config.video_max_height,
+        media_config.stride_y,
+        media_config.stride_uv,
+        media_config.offset_u,
+        media_config.offset_v,
+        (unsigned int) media_config.video_encode_pixel_format,
+        timestamp,
+        output,
+        false);
 
     return output;
 }
 
-}
+}        // namespace qmedia

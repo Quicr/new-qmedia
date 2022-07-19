@@ -2,10 +2,10 @@
 
 // Lip sync
 
-#include "../src/jitter_queues.hh"
+#include "jitter_queues.hh"
 #include <chrono>
 
-namespace neo_media
+namespace qmedia
 {
 class Sync
 {
@@ -37,4 +37,4 @@ public:
                                unsigned int &num_pop,
                                std::chrono::steady_clock::time_point now);
 };
-}        // namespace neo_media
+}        // namespace qmedia

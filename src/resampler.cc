@@ -2,7 +2,7 @@
 #include <utility>
 #include "resampler.hh"
 
-namespace neo_media
+namespace qmedia
 {
 void Resampler::resample(Packet *packet, unsigned int audio_channels)
 {
@@ -137,4 +137,4 @@ void Resampler::setResampleRatio(float ratio)
     audio_resample_ratio = new_ratio;
 }
 
-}        // namespace neo_media
+}        // namespace qmedia

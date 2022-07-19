@@ -1,6 +1,6 @@
-
+#if 0
 #include "neo_media_client.hh"
-#include "neo.hh"
+#include "neo.yy"
 
 using namespace neo_media;
 
@@ -173,3 +173,4 @@ extern "C"
         neo->start_transport((NetTransport::Type) transport_type);
     }
 }
+#endif

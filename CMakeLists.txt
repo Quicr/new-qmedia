@@ -20,7 +20,7 @@ if("${CMAKE_GENERATOR}" MATCHES "Makefiles")
     set(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
 endif()
 
-option(BUILD_EXTERN "build external library" ON)
+option(BUILD_EXTERN "build external library" OFF)
 option(BUILD_TESTS  "build tests" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
 
@@ -53,7 +53,8 @@ endif()
 
 
 
-include_directories( include src/extern )
+# include_directories( include src/extern )
+include_directories( include )
 
 
 ###
@@ -119,7 +120,7 @@ endif()
 ###
 ### Library Source
 ###
-add_subdirectory(lib)
+# add_subdirectory(lib)
 add_subdirectory(src)
 
 ###
@@ -148,11 +149,11 @@ target_include_directories(${LIB_NAME}
 ### Applications
 ###
 
-add_subdirectory(cmd)
+#add_subdirectory(cmd)
 
 ###
 ### Tests
 ###
 if(BUILD_TESTS)
-    add_subdirectory(test)
+   # add_subdirectory(test)
 endif(BUILD_TESTS)

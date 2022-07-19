@@ -10,8 +10,8 @@
 #include <sstream>
 #include <chrono>
 
-#include "neo.hh"
-#include "resampler.hh"
+#include "neo.yy"
+#include "../src/resampler.hh"
 #include "qmedia/logger.hh"
 
 using namespace neo_media;

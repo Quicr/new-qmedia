@@ -26,7 +26,8 @@ struct Delegate : public quicr::QuicRClient::Delegate
     virtual void on_object_published(const std::string &name,
                                      uint64_t group_id,
                                      uint64_t object_id) override;
-    virtual void log(quicr::LogLevel level, const std::string &message) override;
+    virtual void log(quicr::LogLevel level,
+                     const std::string &message) override;
     void get_queued_messages(std::vector<TransportMessageInfo> &messages_out);
 
 private:

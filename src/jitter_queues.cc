@@ -3,7 +3,7 @@
 
 #include "jitter_queues.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 bool MetaQueue::empty()
 {
@@ -59,7 +59,10 @@ void MetaQueue::drainToMax()
 uint64_t MetaQueue::getNextSeq()
 {
     uint64_t next_seq = 0;
-    if (!Q.empty()) next_seq = Q.front()->packet->encodedSequenceNum;
+    if (!Q.empty())
+    {
+        next_seq = Q.front()->packet->encodedSequenceNum;
+    }
 
     return next_seq;
 }

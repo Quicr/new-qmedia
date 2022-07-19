@@ -1,8 +1,8 @@
 #pragma once
 #include <samplerate.h>
-#include "../src/packet.hh"
+#include "packet.hh"
 
-namespace neo_media
+namespace qmedia
 {
 class Resampler
 {
@@ -30,4 +30,4 @@ public:
                         double src_ratio);
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

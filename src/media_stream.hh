@@ -10,6 +10,8 @@
 #include "audio_encoder.hh"
 #include "codec.hh"
 #include "names.hh"
+#include "jitter.hh"
+#include "metrics.hh"
 
 namespace qmedia
 {
@@ -24,7 +26,9 @@ public:
                          const LoggerPointer &logger = nullptr) :
         domain(domain_in),
         conference_id(conference_id_in),
-        client_id(client_id_in) {}
+        client_id(client_id_in)
+    {
+    }
 
     virtual ~MediaStream() = default;
 
@@ -35,28 +39,29 @@ public:
 
     virtual MediaStreamId id() = 0;
 
-
     virtual void handle_media(MediaConfig::CodecType codec_type,
                               uint8_t *buffer,
                               unsigned int length,
                               uint64_t timestamp,
-                              const MediaConfig& media_config) = 0;
+                              const MediaConfig &media_config) = 0;
+
+    virtual void handle_media(uint64_t group_id,
+                              uint64_t object_id,
+                              std::vector<uint8_t> &&bytes) = 0;
 
 protected:
     MediaConfig::MediaDirection media_direction;
     std::shared_ptr<MediaTransport> media_transport;
     LoggerPointer logger;
+    Metrics::MetricsPtr metrics = nullptr;
+
     std::atomic<bool> mutedAudioEmptyFrames = false;
 
     uint64_t domain = 0;
     uint64_t conference_id = 0;
     uint64_t client_id = 0;
     MediaStreamId media_stream_id = 0;
-private:
-    void register_with_transport();
-    void unregister_from_transport();
-
-
+    uint64_t encode_sequence_num = 0;
 };
 
 struct AudioStream : public MediaStream
@@ -72,16 +77,23 @@ struct AudioStream : public MediaStream
                               uint8_t *buffer,
                               unsigned int length,
                               uint64_t timestamp,
-                              const MediaConfig& media_config) override;
-    virtual void handle_media(uint64_t group_id, uint64_t object_id, std::vector<uint8_t>&& bytes)
+                              const MediaConfig &media_config) override;
+    virtual void handle_media(uint64_t group_id,
+                              uint64_t object_id,
+                              std::vector<uint8_t> &&bytes) override;
 
 private:
-    std::shared_ptr<AudioEncoder> getAudioEncoder();
+    std::shared_ptr<AudioEncoder> setupAudioEncoder();
     void audio_encoder_callback(std::vector<uint8_t> &&bytes);
+    // jitter helpers
+    std::shared_ptr<Jitter> getJitter(uint64_t client_id);
+    std::shared_ptr<Jitter> createJitter(uint64_t clientID);
 
     // 1;1 mapping bteween stream and the encoder
     std::shared_ptr<AudioEncoder> encoder = nullptr;
     MediaConfig config;
+    const unsigned int maxJitters = 2;
+    std::map<uint64_t, std::shared_ptr<Jitter>> jitters;
 };
 
 struct VideoStream : public MediaStream
@@ -99,18 +111,21 @@ struct VideoStream : public MediaStream
                               uint8_t *buffer,
                               unsigned int length,
                               uint64_t timestamp,
-                              const MediaConfig& media_config) override;
+                              const MediaConfig &media_config) override;
+    virtual void handle_media(uint64_t group_id,
+                              uint64_t object_id,
+                              std::vector<uint8_t> &&bytes) override;
 
     void set_config(const MediaConfig &config);
 
 private:
-    std::vector<uint8_t > encode_h264(uint8_t *buffer,
+    std::vector<uint8_t> encode_h264(uint8_t *buffer,
                                      unsigned int length,
                                      uint64_t timestamp,
-                                     const MediaConfig& media_config);
+                                     const MediaConfig &media_config);
 
     std::unique_ptr<VideoEncoder> encoder = nullptr;
-    MediaConfig config
+    MediaConfig config;
 };
 
 // MediaStream Factory
@@ -120,7 +135,7 @@ struct MediaStreamFactory
     create_audio_stream(uint64_t domain,
                         uint64_t conference_id,
                         uint64_t client_id,
-                        AudioConfig media_config)
+                        const MediaConfig &media_config)
     {
         auto stream = std::make_shared<AudioStream>(
             domain, conference_id, client_id);
@@ -132,7 +147,7 @@ struct MediaStreamFactory
     create_video_stream(uint64_t domain,
                         uint64_t conference_id,
                         uint64_t client_id,
-                        VideoConfig media_config)
+                        const MediaConfig &media_config)
     {
         auto stream = std::make_shared<VideoStream>(
             domain, conference_id, client_id);

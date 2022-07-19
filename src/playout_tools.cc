@@ -2,7 +2,7 @@
 
 #include "playout_tools.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 ///
 /// PopFrequencyCounter

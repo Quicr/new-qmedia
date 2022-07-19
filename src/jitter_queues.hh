@@ -2,9 +2,9 @@
 
 #include <list>
 #include "packet.hh"
-#include "qmedia/metrics.hh"
+#include "metrics.hh"
 
-namespace neo_media
+namespace qmedia
 {
 // cumulative metrics
 class CumulativeMetrics
@@ -84,4 +84,4 @@ private:
                                         // for 1 sec
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

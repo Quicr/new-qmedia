@@ -8,7 +8,7 @@
 #include <list>
 #include <chrono>
 
-namespace neo_media
+namespace qmedia
 {
 struct MetricsConfig
 {
@@ -91,4 +91,4 @@ public:
     CURL *handle;
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

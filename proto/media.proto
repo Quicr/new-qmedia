@@ -19,9 +19,22 @@ enum PacketizeType {
 
 // E2E Authenticated header per media packet
 message MediaDataHeader {
-  MediaType mediaType= 1;
+  MediaType mediaType = 1;
   uint64  sourceID = 2;            // audio/video/... unique source identifier
   fixed64 sourceRecordTime = 3;    // nanoseconds since unix epoch
+  uint64  encodedSeqNumber = 4;
+
+  oneof header {
+    Video video_header = 8;
+  }
+
+  // Video payload Header
+  message Video {
+    bool intraFrame = 2;
+    bool discardable = 3;
+    uint32 spatialLayerId = 4;
+    uint32 temporalLayerId = 5;
+  }
 }
 
 // Container for carrying media data

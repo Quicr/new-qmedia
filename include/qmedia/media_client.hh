@@ -79,16 +79,18 @@ struct MediaConfig : public AudioConfig, public VideoConfig
 // handy typedefs
 using MediaStreamId = uint64_t;
 
+// forward declarations
 struct MediaStream;
+struct MediaTransport;
 
 class MediaClient
 {
 public:
     // Report new remote source
-    using callbackSourceId = std::function<
+    using NewSourceCallback = std::function<
         void(const uint64_t, const uint64_t, const uint64_t, const MediaType)>;
 
-    explicit MediaClient(const LoggerPointer &parent_logger = nullptr);
+    explicit MediaClient(const LoggerPointer &s = nullptr);
 
     // configure transport for this client
     void init_transport(TransportType transport_type,
@@ -99,12 +101,12 @@ public:
     MediaStreamId add_audio_stream(uint64_t domain,
                                    uint64_t conference_id,
                                    uint64_t client_id,
-                                   const AudioConfig &media_config);
+                                   const MediaConfig &media_config);
 
     MediaStreamId add_video_stream(uint64_t domain,
                                    uint64_t conference_id,
                                    uint64_t client_id,
-                                   const VideoConfig &media_config);
+                                   const MediaConfig &media_config);
 
     void remove_media_stream(MediaStreamId media_stream_id);
 
@@ -130,8 +132,7 @@ public:
     int get_audio(MediaStreamId streamId,
                   uint64_t &timestamp,
                   unsigned char **buffer,
-                  unsigned int max_len,
-                  Packet **packetToFree);
+                  unsigned int max_len);
 
     std::uint32_t get_video(uint64_t clientID,
                             uint64_t sourceID,
@@ -142,10 +143,10 @@ public:
                             unsigned char **buffer);
 
 private:
+    // Should this be exposed in public header ??
     void do_work();
     std::thread work_thread;
     bool shutdown = false;
-
     static int start_work_thread(MediaClient *media_client)
     {
         assert(media_client);
@@ -153,15 +154,13 @@ private:
         return 0;
     }
 
-    bool firstPacket = true;
-    callbackSourceId newSources;
+    NewSourceCallback newSources;
     LoggerPointer log;
 
     // list of media streams
     std::map<MediaStreamId, std::shared_ptr<MediaStream>> active_streams;
 
     // underlying media transport
-    struct MediaTransport;
     std::shared_ptr<MediaTransport> media_transport;
 };
 

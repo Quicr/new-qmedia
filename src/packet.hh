@@ -13,10 +13,12 @@
 #include <ws2tcpip.h>
 #endif
 
+#include <qmedia/media_client.hh>
+
 namespace qmedia
 {
-class Packet;
 
+class Packet;
 using PacketPointer = std::unique_ptr<Packet>;
 
 class Packet
@@ -27,7 +29,7 @@ public:
     {
         Unknown = 0,
         StreamContent = 3,
-     };
+    };
 
     // supported media types
     enum struct MediaType : uint16_t
@@ -40,21 +42,22 @@ public:
         Raw = 5
     };
 
-
 public:
     Packet();
     Packet(const Packet &) = default;
     Packet(Packet &&) = default;
 
-    static bool encode(Packet *packet, std::vector<uint8_t>& data_out);
-    static bool decode(const std::vector<uint8_t>& data_in, Packet *packet_out);
+    static bool encode(Packet *packet, std::vector<uint8_t> &data_out);
+    static bool decode(const std::vector<uint8_t> &data_in, Packet *packet_out);
 
-    uint64_t conferenceID;
-    uint64_t sourceID;        // unique per source (scoped with a client)
-    uint64_t clientID;
-    uint64_t sourceRecordTime;
-
+    uint64_t conferenceID = 0;
+    uint64_t sourceID = 0;        // unique per source (scoped with a client)
+    uint64_t clientID = 0;
+    uint64_t sourceRecordTime = 0;
+    uint64_t encodedSequenceNum = 0;
     MediaType mediaType;
+    bool is_intra_frame = false;
+
     // payload
     std::vector<uint8_t> data;        // media bytes (may be encrypted or not)
     std::vector<uint8_t> authTag;
@@ -62,4 +65,4 @@ public:
 };
 
 std::ostream &operator<<(std::ostream &os, const Packet::Type &pktType);
-}
+}        // namespace qmedia

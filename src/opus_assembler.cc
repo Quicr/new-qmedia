@@ -3,7 +3,7 @@
 #include <cstring>
 #include "opus_assembler.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 OpusAssembler::OpusAssembler(Packet::MediaType stream_type) : type(stream_type)
 {

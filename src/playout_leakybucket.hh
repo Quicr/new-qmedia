@@ -5,7 +5,7 @@
 #include <chrono>
 #include <deque>
 
-namespace neo_media
+namespace qmedia
 {
 class LeakyBucket
 {
@@ -69,4 +69,4 @@ private:
     Tracker drain_tracker;
     LeakyBucket::DrainSpeed getBestDrain();
 };
-}        // namespace neo_media
+}        // namespace qmedia

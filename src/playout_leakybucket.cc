@@ -1,7 +1,7 @@
 #include "playout_leakybucket.hh"
 #include <math.h>
 
-using namespace neo_media;
+using namespace qmedia;
 
 void LeakyBucket::emptyBucket(std::chrono::steady_clock::time_point now)
 {

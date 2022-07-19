@@ -1,4 +1,3 @@
-#pragma once
 #include <memory>
 
 #include <qmedia/media_client.hh>
@@ -7,6 +6,11 @@
 
 namespace qmedia
 {
+
+MediaClient::MediaClient(const LoggerPointer &parent_logger) :
+    log(parent_logger)
+{
+}
 
 void MediaClient::init_transport(TransportType /*transport_type*/,
                                  const std::string &remote_address,
@@ -19,7 +23,7 @@ void MediaClient::init_transport(TransportType /*transport_type*/,
 MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
                                             uint64_t conference_id,
                                             uint64_t client_id,
-                                            const AudioConfig &media_config)
+                                            const MediaConfig &media_config)
 {
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_audio_stream(
@@ -31,7 +35,7 @@ MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
 MediaStreamId MediaClient::add_video_stream(uint64_t domain,
                                             uint64_t conference_id,
                                             uint64_t client_id,
-                                            const VideoConfig &media_config)
+                                            const MediaConfig &media_config)
 {
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_video_stream(
@@ -53,13 +57,15 @@ void MediaClient::send_audio(MediaStreamId streamId,
         return;
     }
 
-    auto audio_stream = std::dynamic_pointer_cast<AudioStream>(active_streams[streamId]);
-    if (audio_stream) {
+    auto audio_stream = std::dynamic_pointer_cast<AudioStream>(
+        active_streams[streamId]);
+    if (audio_stream)
+    {
         // revisit this
         MediaConfig config;
-        audio_stream->handle_media(buffer, length, timestamp, config);
+        audio_stream->handle_media(
+            MediaConfig::CodecType::raw, buffer, length, timestamp, config);
     }
-
 }
 
 void MediaClient::send_video(MediaStreamId streamId,
@@ -81,21 +87,22 @@ void MediaClient::send_video(MediaStreamId streamId,
         return;
     }
 
-    auto video_stream = std::dynamic_pointer_cast<VideoStream>(active_streams[streamId]);
-    if (video_stream) {
+    auto video_stream = std::dynamic_pointer_cast<VideoStream>(
+        active_streams[streamId]);
+    if (video_stream)
+    {
         // revisit this
         MediaConfig config;
-        video_stream->handle_media(buffer, length, timestamp, config);
+        video_stream->handle_media(
+            MediaConfig::CodecType::raw, buffer, length, timestamp, config);
     }
 }
-
 
 void MediaClient::do_work()
 {
     // Wait on a condition variable
     while (!shutdown)
     {
-
         auto messages = std::vector<TransportMessageInfo>{};
         media_transport->check_network_messages(messages);
 
@@ -104,52 +111,22 @@ void MediaClient::do_work()
             continue;
         }
 
-        for (auto& message: messages) {
-            // hand the data to appropriate media stream
+        for (auto &message : messages)
+        {
             auto media_stream_id = std::stoi(message.name);
             //  Note: since a subscribe should preceed before
             // data arrive, we should find an entry when
             // there is data for a given stream
-            if(!active_streams.count(media_stream_id)) {
-                log->warning << media_stream_id << " not found, ignoring data" << std::flush;
+            if (!active_streams.count(media_stream_id))
+            {
+                log->warning << media_stream_id << " not found, ignoring data"
+                             << std::flush;
                 continue;
             }
 
-            active_streams[media_stream_id]->
-
-        }
-
-        if (Packet::Type::StreamContent == packet->packetType)
-        {
-            uint64_t clientID = packet->clientID;
-            uint64_t sourceID = packet->sourceID;
-            uint64_t sourceTS = packet->sourceRecordTime;
-            // TODO: This is pre-decode media type, which is
-            // not really right but close enough. Hold off changing a lot
-            // to get at that data before Geir's changes to Jitter/Playout.
-            Packet::MediaType sourceType = packet->mediaType;
-            bool new_stream;
-            auto jitter_instance = getJitter(clientID);
-            if (jitter_instance == nullptr)
-            {
-                jitter_instance = createJitter(clientID);
-            }
-
-            if (jitter_instance != nullptr)
-            {
-                new_stream = jitter_instance->push(std::move(packet));
-                // jitter assembles packets to frames, decodes, conceals
-                // and makes frames available to client
-                if (new_stream && newSources)
-                {
-                    newSources(clientID, sourceID, sourceTS, sourceType);
-                }
-            }
-        }
-        else if (Packet::Type::IdrRequest == packet->packetType)
-        {
-            log->info << "Received IDR request" << std::flush;
-            reqKeyFrame = true;
+            // hand the data to appropriate media stream
+            active_streams[media_stream_id]->handle_media(
+                message.group_id, message.object_id, std::move(message.data));
         }
     }
 }

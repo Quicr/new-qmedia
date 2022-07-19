@@ -3,7 +3,7 @@
 #include <cmath>
 #include <algorithm>
 
-namespace neo_media
+namespace qmedia
 {
 class AudioLevel
 {
@@ -64,4 +64,4 @@ private:
     bool inited = false;
 };
 
-}        // namespace neo_media
+}        // namespace qmedia

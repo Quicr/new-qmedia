@@ -1,6 +1,6 @@
 #include "playout_sync.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 // make a note about most recent audio popped by the cloent
 void Sync::audio_popped(uint64_t source_time,
@@ -21,8 +21,8 @@ void Sync::video_popped(uint64_t source_time,
     local_video_time_popped = now;
 }
 
-Sync::sync_action Sync::getVideoAction(unsigned int audio_pop_delay,
-                                       unsigned int video_pop_delay,
+Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
+                                       unsigned int /*video_pop_delay*/,
                                        const MetaQueue &mq,
                                        unsigned int &num_pop,
                                        std::chrono::steady_clock::time_point now)
@@ -35,7 +35,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int audio_pop_delay,
         // first frame - pop_discard to IDR - or pop if IDR is next
         if (video_seq_popped == UINT64_MAX)
         {
-            if (frame->packet->videoFrameType != Packet::VideoFrameType::Idr)
+            if (!frame->packet->is_intra_frame)
             {
                 action = pop_discard;
                 ++num_pop;
@@ -94,7 +94,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int audio_pop_delay,
 
             // TODO:  take into consideration type of frame to support
             // discardable (acceptable) loss
-            if (frame->packet->videoFrameType != Packet::VideoFrameType::Idr)
+            if (!frame->packet->is_intra_frame)
             {
                 action = pop_discard;
                 ++num_pop;

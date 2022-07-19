@@ -4,9 +4,9 @@
 #include <mutex>
 #include <deque>
 
-#include "../src/jitter_queues.hh"
+#include "jitter_queues.hh"
 
-namespace neo_media
+namespace qmedia
 {
 // Class to track media popped by clients
 class PopFrequencyCounter
@@ -47,4 +47,4 @@ public:
     unsigned int jitter_num_std;
 };
 
-}        // namespace neo_media
+}        // namespace qmedia
