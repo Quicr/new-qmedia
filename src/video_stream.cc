@@ -7,9 +7,43 @@ namespace qmedia
 VideoStream::VideoStream(uint64_t domain,
                          uint64_t conference_id,
                          uint64_t client_id,
+                         const MediaConfig &media_config,
                          LoggerPointer logger_in) :
-    MediaStream(domain, conference_id, client_id, logger_in)
+    MediaStream(domain, conference_id, client_id, media_config, logger_in)
+{}
+
+void VideoStream::configure()
 {
+    media_direction = config.media_direction;
+
+    switch (config.media_direction)
+    {
+        case MediaConfig::MediaDirection::recvonly:
+            // setup decoder
+            break;
+        case MediaConfig::MediaDirection::sendonly:
+            // setup encoder
+            encoder = std::make_unique<H264Encoder>(
+                config.video_max_width,
+                config.video_max_height,
+                config.video_max_frame_rate,
+                config.video_max_bitrate,
+                (uint32_t) config.video_encode_pixel_format,
+                logger);
+
+            if (!encoder)
+            {
+                logger->error << " video encoder init failed" << std::flush;
+                return;
+            }
+            break;
+        case MediaConfig::MediaDirection::sendrecv:
+            // setup encoder and decoder
+            break;
+        case MediaConfig::MediaDirection::unknown:
+        default:
+            assert("Invalid media direction");
+    }
 }
 
 MediaStreamId VideoStream::id()
@@ -27,41 +61,6 @@ MediaStreamId VideoStream::id()
     std::hash<std::string> hasher;
     media_stream_id = hasher(name);
     return media_stream_id;
-}
-
-void VideoStream::set_config(const MediaConfig &video_config)
-{
-    config = video_config;
-    media_direction = video_config.media_direction;
-
-    switch (media_direction)
-    {
-        case MediaConfig::MediaDirection::recvonly:
-            // setup decoder
-            break;
-        case MediaConfig::MediaDirection::sendonly:
-            // setup encoder
-            encoder = std::make_unique<H264Encoder>(
-                config.video_max_width,
-                config.video_max_height,
-                video_config.video_max_frame_rate,
-                video_config.video_max_bitrate,
-                (uint32_t) video_config.video_encode_pixel_format,
-                logger);
-
-            if (!encoder)
-            {
-                logger->error << " video encoder init failed" << std::flush;
-                return;
-            }
-            break;
-        case MediaConfig::MediaDirection::sendrecv:
-            // setup encoder and decoder
-            break;
-        case MediaConfig::MediaDirection::unknown:
-        default:
-            assert("Invalid media direction");
-    }
 }
 
 void VideoStream::handle_media(MediaConfig::CodecType codec_type,
@@ -91,6 +90,8 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                 // todo : fix this to not be hardcoded
                 packet->mediaType = Packet::MediaType::H264;
                 packet->sourceID = id();        // same as streamId
+                packet->encodedSequenceNum = encode_sequence_num;
+                encode_sequence_num += 1;
                 auto ret = Packet::encode(packet.get(), packet->encoded_data);
                 if (!ret)
                 {
@@ -114,11 +115,34 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
     }
 }
 
-void VideoStream::handle_media(uint64_t group_id,
-                               uint64_t object_id,
-                               std::vector<uint8_t> &&bytes)
+size_t VideoStream::get_media(uint64_t &timestamp,
+                            MediaConfig &config,
+                            unsigned char **buffer)
 {
+    size_t recv_length = 0;
+    logger->debug << "GetvideoFrame called" << std::flush;
+
+    auto jitter = getJitter(client_id);
+    if (jitter == nullptr)
+    {
+        logger->warning << "[VideoStream::get_media]: jitter is nullptr"
+                        << std::flush;
+        return 0;
+    }
+
+    uint32_t pixel_format;
+    recv_length = jitter->popVideo(id(),
+                                   config.video_max_width,
+                                   config.video_max_height,
+                                   pixel_format,
+                                   timestamp,
+                                   buffer);
+
+    config.video_decode_pixel_format = (VideoConfig::PixelFormat)pixel_format;
+
+    return recv_length;
 }
+
 
 ///
 /// Private

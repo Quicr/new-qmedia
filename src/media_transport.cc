@@ -42,8 +42,9 @@ void Delegate::on_object_published(const std::string &name,
 void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
 {
     // todo: add support for inserting logger
-    if(logger) {
-        logger->debug << message << std::flush;
+    if (logger)
+    {
+        logger->info << message << std::flush;
     }
     // std::clog << message << std::endl;
 }
@@ -82,11 +83,18 @@ MediaTransport::MediaTransport(const std::string &server_ip,
     delegate.set_logger(logger);
 }
 
-void MediaTransport::register_stream(uint64_t id)
+void MediaTransport::register_stream(uint64_t id, MediaConfig::MediaDirection direction)
 {
-    logger->info << "[MediaTransport]: register_stream " << id << std::flush;
+    logger->info << "[MediaTransport]: register_stream " << id  <<std::flush;
     auto qname = quicr::QuicrName{std::to_string(id), 0};
-    qr_client.register_names({qname}, false);
+    if (direction == MediaConfig::MediaDirection::sendonly) {
+        qr_client.register_names({qname}, false);
+    } else if (direction == MediaConfig::MediaDirection::recvonly) {
+        qr_client.subscribe({qname}, false, true);
+    } else {
+        qr_client.register_names({qname}, false);
+        qr_client.subscribe({qname}, false, true);
+    }
 }
 
 void MediaTransport::send_data(uint64_t id, quicr::bytes &&data)

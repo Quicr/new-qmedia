@@ -46,7 +46,7 @@ struct MediaTransport
                             LoggerPointer logger_in);
     ~MediaTransport() = default;
 
-    void register_stream(uint64_t id);
+    void register_stream(uint64_t id, MediaConfig::MediaDirection direction);
 
     void send_data(uint64_t id, quicr::bytes &&data);
 

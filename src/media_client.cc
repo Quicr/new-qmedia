@@ -1,4 +1,5 @@
 #include <memory>
+#include <sstream>
 
 #include <qmedia/media_client.hh>
 #include "media_transport.hh"
@@ -20,6 +21,8 @@ void MediaClient::init_transport(TransportType /*transport_type*/,
 {
     media_transport = std::make_shared<MediaTransport>(
         remote_address, remote_port, log);
+
+    work_thread = std::thread(start_work_thread, this);
 }
 
 MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
@@ -34,6 +37,7 @@ MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
     log->info << "[MediaClient::add_audio_stream]: created: "
               << media_stream->id() << std::flush;
 
+    media_transport->register_stream(media_stream->id(), media_config.media_direction);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
     return media_stream->id();
@@ -48,9 +52,9 @@ MediaStreamId MediaClient::add_video_stream(uint64_t domain,
     auto media_stream = MediaStreamFactory::create_video_stream(
         domain, conference_id, client_id, media_config, log);
 
-    log->info << "[MediaClient::add_audio_stream]: created: "
+    log->info << "[MediaClient::add_video_stream]: created: "
               << media_stream->id() << std::flush;
-    media_transport->register_stream(media_stream->id());
+    media_transport->register_stream(media_stream->id(), media_config.media_direction);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
     return media_stream->id();
@@ -133,7 +137,9 @@ void MediaClient::do_work()
 
         for (auto &message : messages)
         {
-            auto media_stream_id = std::stoi(message.name);
+            MediaStreamId media_stream_id {0};
+            std::istringstream iss(message.name);
+            iss >> media_stream_id;
             //  Note: since a subscribe should preceed before
             // data arrive, we should find an entry when
             // there is data for a given stream
@@ -143,7 +149,6 @@ void MediaClient::do_work()
                              << std::flush;
                 continue;
             }
-
             // hand the data to appropriate media stream
             active_streams[media_stream_id]->handle_media(
                 message.group_id, message.object_id, std::move(message.data));
@@ -166,7 +171,24 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
                                      uint32_t &format,
                                      unsigned char **buffer)
 {
-    return -1;
+
+    uint32_t recv_length = 0;
+    // happens on client thread
+    if (!active_streams.count(streamId))
+    {
+        // log and return
+        return 0;
+    }
+
+    auto video_stream = std::dynamic_pointer_cast<VideoStream>(
+        active_streams[streamId]);
+
+    MediaConfig config {};
+    recv_length = video_stream->get_media(timestamp, config, buffer);
+    width = config.video_max_width;
+    height = config.video_max_height;
+    format = (uint32_t) config.video_decode_pixel_format;
+    return recv_length;
 }
 
 }        // namespace qmedia

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <vector>
 #include <cassert>
 #include <cmath>
 
@@ -23,8 +24,9 @@ void source_callback(std::uint64_t cid,
               << " Type:" << source_type << std::endl;
 }
 
-int main(int /*argc*/, char ** /*argv*/)
+int main(int argc, char **argv)
 {
+    std::string mode;
     std::uint64_t client_id = 5;            // made it up
     std::uint64_t conference_id = 1;        // made it up
 
@@ -38,6 +40,15 @@ int main(int /*argc*/, char ** /*argv*/)
     std::size_t image_size = image_y_size + image_uv_size * 2;
     char *image = static_cast<char *>(malloc(image_size));
     assert(image);
+
+    if (argc < 2) {
+        std::cerr << "Usage: app <mode> " << std::endl;
+        std::cerr << "send/recv" << std::endl;
+        exit(-1);
+    }
+
+    mode.assign(argv[1]);
+
 
     // Fill image with color gradients.
     // 16M YUV combos mapped to 1M pixels.
@@ -61,55 +72,101 @@ int main(int /*argc*/, char ** /*argv*/)
 
     void *client;
     MediaClient_Create(logcb, source_callback, "127.0.0.1", 7777, &client);
-    auto stream_id = MediaClient_AddVideoStream(client,
-                                                0x1000,
-                                                0x2000,
-                                                0x3000,
-                                                0,
-                                                enc_format,
-                                                image_width,
-                                                image_height,
-                                                30,
-                                                200000);
 
-    // Send frames.
-    std::thread sendThread(
-        [client,
-         stream_id,
-         image,
-         image_size,
-         image_width,
-         image_height,
-         enc_format]()
-        {
-            while (true)
+    std::vector<std::thread> threads;
+
+    if (mode == "send") {
+        auto stream_id = MediaClient_AddVideoStream(client,
+                                                    0x1000,
+                                                    0x2000,
+                                                    0x3000,
+                                                    0,
+                                                    enc_format,
+                                                    image_width,
+                                                    image_height,
+                                                    30,
+                                                    200000);
+
+        // Send frames.
+        threads.emplace_back(
+            [client,
+             stream_id,
+             image,
+             image_size,
+             image_width,
+             image_height,
+             enc_format]()
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(33));
-                std::uint64_t timestamp =
-                    std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::system_clock::now().time_since_epoch())
-                        .count();
-                std::cerr << " S ";        // << sourceRecordTime << "ns " <<
-                                           // image_size << "bytes" <<
-                                           // std::endl;
+                while (true)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(33));
+                    std::uint64_t timestamp =
+                        std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+                    std::cerr << " S ";        // << sourceRecordTime << "ns " <<
+                                               // image_size << "bytes" <<
+                                               // std::endl;
 
-                MediaClient_sendVideoFrame(client,
-                                           stream_id,
-                                           image,
-                                           image_size,
-                                           image_width,
-                                           image_height,
-                                           image_width,
-                                           image_width,
-                                           image_width * image_height,
-                                           0,
-                                           enc_format,
-                                           timestamp);
+                    MediaClient_sendVideoFrame(client,
+                                               stream_id,
+                                               image,
+                                               image_size,
+                                               image_width,
+                                               image_height,
+                                               image_width,
+                                               image_width,
+                                               image_width * image_height,
+                                               0,
+                                               enc_format,
+                                               timestamp);
 
-                image[0] = image[0] + 1;        // Embed a frame counter to
-                                                // check on receive
-            }
-        });
+                    image[0] = image[0] + 1;        // Embed a frame counter to
+                                                    // check on receive
+                }
+            });
+    }
+
+    if (mode == "recv") {
+        auto stream_id = MediaClient_AddVideoStream(client,
+                                                    0x1000,
+                                                    0x2000,
+                                                    0x3000,
+                                                    1,  // recvonly
+                                                    dec_format,
+                                                    image_width,
+                                                    image_height,
+                                                    30,
+                                                    200000);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        threads.emplace_back(
+            [client,
+             stream_id,
+             dec_format]()
+            {
+                while (true)
+                {
+                    std::cerr << " R ";        // << ts << " " <<
+                                               // received_image_size << std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(33));
+                    //if (source_id == 0) continue;
+                    unsigned char *buffer = nullptr;
+                    std::uint64_t ts = 0;
+                    std::uint32_t width = 0;
+                    std::uint32_t height = 0;
+                    std::uint32_t format = dec_format;        // I420
+                    auto received_image_size = MediaClient_getVideoFrame(client,
+                                                                         stream_id,
+                                                                         ts,
+                                                                         width,
+                                                                         height,
+                                                                         format,
+                                                                         &buffer);
+                    std::cerr << " r " << ts << " " << received_image_size << std::endl;
+                }
+            });
+    }
 
     // Main thread.
     while (true)

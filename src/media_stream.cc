@@ -5,14 +5,91 @@ namespace qmedia
 {
 
 ///
+/// MediaStream
+///
+
+void MediaStream::handle_media(uint64_t /*group_id*/,
+                               uint64_t /*object_id*/,
+                               std::vector<uint8_t> &&data)
+{
+    logger->debug << "[MediaStream::handle_media]" << std::flush;
+    if (data.empty())
+    {
+        // log here
+        return;
+    }
+
+    // decode
+    auto packet = std::make_unique<Packet>();
+    auto ret = Packet::decode(data, packet.get());
+    if (!ret)
+    {
+        // log here
+        return;
+    }
+
+    uint64_t clientID = packet->clientID;
+    uint64_t sourceID = packet->sourceID;
+    uint64_t sourceTS = packet->sourceRecordTime;
+    Packet::MediaType sourceType = packet->mediaType;
+
+    logger->debug << "[MediaStream::handle_media]: ClientId:" << clientID
+                  << std::flush;
+
+    bool new_stream;
+    auto jitter_instance = getJitter(clientID);
+    if (jitter_instance == nullptr)
+    {
+        logger->debug << "[MediaStream::handle_media] Creating jitter"
+                      << std::flush;
+        jitter_instance = createJitter(clientID, config);
+    }
+
+    if (jitter_instance != nullptr)
+    {
+        new_stream = jitter_instance->push(std::move(packet));
+        logger->debug << "[MediaStream::handle_media]: New Stream Found"
+                      << std::flush;
+
+        // jitter assembles packets to frames, decodes, conceals
+        // and makes frames available to client
+        // if (new_stream && newSources)
+        // {
+        //    newSources(clientID, sourceID, sourceTS, sourceType);
+        // }
+    }
+}
+
+///
 /// Audio Stream Api
 ///
 AudioStream::AudioStream(uint64_t domain,
                          uint64_t conference_id,
                          uint64_t client_id,
+                         const MediaConfig &media_config,
                          LoggerPointer logger_in) :
-    MediaStream(domain, conference_id, client_id, logger_in)
+    MediaStream(domain, conference_id, client_id, media_config, logger_in)
+{}
+
+void AudioStream::configure()
 {
+    media_direction = config.media_direction;
+    switch (media_direction)
+    {
+        case MediaConfig::MediaDirection::recvonly:
+            // setup decoder
+            break;
+        case MediaConfig::MediaDirection::sendonly:
+            setupAudioEncoder();
+            break;
+        case MediaConfig::MediaDirection::sendrecv:
+            // setup encoder and decoder
+            setupAudioEncoder();
+            break;
+        case MediaConfig::MediaDirection::unknown:
+        default:
+            assert("Invalid media direction");
+    }
 }
 
 MediaStreamId AudioStream::id()
@@ -30,28 +107,6 @@ MediaStreamId AudioStream::id()
     std::hash<std::string> hasher;
     media_stream_id = hasher(name);
     return media_stream_id;
-}
-
-void AudioStream::set_config(const MediaConfig &audio_config)
-{
-    config = audio_config;
-    media_direction = audio_config.media_direction;
-    switch (media_direction)
-    {
-        case MediaConfig::MediaDirection::recvonly:
-            // setup decoder
-            break;
-        case MediaConfig::MediaDirection::sendonly:
-            setupAudioEncoder();
-            break;
-        case MediaConfig::MediaDirection::sendrecv:
-            // setup encoder and decoder
-            setupAudioEncoder();
-            break;
-        case MediaConfig::MediaDirection::unknown:
-        default:
-            assert("Invalid media direction");
-    }
 }
 
 void AudioStream::handle_media(MediaConfig::CodecType codec_type,
@@ -86,48 +141,11 @@ void AudioStream::handle_media(MediaConfig::CodecType codec_type,
     }
 }
 
-void AudioStream::handle_media(uint64_t /*group_id*/,
-                               uint64_t /*object_id*/,
-                               std::vector<uint8_t> &&data)
+size_t AudioStream::get_media(uint64_t &timestamp, MediaConfig &config, unsigned char **buffer)
 {
-    if (data.empty())
-    {
-        // log here
-        return;
-    }
-
-    // decode
-    auto packet = std::make_unique<Packet>();
-    auto ret = Packet::decode(data, packet.get());
-    if (!ret)
-    {
-        // log here
-        return;
-    }
-
-    uint64_t clientID = packet->clientID;
-    uint64_t sourceID = packet->sourceID;
-    uint64_t sourceTS = packet->sourceRecordTime;
-    Packet::MediaType sourceType = packet->mediaType;
-
-    bool new_stream;
-    auto jitter_instance = getJitter(clientID);
-    if (jitter_instance == nullptr)
-    {
-        jitter_instance = createJitter(clientID);
-    }
-
-    if (jitter_instance != nullptr)
-    {
-        new_stream = jitter_instance->push(std::move(packet));
-        // jitter assembles packets to frames, decodes, conceals
-        // and makes frames available to client
-        // if (new_stream && newSources)
-        // {
-        //    newSources(clientID, sourceID, sourceTS, sourceType);
-        // }
-    }
+    return  0;
 }
+
 ///
 /// Private
 ///
@@ -149,6 +167,8 @@ void AudioStream::audio_encoder_callback(std::vector<uint8_t> &&bytes)
     // todo : fix this to not be hardcoded
     packet->mediaType = Packet::MediaType::Opus;
     packet->sourceID = id();        // same as streamId
+    packet->encodedSequenceNum = encode_sequence_num;
+    encode_sequence_num += 1;
     auto ret = Packet::encode(packet.get(), packet->encoded_data);
     if (!ret)
     {
@@ -178,7 +198,7 @@ std::shared_ptr<AudioEncoder> AudioStream::setupAudioEncoder()
     return encoder;
 }
 
-std::shared_ptr<Jitter> AudioStream::getJitter(uint64_t client_id)
+std::shared_ptr<Jitter> MediaStream::getJitter(uint64_t client_id)
 {
     if (auto it{jitters.find(client_id)}; it != std::end(jitters))
     {
@@ -187,7 +207,8 @@ std::shared_ptr<Jitter> AudioStream::getJitter(uint64_t client_id)
     return nullptr;
 }
 
-std::shared_ptr<Jitter> AudioStream::createJitter(uint64_t clientID)
+std::shared_ptr<Jitter> MediaStream::createJitter(uint64_t clientID,
+                                                  const MediaConfig &config)
 {
     Packet::MediaType packet_media_type = Packet::MediaType::Bad;
     switch (config.sample_type)
