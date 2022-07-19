@@ -84,6 +84,7 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
             {
                 auto encoded = encode_h264(
                     buffer, length, timestamp, media_config);
+
                 auto packet = std::make_unique<Packet>();
                 packet->data = std::move(encoded);
                 packet->clientID = client_id;

@@ -18,8 +18,8 @@ void MediaClient::init_transport(TransportType /*transport_type*/,
                                  const std::string &remote_address,
                                  unsigned int remote_port)
 {
-    media_transport = std::make_shared<MediaTransport>(remote_address,
-                                                       remote_port);
+    media_transport = std::make_shared<MediaTransport>(
+        remote_address, remote_port, log);
 }
 
 MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
@@ -30,8 +30,13 @@ MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_audio_stream(
         domain, conference_id, client_id, media_config, log);
+
+    log->info << "[MediaClient::add_audio_stream]: created: "
+              << media_stream->id() << std::flush;
+
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
+    return media_stream->id();
 }
 
 MediaStreamId MediaClient::add_video_stream(uint64_t domain,
@@ -42,8 +47,13 @@ MediaStreamId MediaClient::add_video_stream(uint64_t domain,
     // create a new media stream and associate the transport
     auto media_stream = MediaStreamFactory::create_video_stream(
         domain, conference_id, client_id, media_config, log);
+
+    log->info << "[MediaClient::add_audio_stream]: created: "
+              << media_stream->id() << std::flush;
+    media_transport->register_stream(media_stream->id());
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
+    return media_stream->id();
 }
 
 // media apis
@@ -94,9 +104,17 @@ void MediaClient::send_video(MediaStreamId streamId,
     if (video_stream)
     {
         // revisit this
-        MediaConfig config;
+        MediaConfig config{};
+        config.video_max_width = width;
+        config.video_max_height = height;
+        config.offset_u = offset_u;
+        config.offset_v = offset_v;
+        config.stride_y = stride_y;
+        config.stride_uv = stride_uv;
+        // revisit this
+        config.video_encode_pixel_format = VideoConfig::PixelFormat::I420;
         video_stream->handle_media(
-            MediaConfig::CodecType::raw, buffer, length, timestamp, config);
+            MediaConfig::CodecType::h264, buffer, length, timestamp, config);
     }
 }
 

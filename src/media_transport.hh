@@ -30,15 +30,20 @@ struct Delegate : public quicr::QuicRClient::Delegate
                      const std::string &message) override;
     void get_queued_messages(std::vector<TransportMessageInfo> &messages_out);
 
+    void set_logger(LoggerPointer logger_in);
+
 private:
     std::mutex queue_mutex;
     std::queue<TransportMessageInfo> receive_queue;
+    LoggerPointer logger;
 };
 
 // Wrapper around quicr::QuicRClient
 struct MediaTransport
 {
-    explicit MediaTransport(const std::string &server_ip, const uint16_t port);
+    explicit MediaTransport(const std::string &server_ip,
+                            const uint16_t port,
+                            LoggerPointer logger_in);
     ~MediaTransport() = default;
 
     void register_stream(uint64_t id);
@@ -51,6 +56,7 @@ struct MediaTransport
 private:
     Delegate delegate;
     quicr::QuicRClient qr_client;
+    LoggerPointer logger;
 };
 
 }        // namespace qmedia

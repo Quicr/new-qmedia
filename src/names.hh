@@ -15,7 +15,7 @@ struct QuicrName
                                        uint64_t client_id)
     {
         return name_for_conference(domain, conference) +
-               std::to_string(client_id);
+               std::to_string(client_id) + "/";
     }
 
     static std::string name_for_conference(uint64_t domain, uint64_t conference)

@@ -7,6 +7,11 @@ namespace qmedia
 /// Delegate
 ///
 
+void Delegate::set_logger(LoggerPointer logger_in)
+{
+    logger = logger_in;
+}
+
 void Delegate::on_data_arrived(const std::string &name,
                                quicr::bytes &&data,
                                std::uint64_t group_id,
@@ -23,15 +28,23 @@ void Delegate::on_connection_close(const std::string &name)
     // trigger a resubscribe
 }
 
-void Delegate::on_object_published(const std::string & /*name*/,
-                                   uint64_t /*group_id*/,
-                                   uint64_t /*object_id*/)
+void Delegate::on_object_published(const std::string &name,
+                                   uint64_t group_id,
+                                   uint64_t object_id)
 {
+    if (logger)
+    {
+        logger->debug << "[Delegate::on_object_published]" << name << ", group "
+                      << group_id << ", object:" << object_id << std::flush;
+    }
 }
 
 void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
 {
     // todo: add support for inserting logger
+    if(logger) {
+        logger->debug << message << std::flush;
+    }
     // std::clog << message << std::endl;
 }
 
@@ -57,18 +70,21 @@ void Delegate::get_queued_messages(
 ///
 
 MediaTransport::MediaTransport(const std::string &server_ip,
-                               const uint16_t port) :
-    qr_client(delegate, server_ip, port)
+                               const uint16_t port,
+                               LoggerPointer logger_in) :
+    qr_client(delegate, server_ip, port), logger(logger_in)
 {
     while (!qr_client.is_transport_ready())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-    // log here
+    logger->info << "[MediaTransport]: Transport Created" << std::flush;
+    delegate.set_logger(logger);
 }
 
 void MediaTransport::register_stream(uint64_t id)
 {
+    logger->info << "[MediaTransport]: register_stream " << id << std::flush;
     auto qname = quicr::QuicrName{std::to_string(id), 0};
     qr_client.register_names({qname}, false);
 }

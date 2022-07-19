@@ -23,7 +23,7 @@ void source_callback(std::uint64_t cid,
               << " Type:" << source_type << std::endl;
 }
 
-int main(int /*argc*/, char **/*argv*/)
+int main(int /*argc*/, char ** /*argv*/)
 {
     std::uint64_t client_id = 5;            // made it up
     std::uint64_t conference_id = 1;        // made it up
@@ -74,7 +74,13 @@ int main(int /*argc*/, char **/*argv*/)
 
     // Send frames.
     std::thread sendThread(
-        [client,stream_id,  image, image_size, image_width, image_height, enc_format]()
+        [client,
+         stream_id,
+         image,
+         image_size,
+         image_width,
+         image_height,
+         enc_format]()
         {
             while (true)
             {
@@ -104,7 +110,6 @@ int main(int /*argc*/, char **/*argv*/)
                                                 // check on receive
             }
         });
-
 
     // Main thread.
     while (true)
