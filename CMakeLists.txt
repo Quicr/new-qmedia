@@ -53,8 +53,7 @@ endif()
 
 
 
-# include_directories( include src/extern )
-include_directories( include )
+include_directories( include src/extern )
 
 
 ###
@@ -149,7 +148,7 @@ target_include_directories(${LIB_NAME}
 ### Applications
 ###
 
-#add_subdirectory(cmd)
+add_subdirectory(cmd)
 
 ###
 ### Tests
