@@ -23,6 +23,25 @@ static std::string to_hex(unsigned char *data, int stop)
     return hex.str();
 }
 
+static VideoEncoder::EncodedFrameType toEncodedFrameType(EVideoFrameType frame)
+{
+    switch (frame)
+    {
+        case EVideoFrameType::videoFrameTypeIDR:
+            return VideoEncoder::EncodedFrameType::IDR;
+        case EVideoFrameType::videoFrameTypeI:
+            return VideoEncoder::EncodedFrameType::I;
+        case EVideoFrameType::videoFrameTypeP:
+            return VideoEncoder::EncodedFrameType::P;
+        case EVideoFrameType::videoFrameTypeSkip:
+            return VideoEncoder::EncodedFrameType::Skip;
+        case EVideoFrameType::videoFrameTypeInvalid:
+        default:
+            return VideoEncoder::EncodedFrameType::Invalid;
+            break;
+    }
+}
+
 H264Encoder::H264Encoder(unsigned int video_max_width,
                          unsigned int video_max_height,
                          unsigned int video_max_frame_rate,
@@ -105,18 +124,19 @@ H264Encoder::~H264Encoder()
     }
 }
 
-int H264Encoder::encode(const char *input_buffer,
-                        std::uint32_t input_length,
-                        std::uint32_t width,
-                        std::uint32_t height,
-                        std::uint32_t stride_y,
-                        std::uint32_t stride_uv,
-                        std::uint32_t offset_u,
-                        std::uint32_t offset_v,
-                        std::uint32_t format,
-                        std::uint64_t timestamp,
-                        std::vector<std::uint8_t> &output_bitstream,
-                        bool genKeyFrame)
+VideoEncoder::EncodedFrameType
+H264Encoder::encode(const char *input_buffer,
+                    std::uint32_t input_length,
+                    std::uint32_t width,
+                    std::uint32_t height,
+                    std::uint32_t stride_y,
+                    std::uint32_t stride_uv,
+                    std::uint32_t offset_u,
+                    std::uint32_t offset_v,
+                    std::uint32_t format,
+                    std::uint64_t timestamp,
+                    std::vector<std::uint8_t> &output_bitstream,
+                    bool genKeyFrame)
 {
     static std::uint64_t total_frames_encoded = 0;
     static std::uint64_t total_bytes_encoded = 0;
@@ -206,10 +226,10 @@ int H264Encoder::encode(const char *input_buffer,
             case videoFrameTypeSkip:
                 logger->info << "h264Encoder:: videoFrameTypeSkip"
                              << std::flush;
-                return 0;
+                return VideoEncoder::EncodedFrameType::Skip;
             case videoFrameTypeInvalid:
                 logger->info << "h264Encoder: failed: " << ret << std::flush;
-                return -1;
+                return VideoEncoder::EncodedFrameType::Invalid;
         }
     }
 
@@ -245,5 +265,5 @@ int H264Encoder::encode(const char *input_buffer,
     total_frames_encoded++;
 
     // success
-    return encodedFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
+    return toEncodedFrameType(encodedFrame.eFrameType);
 }

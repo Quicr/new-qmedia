@@ -129,6 +129,18 @@ struct PBDecoder
             const auto &video_hdr = hdr.video_header();
             packet_out->is_intra_frame = video_hdr.intraframe();
         }
+        switch (hdr.mediatype())
+        {
+            case media_message::MediaType::H264:
+                packet_out->mediaType = Packet::MediaType::H264;
+                break;
+            case media_message::MediaType::RAW:
+                packet_out->mediaType = Packet::MediaType::Raw;
+                break;
+            default:
+                packet_out->mediaType = Packet::MediaType::Bad;
+                break;
+        }
 
         packet_out->sourceRecordTime = hdr.sourcerecordtime();
         packet_out->sourceID = hdr.sourceid();

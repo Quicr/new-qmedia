@@ -49,8 +49,8 @@ public:
                               uint64_t timestamp,
                               const MediaConfig &media_config) = 0;
     virtual size_t get_media(uint64_t &timestamp,
-                           MediaConfig &config,
-                           unsigned char **buffer) = 0;
+                             MediaConfig &config,
+                             unsigned char **buffer) = 0;
 
 protected:
     // jitter helpers
@@ -89,8 +89,8 @@ struct AudioStream : public MediaStream
                               uint64_t timestamp,
                               const MediaConfig &media_config) override;
     virtual size_t get_media(uint64_t &timestamp,
-                           MediaConfig &config,
-                           unsigned char **buffer) override;
+                             MediaConfig &config,
+                             unsigned char **buffer) override;
 
 private:
     std::shared_ptr<AudioEncoder> setupAudioEncoder();
@@ -119,14 +119,14 @@ struct VideoStream : public MediaStream
                               const MediaConfig &media_config) override;
 
     virtual size_t get_media(uint64_t &timestamp,
-                           MediaConfig &config,
-                           unsigned char **buffer) override;
+                             MediaConfig &config,
+                             unsigned char **buffer) override;
 
 private:
-    std::vector<uint8_t> encode_h264(uint8_t *buffer,
-                                     unsigned int length,
-                                     uint64_t timestamp,
-                                     const MediaConfig &media_config);
+    PacketPointer encode_h264(uint8_t *buffer,
+                              unsigned int length,
+                              uint64_t timestamp,
+                              const MediaConfig &media_config);
 
     std::unique_ptr<VideoEncoder> encoder = nullptr;
     uint64_t encode_sequence_num = 0;

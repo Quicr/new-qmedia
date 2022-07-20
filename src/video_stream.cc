@@ -10,7 +10,8 @@ VideoStream::VideoStream(uint64_t domain,
                          const MediaConfig &media_config,
                          LoggerPointer logger_in) :
     MediaStream(domain, conference_id, client_id, media_config, logger_in)
-{}
+{
+}
 
 void VideoStream::configure()
 {
@@ -84,15 +85,7 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                 auto encoded = encode_h264(
                     buffer, length, timestamp, media_config);
 
-                auto packet = std::make_unique<Packet>();
-                packet->data = std::move(encoded);
-                packet->clientID = client_id;
-                // todo : fix this to not be hardcoded
-                packet->mediaType = Packet::MediaType::H264;
-                packet->sourceID = id();        // same as streamId
-                packet->encodedSequenceNum = encode_sequence_num;
-                encode_sequence_num += 1;
-                auto ret = Packet::encode(packet.get(), packet->encoded_data);
+                auto ret = Packet::encode(encoded.get(), encoded->encoded_data);
                 if (!ret)
                 {
                     // log err
@@ -100,7 +93,7 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                 }
 
                 media_transport->send_data(id(),
-                                           std::move(packet->encoded_data));
+                                           std::move(encoded->encoded_data));
             }
         }
         break;
@@ -116,8 +109,8 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
 }
 
 size_t VideoStream::get_media(uint64_t &timestamp,
-                            MediaConfig &config,
-                            unsigned char **buffer)
+                              MediaConfig &config,
+                              unsigned char **buffer)
 {
     size_t recv_length = 0;
     logger->debug << "GetvideoFrame called" << std::flush;
@@ -138,27 +131,26 @@ size_t VideoStream::get_media(uint64_t &timestamp,
                                    timestamp,
                                    buffer);
 
-    config.video_decode_pixel_format = (VideoConfig::PixelFormat)pixel_format;
+    config.video_decode_pixel_format = (VideoConfig::PixelFormat) pixel_format;
 
     return recv_length;
 }
-
 
 ///
 /// Private
 ///
 
-std::vector<uint8_t> VideoStream::encode_h264(uint8_t *buffer,
-                                              unsigned int length,
-                                              uint64_t timestamp,
-                                              const MediaConfig &media_config)
+PacketPointer VideoStream::encode_h264(uint8_t *buffer,
+                                       unsigned int length,
+                                       uint64_t timestamp,
+                                       const MediaConfig &media_config)
 {
     std::vector<uint8_t> output;
 
     if (encoder == nullptr)
     {
         logger->warning << "Video Encoder, unavailable" << std::flush;
-        return output;
+        return nullptr;
     }
 
     int sendRaw = 0;
@@ -177,7 +169,30 @@ std::vector<uint8_t> VideoStream::encode_h264(uint8_t *buffer,
         output,
         false);
 
-    return output;
+    if (encoded_frame_type == VideoEncoder::EncodedFrameType::Skip ||
+        encoded_frame_type == VideoEncoder::EncodedFrameType::Invalid)
+    {
+        logger->info << "Encoded Frame Type ignored due "
+                     << (int) encoded_frame_type << std::flush;
+        return nullptr;
+    }
+
+    logger->info << "Encoded Frame Type is  " << (int) encoded_frame_type
+                 << std::flush;
+
+    auto packet = std::make_unique<Packet>();
+
+    packet->is_intra_frame = encoded_frame_type ==
+                             VideoEncoder::EncodedFrameType::IDR;
+
+    packet->data = std::move(output);
+    packet->clientID = client_id;
+    // todo : fix this to not be hardcoded
+    packet->mediaType = Packet::MediaType::H264;
+    packet->sourceID = id();        // same as streamId
+    packet->encodedSequenceNum = encode_sequence_num;
+    encode_sequence_num += 1;
+    return packet;
 }
 
 }        // namespace qmedia

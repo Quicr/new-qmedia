@@ -37,7 +37,8 @@ MediaStreamId MediaClient::add_audio_stream(uint64_t domain,
     log->info << "[MediaClient::add_audio_stream]: created: "
               << media_stream->id() << std::flush;
 
-    media_transport->register_stream(media_stream->id(), media_config.media_direction);
+    media_transport->register_stream(media_stream->id(),
+                                     media_config.media_direction);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
     return media_stream->id();
@@ -54,7 +55,8 @@ MediaStreamId MediaClient::add_video_stream(uint64_t domain,
 
     log->info << "[MediaClient::add_video_stream]: created: "
               << media_stream->id() << std::flush;
-    media_transport->register_stream(media_stream->id(), media_config.media_direction);
+    media_transport->register_stream(media_stream->id(),
+                                     media_config.media_direction);
     media_stream->set_transport(media_transport);
     active_streams[media_stream->id()] = media_stream;
     return media_stream->id();
@@ -137,7 +139,7 @@ void MediaClient::do_work()
 
         for (auto &message : messages)
         {
-            MediaStreamId media_stream_id {0};
+            MediaStreamId media_stream_id{0};
             std::istringstream iss(message.name);
             iss >> media_stream_id;
             //  Note: since a subscribe should preceed before
@@ -171,7 +173,6 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
                                      uint32_t &format,
                                      unsigned char **buffer)
 {
-
     uint32_t recv_length = 0;
     // happens on client thread
     if (!active_streams.count(streamId))
@@ -183,7 +184,7 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
     auto video_stream = std::dynamic_pointer_cast<VideoStream>(
         active_streams[streamId]);
 
-    MediaConfig config {};
+    MediaConfig config{};
     recv_length = video_stream->get_media(timestamp, config, buffer);
     width = config.video_max_width;
     height = config.video_max_height;

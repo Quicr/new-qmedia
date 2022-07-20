@@ -33,15 +33,15 @@ void MediaStream::handle_media(uint64_t /*group_id*/,
     uint64_t sourceTS = packet->sourceRecordTime;
     Packet::MediaType sourceType = packet->mediaType;
 
-    logger->debug << "[MediaStream::handle_media]: ClientId:" << clientID
-                  << std::flush;
+    logger->info << "[MediaStream::handle_media]: ClientId:" << clientID
+                 << std::flush;
 
     bool new_stream;
     auto jitter_instance = getJitter(clientID);
     if (jitter_instance == nullptr)
     {
-        logger->debug << "[MediaStream::handle_media] Creating jitter"
-                      << std::flush;
+        logger->info << "[MediaStream::handle_media] Creating jitter"
+                     << std::flush;
         jitter_instance = createJitter(clientID, config);
     }
 
@@ -69,7 +69,8 @@ AudioStream::AudioStream(uint64_t domain,
                          const MediaConfig &media_config,
                          LoggerPointer logger_in) :
     MediaStream(domain, conference_id, client_id, media_config, logger_in)
-{}
+{
+}
 
 void AudioStream::configure()
 {
@@ -141,9 +142,11 @@ void AudioStream::handle_media(MediaConfig::CodecType codec_type,
     }
 }
 
-size_t AudioStream::get_media(uint64_t &timestamp, MediaConfig &config, unsigned char **buffer)
+size_t AudioStream::get_media(uint64_t &timestamp,
+                              MediaConfig &config,
+                              unsigned char **buffer)
 {
-    return  0;
+    return 0;
 }
 
 ///

@@ -41,14 +41,14 @@ int main(int argc, char **argv)
     char *image = static_cast<char *>(malloc(image_size));
     assert(image);
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         std::cerr << "Usage: app <mode> " << std::endl;
         std::cerr << "send/recv" << std::endl;
         exit(-1);
     }
 
     mode.assign(argv[1]);
-
 
     // Fill image with color gradients.
     // 16M YUV combos mapped to 1M pixels.
@@ -75,7 +75,8 @@ int main(int argc, char **argv)
 
     std::vector<std::thread> threads;
 
-    if (mode == "send") {
+    if (mode == "send")
+    {
         auto stream_id = MediaClient_AddVideoStream(client,
                                                     0x1000,
                                                     0x2000,
@@ -104,8 +105,8 @@ int main(int argc, char **argv)
                         std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::system_clock::now().time_since_epoch())
                             .count();
-                    std::cerr << " S ";        // << sourceRecordTime << "ns " <<
-                                               // image_size << "bytes" <<
+                    std::cerr << " S ";        // << sourceRecordTime << "ns "
+                                               // << image_size << "bytes" <<
                                                // std::endl;
 
                     MediaClient_sendVideoFrame(client,
@@ -127,12 +128,13 @@ int main(int argc, char **argv)
             });
     }
 
-    if (mode == "recv") {
+    if (mode == "recv")
+    {
         auto stream_id = MediaClient_AddVideoStream(client,
                                                     0x1000,
                                                     0x2000,
                                                     0x3000,
-                                                    1,  // recvonly
+                                                    1,        // recvonly
                                                     dec_format,
                                                     image_width,
                                                     image_height,
@@ -141,29 +143,21 @@ int main(int argc, char **argv)
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         threads.emplace_back(
-            [client,
-             stream_id,
-             dec_format]()
+            [client, stream_id, dec_format]()
             {
                 while (true)
                 {
-                    std::cerr << " R ";        // << ts << " " <<
-                                               // received_image_size << std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(33));
-                    //if (source_id == 0) continue;
+                    // if (source_id == 0) continue;
                     unsigned char *buffer = nullptr;
                     std::uint64_t ts = 0;
                     std::uint32_t width = 0;
                     std::uint32_t height = 0;
                     std::uint32_t format = dec_format;        // I420
-                    auto received_image_size = MediaClient_getVideoFrame(client,
-                                                                         stream_id,
-                                                                         ts,
-                                                                         width,
-                                                                         height,
-                                                                         format,
-                                                                         &buffer);
-                    std::cerr << " r " << ts << " " << received_image_size << std::endl;
+                    auto received_image_size = MediaClient_getVideoFrame(
+                        client, stream_id, ts, width, height, format, &buffer);
+                    std::cerr << " r " << ts << " " << received_image_size
+                              << std::endl;
                 }
             });
     }
