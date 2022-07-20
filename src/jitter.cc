@@ -83,7 +83,7 @@ bool Jitter::push(PacketPointer packet,
     bool new_stream = false;
     uint64_t sourceID = packet->sourceID;
     uint64_t clientID = packet->clientID;
-
+    logger->info << "[Jitter::push]: media_type: " << (int) packet->mediaType << std::flush;
     {
         assert(packet);
         switch (packet->mediaType)

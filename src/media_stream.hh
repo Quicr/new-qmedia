@@ -39,7 +39,9 @@ public:
     {
         media_transport = transport;
     }
-    void handle_media(uint64_t group_id,
+
+    void handle_media(MediaClient::NewSourceCallback stream_callback,
+                      uint64_t group_id,
                       uint64_t object_id,
                       std::vector<uint8_t> &&bytes);
     virtual MediaStreamId id() = 0;
@@ -50,7 +52,8 @@ public:
                               const MediaConfig &media_config) = 0;
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
-                             unsigned char **buffer) = 0;
+                             unsigned char **buffer,
+                             unsigned int max_len) = 0;
 
 protected:
     // jitter helpers
@@ -90,7 +93,8 @@ struct AudioStream : public MediaStream
                               const MediaConfig &media_config) override;
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
-                             unsigned char **buffer) override;
+                             unsigned char **buffer,
+                             unsigned int max_len) override;
 
 private:
     std::shared_ptr<AudioEncoder> setupAudioEncoder();
@@ -120,7 +124,8 @@ struct VideoStream : public MediaStream
 
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
-                             unsigned char **buffer) override;
+                             unsigned char **buffer,
+                             unsigned int max_len) override;
 
 private:
     PacketPointer encode_h264(uint8_t *buffer,

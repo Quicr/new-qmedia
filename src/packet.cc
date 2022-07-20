@@ -137,6 +137,9 @@ struct PBDecoder
             case media_message::MediaType::RAW:
                 packet_out->mediaType = Packet::MediaType::Raw;
                 break;
+            case media_message::MediaType::OPUS_40K_20MS:
+                packet_out->mediaType = Packet::MediaType::Opus;
+                break;
             default:
                 packet_out->mediaType = Packet::MediaType::Bad;
                 break;

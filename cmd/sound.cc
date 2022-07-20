@@ -142,20 +142,20 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
         {
             std::lock_guard<std::mutex> lock(audioWriteMutex);
             playoutSpaceAvailable = Pa_GetStreamWriteAvailable(audioStream);
-            logger->debug << "[" << playoutSpaceAvailable << "]" << std::flush;
+            logger->info << "[" << playoutSpaceAvailable << "]" << std::flush;
         }
 
         if (playoutSpaceAvailable < 1000 /* 21 ms */)
         {
             // not enought space to play, wait till later
-            logger->debug << "$" << std::flush;
+            logger->info << "$" << std::flush;
             std::chrono::steady_clock::time_point sleep_time =
                 std::chrono::steady_clock::now();
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             auto sleep_delta =
                 std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - sleep_time);
-            logger->debug << "{S: " << sleep_delta.count() << "}" << std::flush;
+            logger->info << "{S: " << sleep_delta.count() << "}" << std::flush;
             continue;
         }
 
@@ -169,7 +169,7 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
         int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size);
         auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - get_audio);
-        logger->debug << "{A:" << audio_delta.count() << "}" << std::flush;
+        logger->info << "{A:" << audio_delta.count() << "}" << std::flush;
 
         PaError err;
         if (!recv_actual)
@@ -317,9 +317,10 @@ int main(int argc, char *argv[])
                                                      uint64_t source_ts,
                                                      MediaType media_type)
     {
-            recvMedia = true;
-            recvClientID = client_id;
-            recvSourceID = source_id;
+        logger->info << "[Sound]: New Sorcce" << source_id << std::flush;
+        recvMedia = true;
+        recvClientID = client_id;
+        recvSourceID = source_id;
     };
 
     // Create media library.
@@ -394,7 +395,7 @@ int main(int argc, char *argv[])
         config.sample_rate = 48000;
         config.sample_type = AudioConfig::SampleType::Float32;
         stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
-        std::thread recordThread(recordThreadFunc, &client, stream_id);
+        threads.emplace_back(recordThreadFunc, &client, stream_id);
     }
     else if (mode == "recv")
     {
@@ -405,8 +406,8 @@ int main(int argc, char *argv[])
         config.sample_rate = 48000;
         config.sample_type = AudioConfig::SampleType::Float32;
         stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
-        std::thread playThread(playThreadFunc, &client, stream_id);
-        playThread.detach();
+        threads.emplace_back(playThreadFunc, &client, stream_id);
+        threads.at(0).detach();
     }
 
     logger->info << "Starting Stream: " << stream_id << std::flush;

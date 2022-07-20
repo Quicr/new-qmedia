@@ -110,7 +110,8 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
 
 size_t VideoStream::get_media(uint64_t &timestamp,
                               MediaConfig &config,
-                              unsigned char **buffer)
+                              unsigned char **buffer,
+                              unsigned int /*max_len*/)
 {
     size_t recv_length = 0;
     logger->debug << "GetvideoFrame called" << std::flush;

@@ -19,8 +19,9 @@ enum struct TransportType
 
 enum MediaType
 {
-    audio = 0,
-    video = 1,
+    invalid=0,
+    audio = 1,
+    video = 2
 };
 
 struct AudioConfig

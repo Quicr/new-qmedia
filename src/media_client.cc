@@ -152,8 +152,10 @@ void MediaClient::do_work()
                 continue;
             }
             // hand the data to appropriate media stream
-            active_streams[media_stream_id]->handle_media(
-                message.group_id, message.object_id, std::move(message.data));
+            active_streams[media_stream_id]->handle_media(new_stream_callback,
+                                                          message.group_id,
+                                                          message.object_id,
+                                                          std::move(message.data));
         }
     }
 }
@@ -163,7 +165,19 @@ int MediaClient::get_audio(MediaStreamId streamId,
                            unsigned char **buffer,
                            unsigned int max_len)
 {
-    return -1;
+    uint32_t recv_length = 0;
+    // happens on client thread
+    if (!active_streams.count(streamId))
+    {
+        // log and return
+        return 0;
+    }
+
+    auto audio_stream = std::dynamic_pointer_cast<AudioStream>(
+        active_streams[streamId]);
+    MediaConfig config{};
+    recv_length = audio_stream->get_media(timestamp, config, buffer, max_len);
+
 }
 
 std::uint32_t MediaClient::get_video(MediaStreamId streamId,
@@ -185,7 +199,7 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
         active_streams[streamId]);
 
     MediaConfig config{};
-    recv_length = video_stream->get_media(timestamp, config, buffer);
+    recv_length = video_stream->get_media(timestamp, config, buffer, 0);
     width = config.video_max_width;
     height = config.video_max_height;
     format = (uint32_t) config.video_decode_pixel_format;

@@ -8,11 +8,12 @@ namespace qmedia
 /// MediaStream
 ///
 
-void MediaStream::handle_media(uint64_t /*group_id*/,
+void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
+                               uint64_t /*group_id*/,
                                uint64_t /*object_id*/,
                                std::vector<uint8_t> &&data)
 {
-    logger->debug << "[MediaStream::handle_media]" << std::flush;
+    logger->debug << "[MediaStream::handle_media] " << data.size() << std::flush;
     if (data.empty())
     {
         // log here
@@ -28,35 +29,44 @@ void MediaStream::handle_media(uint64_t /*group_id*/,
         return;
     }
 
-    uint64_t clientID = packet->clientID;
-    uint64_t sourceID = packet->sourceID;
-    uint64_t sourceTS = packet->sourceRecordTime;
-    Packet::MediaType sourceType = packet->mediaType;
+    uint64_t client_id = packet->clientID;
+    uint64_t source_id= packet->sourceID;
+    uint64_t source_ts = packet->sourceRecordTime;
+    MediaType media_type = MediaType::invalid;
+    switch(packet->mediaType) {
+        case Packet::MediaType::H264:
+            media_type = MediaType::video;
+            break;
+        case Packet::MediaType::Opus:
+        case Packet::MediaType::F32:
+        case Packet::MediaType::L16:
+            media_type = MediaType::audio;
+            break;
+        default:
+            media_type = MediaType::invalid;
+    }
 
-    logger->info << "[MediaStream::handle_media]: ClientId:" << clientID
-                 << std::flush;
-
-    bool new_stream;
-    auto jitter_instance = getJitter(clientID);
+    bool new_stream = false;
+    auto jitter_instance = getJitter(client_id);
     if (jitter_instance == nullptr)
     {
         logger->info << "[MediaStream::handle_media] Creating jitter"
                      << std::flush;
-        jitter_instance = createJitter(clientID, config);
+        jitter_instance = createJitter(client_id, config);
     }
 
     if (jitter_instance != nullptr)
     {
         new_stream = jitter_instance->push(std::move(packet));
-        logger->debug << "[MediaStream::handle_media]: New Stream Found"
-                      << std::flush;
+        logger->info << "[MediaStream::handle_media]: New Stream ?"
+                      << new_stream << std::flush;
 
         // jitter assembles packets to frames, decodes, conceals
         // and makes frames available to client
-        // if (new_stream && newSources)
-        // {
-        //    newSources(clientID, sourceID, sourceTS, sourceType);
-        // }
+        if (new_stream && stream_callback)
+        {
+            stream_callback(client_id, source_id, source_ts, media_type);
+        }
     }
 }
 
@@ -143,10 +153,27 @@ void AudioStream::handle_media(MediaConfig::CodecType codec_type,
 }
 
 size_t AudioStream::get_media(uint64_t &timestamp,
-                              MediaConfig &config,
-                              unsigned char **buffer)
+                              MediaConfig &/*config*/,
+                              unsigned char **buffer,
+                              unsigned int max_len)
 {
-    return 0;
+    int recv_length = 0;
+    auto jitter = getJitter(client_id);
+    if (jitter == nullptr) {
+        logger->info << "[AudioStream::get_media] Jitter not found" << std::flush;
+        return 0;
+    }
+
+    auto packet = jitter->popAudio(id(), max_len);
+
+    if (packet != nullptr)
+    {
+        timestamp = packet->sourceRecordTime;
+        *buffer = &packet->data[0];
+        recv_length = packet->data.size();
+    }
+    logger->info << "[AudioStream::get_media] recv_length:" << recv_length << std::flush;
+    return recv_length;
 }
 
 ///
@@ -167,7 +194,6 @@ void AudioStream::audio_encoder_callback(std::vector<uint8_t> &&bytes)
     auto packet = std::make_unique<Packet>();
     packet->data = std::move(bytes);
     packet->clientID = client_id;
-    // todo : fix this to not be hardcoded
     packet->mediaType = Packet::MediaType::Opus;
     packet->sourceID = id();        // same as streamId
     packet->encodedSequenceNum = encode_sequence_num;
