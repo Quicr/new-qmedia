@@ -65,7 +65,6 @@ struct PublisherContext
     uint64_t source_id;
     Packet::MediaType media_type;
     std::string url;
-    quicrq_media_source_ctx_t *source_ctx;
     quicrq_media_object_source_ctx_t *object_source_ctx;        // used with
                                                                 // object api
     TransportManager *transportManager;

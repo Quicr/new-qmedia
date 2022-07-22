@@ -152,6 +152,7 @@ static void *media_publisher_subscribe(void *v_srce_ctx)
 }
 
 // Callback from quicr stack
+#if not defined(USE_OBJECT_API)
 static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
                                     void *media_ctx,
                                     uint8_t *data,
@@ -227,6 +228,7 @@ static int media_frame_publisher_fn(quicrq_media_source_action_enum action,
     // delta end
     return ret;
 }
+#endif
 
 static int
 media_consumer_frame_ready(void *media_ctx,
@@ -278,17 +280,7 @@ static int media_datagram_input(void *media_ctx,
                                 size_t data_length)
 {
     ConsumerContext *cons_ctx = (ConsumerContext *) media_ctx;
-    int ret = quicrq_reassembly_input(&cons_ctx->reassembly_ctx,
-                                      current_time,
-                                      data,
-                                      frame_id,
-                                      offset,
-                                      is_last_segment,
-                                      data_length,
-                                      media_consumer_frame_ready,
-                                      media_ctx);
-
-    return ret;
+    return 0;
 }
 
 int media_consumer_learn_final_frame_id(void *media_ctx,
@@ -296,8 +288,8 @@ int media_consumer_learn_final_frame_id(void *media_ctx,
 {
     int ret = 0;
     auto *cons_ctx = (ConsumerContext *) media_ctx;
-    ret = quicrq_reassembly_learn_final_object_id(&cons_ctx->reassembly_ctx,
-                                                  final_frame_id);
+    //ret = quicrq_reassembly_learn_final_object_id(&cons_ctx->reassembly_ctx,
+    //                                              final_frame_id);
     return ret;
 }
 
@@ -352,6 +344,7 @@ int object_stream_consumer_fn(
     quicrq_media_consumer_enum action,
     void *object_consumer_ctx,
     uint64_t current_time,
+    uint64_t group_id,
     uint64_t object_id,
     const uint8_t *data,
     size_t data_length,
@@ -481,11 +474,16 @@ int quicrq_app_loop_cb(picoquic_quic_t *quic,
                 auto &publish_ctx = cb_ctx->transport->get_publisher_context(
                     send_packet.source_id);
                 assert(publish_ctx.object_source_ctx);
+                uint64_t group_id = 0;
+                uint64_t object_id = 0;
                 ret = quicrq_publish_object(
                     publish_ctx.object_source_ctx,
                     reinterpret_cast<uint8_t *>(send_packet.data.data()),
                     send_packet.data.size(),
-                    nullptr);
+                    1,
+                    nullptr,
+                    &group_id,
+                    &object_id);
                 assert(ret == 0);
 #endif
             }
@@ -524,7 +522,7 @@ void NetTransportQUICR::wake_up_all_sources()
     for (const auto &ctx : publishers)
     {
         logger->debug << "[W]";
-        quicrq_source_wakeup(ctx.second.source_ctx);
+        //quicrq_source_wakeup(ctx.second.source_ctx);
     }
 }
 
@@ -538,7 +536,7 @@ void NetTransportQUICR::publish(uint64_t source_id,
     }
 
     auto pub_context = new PublisherContext{
-        source_id, media_type, url, nullptr, nullptr, transportManager, this};
+        source_id, media_type, url, nullptr, transportManager, this};
 
 #if defined(USE_OBJECT_API)
     // TODO: Set object source property
