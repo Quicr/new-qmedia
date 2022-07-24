@@ -56,6 +56,7 @@ MediaStreamId MediaClient::add_video_stream(uint64_t domain,
 
     log->info << "[MediaClient::add_video_stream]: created: "
               << media_stream->id() << std::flush;
+
     media_transport->register_stream(media_stream->id(),
                                      media_config.media_direction);
     media_stream->set_transport(media_transport);
@@ -138,7 +139,7 @@ void MediaClient::do_work()
             continue;
         }
 
-        log->info << "do_work: got message, data:" << message.data.size() << std::flush;
+        log->debug << "do_work: got message, data:" << message.data.size() << std::flush;
 
         MediaStreamId media_stream_id{0};
         std::istringstream iss(message.name);
@@ -177,6 +178,8 @@ int MediaClient::get_audio(MediaStreamId streamId,
         return 0;
     }
 
+    log->debug << "MediaClient::get_audio:" << streamId << std::flush;
+
     auto audio_stream = std::dynamic_pointer_cast<AudioStream>(
         active_streams[streamId]);
     MediaConfig config{};
@@ -199,6 +202,7 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
         return 0;
     }
 
+    log->debug << "MediaClient::get_video:" << streamId << std::flush;
     auto video_stream = std::dynamic_pointer_cast<VideoStream>(
         active_streams[streamId]);
 

@@ -37,7 +37,6 @@ struct PBEncoder
             case Packet::MediaType::Bad:
             {
                 assert(0);
-                break;
             }
             case Packet::MediaType::F32:
             {
@@ -63,6 +62,7 @@ struct PBEncoder
                 auto video_hdr =
                     std::make_unique<media_message::MediaDataHeader_Video>();
                 video_hdr->set_intraframe(packet->is_intra_frame);
+                hdr->set_allocated_video_header(video_hdr.release());
                 break;
             }
 
@@ -124,15 +124,15 @@ struct PBDecoder
                   std::back_inserter(packet_out->data));
 
         const auto &hdr = media_data.header();
-        if (hdr.has_video_header())
-        {
-            const auto &video_hdr = hdr.video_header();
-            packet_out->is_intra_frame = video_hdr.intraframe();
-        }
         switch (hdr.mediatype())
         {
             case media_message::MediaType::H264:
                 packet_out->mediaType = Packet::MediaType::H264;
+                if (hdr.has_video_header())
+                {
+                    const auto &video_hdr = hdr.video_header();
+                    packet_out->is_intra_frame = video_hdr.intraframe();
+                }
                 break;
             case media_message::MediaType::RAW:
                 packet_out->mediaType = Packet::MediaType::Raw;

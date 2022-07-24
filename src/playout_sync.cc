@@ -30,6 +30,8 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
     sync_action action = sync_action::hold;
     num_pop = 0;
 
+    logger->debug << "[Sync::getVideoAction], queue size " << mq.Q.size() << std::flush;
+
     for (const auto &frame : mq.Q)
     {
         // first frame - pop_discard to IDR - or pop if IDR is next
@@ -37,6 +39,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
         {
             if (!frame->packet->is_intra_frame)
             {
+                logger->info << "[Sync::getVideoAction]: pop_discard not intra frame" << std::flush;
                 action = pop_discard;
                 ++num_pop;
             }
@@ -45,6 +48,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
                 if (action != pop_discard)
                 {
                     action = pop;
+                    logger->info << "[Sync::getVideoAction]: popping " << std::flush;
                     ++num_pop;
                 }
                 break;
@@ -68,6 +72,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
             {
                 // pop (another) older frame
                 action = sync_action::pop;
+                logger->info << "[Sync::getVideoAction]: popping video is older" << std::flush;
                 ++num_pop;
             }
             // audio stopped popping or stopped receiving requires independent
@@ -88,15 +93,17 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
         // video out of order - discard until IDR is found - or return IDR
         else
         {
-            if (action == pop)        // if we find out-of-order deeper in the
-                                      // queue - wait
+            // if we find out-of-order deeper in the queue - wait
+            if (action == pop) {
                 break;
+            }
 
             // TODO:  take into consideration type of frame to support
             // discardable (acceptable) loss
             if (!frame->packet->is_intra_frame)
             {
                 action = pop_discard;
+                logger->info << "[Sync::getVideoAction]: discarding not intra, ooo" << std::flush;
                 ++num_pop;
             }
             else
@@ -110,5 +117,7 @@ Sync::sync_action Sync::getVideoAction(unsigned int /*audio_pop_delay*/,
             }
         }
     }
+
+    logger->debug << "[Sync::getVideoAction]: final action" << (int) action << std::flush;
     return action;
 }

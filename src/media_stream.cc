@@ -45,10 +45,12 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
             media_type = MediaType::invalid;
     }
 
-    logger->info <<"[MediaStream::handle_media]: id"
+    logger->debug <<"[MediaStream::handle_media]: id:"
                  << packet->sourceID << ", media_type:" << media_type
+                 << ", seqNo:" << packet->encodedSequenceNum
+                 << ", is_intra:" << packet->is_intra_frame
                  << ", size:" << packet->data.size()
-                 << ", timestamp: " << packet->sourceRecordTime
+                 << ", timestamp:" << packet->sourceRecordTime
                  << std::flush;
 
     bool new_stream = false;

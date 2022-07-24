@@ -53,6 +53,9 @@ void Jitter::set_video_params(uint32_t video_max_width,
     memset(video.lastDecodedFrame.data(),
            0x80,
            video.lastDecodedFrame.size());        // Gray
+
+    video.decoder = std::make_unique<H264Decoder>(video_decode_pixel_format);
+    assert(video.decoder);
 }
 
 void Jitter::recordMetrics(MetaQueue &q,
@@ -120,7 +123,8 @@ bool Jitter::push(PacketPointer packet,
                     video.sourceID = packet->sourceID;
                 }
 
-                logger->info << "[jitter-v: no assembly needed:" << std::flush;
+                logger->debug << "[jitter-v: seq_no:" << packet->encodedSequenceNum
+                             << ", is_intra:" << packet->is_intra_frame << std::flush;
                 // we got assembled frame, add it to jitter queue
                 video.push(std::move(packet), sync.video_seq_popped, now);
                 break;
@@ -408,12 +412,15 @@ int Jitter::popVideo(uint64_t sourceID,
         return len;
     }
 
-    logger->info << "[Jitter: popVideo: queue has: " << video.mq.size() << " ]"
+    logger->debug << "[Jitter:popVideo]:"<< sourceID
+                 << ", queue has: " << video.mq.size() << " ]"
                  << std::flush;
 
     if (idle_client)
     {
         idle_client = false;
+        // remove this
+        sync.logger = logger;
     }
 
     if (video.mq.empty())
@@ -421,7 +428,7 @@ int Jitter::popVideo(uint64_t sourceID,
         // return the last decoded frame
         len = setDecodedFrame(
             sourceID, width, height, format, timestamp, buffer);
-        logger->info << "[EQ]" << std::flush;
+        logger->debug << "[EQ]" << std::flush;
         return len;
     }
 
@@ -436,10 +443,10 @@ int Jitter::popVideo(uint64_t sourceID,
         case Sync::sync_action::hold:
             len = setDecodedFrame(
                 sourceID, width, height, format, timestamp, buffer);
-            logger->info << "[H]" << std::flush;
+            logger->debug << "[H]" << std::flush;
             break;
         case Sync::sync_action::pop:
-            logger->info << "[POP]: num_pops:" << num_pop << std::flush;
+            logger->debug << "[POP]: num_pops:" << num_pop << std::flush;
             for (unsigned int pops = 0; pops < num_pop; pops++)
             {
                 packet = video.pop(now);
@@ -471,7 +478,7 @@ int Jitter::popVideo(uint64_t sourceID,
             }
             len = setDecodedFrame(
                 sourceID, width, height, format, timestamp, buffer);
-            logger->info << "jitter: popDiscard: keyFrame requested"
+            logger->debug << "jitter: popDiscard: keyFrame requested"
                          << std::flush;
             break;
         case Sync::sync_action::pop_video_only:

@@ -84,14 +84,12 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
             {
                 auto encoded = encode_h264(
                     buffer, length, timestamp, media_config);
-
                 auto ret = Packet::encode(encoded.get(), encoded->encoded_data);
                 if (!ret)
                 {
                     // log err
                     return;
                 }
-
                 media_transport->send_data(id(),
                                            std::move(encoded->encoded_data));
             }
@@ -114,8 +112,9 @@ size_t VideoStream::get_media(uint64_t &timestamp,
                               unsigned int /*max_len*/,
                               void** /*to_free*/)
 {
+    static auto got_first_frame = false;
+
     size_t recv_length = 0;
-    logger->debug << "GetVideoFrame called" << std::flush;
 
     auto jitter = getJitter(client_id);
     if (jitter == nullptr)
@@ -123,6 +122,13 @@ size_t VideoStream::get_media(uint64_t &timestamp,
         logger->warning << "[VideoStream::get_media]: jitter is nullptr"
                         << std::flush;
         return 0;
+    }
+
+    if(!got_first_frame) {
+        got_first_frame = true;
+        jitter->set_video_params(config.video_max_width,
+                                 config.video_max_height,
+                                 (uint32_t ) config.video_decode_pixel_format);
     }
 
     uint32_t pixel_format;
@@ -134,7 +140,7 @@ size_t VideoStream::get_media(uint64_t &timestamp,
                                    buffer);
 
     config.video_decode_pixel_format = (VideoConfig::PixelFormat) pixel_format;
-
+    logger->debug << "[VideoStream::get_media]: recv_length " << recv_length << std::flush;
     return recv_length;
 }
 
@@ -155,7 +161,6 @@ PacketPointer VideoStream::encode_h264(uint8_t *buffer,
         return nullptr;
     }
 
-    int sendRaw = 0;
     // bool keyFrame = reqKeyFrame;
     auto encoded_frame_type = encoder->encode(
         reinterpret_cast<const char *>(buffer),
@@ -180,7 +185,6 @@ PacketPointer VideoStream::encode_h264(uint8_t *buffer,
     }
 
     auto packet = std::make_unique<Packet>();
-
     packet->is_intra_frame = encoded_frame_type ==
                              VideoEncoder::EncodedFrameType::IDR;
 
@@ -190,6 +194,7 @@ PacketPointer VideoStream::encode_h264(uint8_t *buffer,
     packet->mediaType = Packet::MediaType::H264;
     packet->sourceID = id();        // same as streamId
     packet->encodedSequenceNum = encode_sequence_num;
+    packet->sourceRecordTime = timestamp;
     encode_sequence_num += 1;
     return packet;
 }

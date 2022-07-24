@@ -38,7 +38,6 @@ static VideoEncoder::EncodedFrameType toEncodedFrameType(EVideoFrameType frame)
         case EVideoFrameType::videoFrameTypeInvalid:
         default:
             return VideoEncoder::EncodedFrameType::Invalid;
-            break;
     }
 }
 
@@ -210,10 +209,10 @@ H264Encoder::encode(const char *input_buffer,
     bool idr_frame = total_frames_encoded & 63 ? false : true;
     if (genKeyFrame || idr_frame)
     {
-        logger->info << "h264Encoder:: Force IDR, total_frames_encoded: "
+        logger->debug << "h264Encoder:: Force IDR, total_frames_encoded: "
                      << total_frames_encoded << std::flush;
         auto ret = encoder->ForceIntraFrame(true);
-        logger->error << "h264Encoder:: IDR Frame Generation Result " << ret
+        logger->debug << "h264Encoder:: IDR Frame Generation Result " << ret
                       << std::flush;
     }
 

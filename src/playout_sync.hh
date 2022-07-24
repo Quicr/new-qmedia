@@ -17,7 +17,7 @@ public:
     std::chrono::steady_clock::time_point local_video_time_popped;
     uint64_t source_video_time_popped = 0;
     uint64_t video_seq_popped = UINT64_MAX;
-
+    LoggerPointer logger = nullptr;
     enum sync_action
     {
         hold,

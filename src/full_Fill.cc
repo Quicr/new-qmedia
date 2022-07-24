@@ -36,7 +36,9 @@ uint64_t fullFill::calculate_timestamp(LoggerPointer logger, unsigned int front,
                                        uint64_t timestamp) const
 {
     logger->debug << "calculate_timestamp: front " << front << ", timestamp " << timestamp << std::endl;
-    if (front == 0 || timestamp == 0) return timestamp;
+    if (front == 0 || timestamp == 0) {
+        return timestamp;
+    }
 
     uint64_t samples = front / sample_divisor;
     uint64_t microseconds_passed = samples * 1000 / 48;        // assuming 48

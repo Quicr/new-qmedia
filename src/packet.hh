@@ -14,6 +14,7 @@
 #endif
 
 #include <qmedia/media_client.hh>
+#include <qmedia/logger.hh>
 
 namespace qmedia
 {
@@ -62,6 +63,8 @@ public:
     std::vector<uint8_t> data;        // media bytes (may be encrypted or not)
     std::vector<uint8_t> authTag;
     std::vector<uint8_t> encoded_data;        // transport encoded
+
+    LoggerPointer logger = nullptr;
 };
 
 std::ostream &operator<<(std::ostream &os, const Packet::Type &pktType);
