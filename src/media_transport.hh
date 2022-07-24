@@ -16,8 +16,16 @@ struct TransportMessageInfo
     quicr::bytes data;
 };
 
+struct TransportMessageHandler {
+    virtual ~TransportMessageHandler() = default;
+    virtual void handle(TransportMessageInfo&& info) = 0;
+};
+
+
 struct Delegate : public quicr::QuicRClient::Delegate
 {
+    Delegate(TransportMessageHandler* handler);
+
     virtual void on_data_arrived(const std::string &name,
                                  quicr::bytes &&data,
                                  std::uint64_t group_id,
@@ -28,35 +36,49 @@ struct Delegate : public quicr::QuicRClient::Delegate
                                      uint64_t object_id) override;
     virtual void log(quicr::LogLevel level,
                      const std::string &message) override;
-    void get_queued_messages(std::vector<TransportMessageInfo> &messages_out);
+
 
     void set_logger(LoggerPointer logger_in);
 
 private:
-    std::mutex queue_mutex;
-    std::queue<TransportMessageInfo> receive_queue;
     LoggerPointer logger;
+    TransportMessageHandler* message_handler;
+};
+
+struct MediaTransport : TransportMessageHandler {
+    virtual ~MediaTransport() = default;
+    virtual void register_stream(uint64_t id, MediaConfig::MediaDirection direction) = 0;
+    virtual void send_data(uint64_t id, quicr::bytes &&data) = 0;
+    virtual void wait_for_messages() = 0;
+    virtual TransportMessageInfo recv() = 0;
 };
 
 // Wrapper around quicr::QuicRClient
-struct MediaTransport
+struct QuicRMediaTransport : public MediaTransport
 {
-    explicit MediaTransport(const std::string &server_ip,
+    explicit QuicRMediaTransport(const std::string &server_ip,
                             const uint16_t port,
                             LoggerPointer logger_in);
-    ~MediaTransport() = default;
+    ~QuicRMediaTransport() = default;
 
-    void register_stream(uint64_t id, MediaConfig::MediaDirection direction);
+    virtual void register_stream(uint64_t id, MediaConfig::MediaDirection direction) override;
 
-    void send_data(uint64_t id, quicr::bytes &&data);
+    virtual void send_data(uint64_t id, quicr::bytes &&data) override;
 
-    // special function
-    void check_network_messages(std::vector<TransportMessageInfo> &messages_out);
+    virtual void wait_for_messages() override;
+
+    virtual TransportMessageInfo recv() override;
+
+    virtual void handle(TransportMessageInfo&& info) override;
 
 private:
     Delegate delegate;
     quicr::QuicRClient qr_client;
     LoggerPointer logger;
+    std::mutex recv_queue_mutex;
+    std::queue<TransportMessageInfo> receive_queue;
+    std::condition_variable recv_cv;
+    bool shutdown = false;
 };
 
 }        // namespace qmedia

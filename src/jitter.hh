@@ -67,7 +67,7 @@ public:
         PacketPointer createPLC(unsigned int size);
         PacketPointer createZeroPayload(unsigned int size);
 
-        unsigned int getMsPerAudioPacket();
+        unsigned int getMsPerAudioPacket(LoggerPointer logger=nullptr);
         unsigned int getMsInQueue();
         void pruneAudioQueue(std::chrono::steady_clock::time_point now,
                              unsigned int prune_target);
@@ -78,16 +78,16 @@ public:
         MetaQueue mq;
         fullFill playout;        // using fullFill to achieve client asked
                                  // playout lengths
-        uint64_t sourceID;
+        uint64_t sourceID = 0;
         PopFrequencyCounter fps;
-        unsigned int ms_per_audio_packet;
+        unsigned int ms_per_audio_packet = 0;
         unsigned int audio_channels = 1;
         unsigned int audio_sample_rate = 48000;
-        std::shared_ptr<OpusAssembler> opus_assembler;
+        std::shared_ptr<OpusAssembler> opus_assembler = nullptr;
         Silence silence;
 
     private:
-        unsigned int getMsPerPacketInQueue();
+        unsigned int getMsPerPacketInQueue(LoggerPointer logger = nullptr);
     } audio;
 
     class Video
@@ -118,10 +118,10 @@ private:
     bool idle_client;
     PacketPointer interpolatePlc(PacketPointer before, PacketPointer after);
     Resampler resampler;
+    LoggerPointer logger;
     bool shutdown = false;
     const unsigned int maxStreams = 4;
     Packet::MediaType decode_audio_as;
-    LoggerPointer logger;
     Metrics::MeasurementPtr measurement = nullptr;
     void recordMetrics(MetaQueue &q,
                        MetaQueue::media_type type,

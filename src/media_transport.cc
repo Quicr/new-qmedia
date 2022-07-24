@@ -7,6 +7,9 @@ namespace qmedia
 /// Delegate
 ///
 
+Delegate::Delegate(TransportMessageHandler* handler)
+: message_handler(handler){}
+
 void Delegate::set_logger(LoggerPointer logger_in)
 {
     logger = logger_in;
@@ -18,8 +21,9 @@ void Delegate::on_data_arrived(const std::string &name,
                                std::uint64_t object_id)
 {
     log(quicr::LogLevel::debug, "on_data_arrived: " + name);
-    std::lock_guard<std::mutex> lock(queue_mutex);
-    receive_queue.push(TransportMessageInfo{name, group_id, object_id, data});
+    if(message_handler) {
+        message_handler->handle(TransportMessageInfo{name, group_id, object_id, data});
+    }
 }
 
 void Delegate::on_connection_close(const std::string &name)
@@ -49,30 +53,14 @@ void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
     // std::clog << message << std::endl;
 }
 
-void Delegate::get_queued_messages(
-    std::vector<TransportMessageInfo> &messages_out)
-{
-    std::lock_guard<std::mutex> lock(queue_mutex);
-    if (receive_queue.empty())
-    {
-        return;
-    }
-
-    while (!receive_queue.empty())
-    {
-        auto data = receive_queue.front();
-        messages_out.push_back(data);
-        receive_queue.pop();
-    }
-}
-
 ///
-///  MediaTransport
+///  QuicRMediaTransport
 ///
 
-MediaTransport::MediaTransport(const std::string &server_ip,
+QuicRMediaTransport::QuicRMediaTransport(const std::string &server_ip,
                                const uint16_t port,
                                LoggerPointer logger_in) :
+    delegate(this),
     qr_client(delegate, server_ip, port), logger(logger_in)
 {
     while (!qr_client.is_transport_ready())
@@ -83,7 +71,7 @@ MediaTransport::MediaTransport(const std::string &server_ip,
     delegate.set_logger(logger);
 }
 
-void MediaTransport::register_stream(uint64_t id,
+void QuicRMediaTransport::register_stream(uint64_t id,
                                      MediaConfig::MediaDirection direction)
 {
     logger->info << "[MediaTransport]: register_stream " << id << std::flush;
@@ -103,16 +91,44 @@ void MediaTransport::register_stream(uint64_t id,
     }
 }
 
-void MediaTransport::send_data(uint64_t id, quicr::bytes &&data)
+void QuicRMediaTransport::send_data(uint64_t id, quicr::bytes &&data)
 {
     auto qname = quicr::QuicrName{std::to_string(id), 0};
     qr_client.publish_named_data(qname.name, std::move(data), 0, 0);
 }
 
-void MediaTransport::check_network_messages(
-    std::vector<TransportMessageInfo> &messages_out)
+void QuicRMediaTransport::wait_for_messages()
 {
-    delegate.get_queued_messages(messages_out);
+    std::unique_lock<std::mutex> ulock(recv_queue_mutex);
+    recv_cv.wait(ulock, [&]() -> bool {
+                     return (shutdown || !receive_queue.empty());
+                 });
+    ulock.unlock();
+}
+
+TransportMessageInfo QuicRMediaTransport::recv()
+{
+    TransportMessageInfo info;
+    {
+        std::lock_guard<std::mutex> lock(recv_queue_mutex);
+        if (!receive_queue.empty())
+        {
+            info = std::move(receive_queue.front());
+            receive_queue.pop();
+        }
+    }
+    return info;
+}
+
+void QuicRMediaTransport::handle(TransportMessageInfo &&info)
+{
+    // add to recv q and notify
+    {
+        std::lock_guard<std::mutex> lock(recv_queue_mutex);
+        receive_queue.push(std::move(info));
+    }
+
+    recv_cv.notify_all();
 }
 
 }        // namespace qmedia

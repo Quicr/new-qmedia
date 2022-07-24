@@ -75,7 +75,7 @@ void OpusAssembler::decodeMedia(Packet *packet)
                 decodedAudioLen *= sizeof(float) * audio_channels;
                 break;
             default:
-                break;
+                assert(0);
         }
     }
 
@@ -136,6 +136,7 @@ PacketPointer OpusAssembler::opusCreatePLC(const std::size_t &data_length)
             return nullptr;
         }
     }
+
     PacketPointer packet = std::make_unique<Packet>();
     packet->data.resize(0);
     packet->data.reserve(decodedAudioLen);

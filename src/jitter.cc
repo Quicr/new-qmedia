@@ -7,6 +7,17 @@
 
 using namespace qmedia;
 
+static std::string to_hex(const std::vector<uint8_t> &data)
+{
+    std::stringstream hex(std::ios_base::out);
+    hex.flags(std::ios::hex);
+    for (const auto &byte : data)
+    {
+        hex << std::setw(2) << std::setfill('0') << int(byte);
+    }
+    return hex.str();
+}
+
 Jitter::Jitter(const LoggerPointer &parent_logger,
                Metrics::MetricsPtr metricsPtr) :
     idle_client(true), metrics(metricsPtr)
@@ -83,7 +94,7 @@ bool Jitter::push(PacketPointer packet,
     bool new_stream = false;
     uint64_t sourceID = packet->sourceID;
     uint64_t clientID = packet->clientID;
-    logger->info << "[Jitter::push]: media_type: " << (int) packet->mediaType << std::flush;
+
     {
         assert(packet);
         switch (packet->mediaType)
@@ -125,14 +136,14 @@ bool Jitter::push(PacketPointer packet,
                         audio.audio_channels,
                         audio.audio_sample_rate);
                     new_stream = true;
-                    logger->info << "New audio sourceID: " << sourceID
-                                 << std::flush;
                 }
 
                 PacketPointer raw = audio.opus_assembler->push(
                     std::move(packet));
                 if (raw != nullptr)
                 {
+                    auto seq = raw->encodedSequenceNum;
+                    auto dsize = raw->data.size();
                     audio.push(std::move(raw), sync.audio_seq_popped, now);
                     audio.insertAudioPLCs();
                     audio_jitter.updateJitterValues(
@@ -177,33 +188,32 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
         return nullptr;
     }
 
-    logger->info << "[J-PopAudio: Q-depth:" << audio.getMsInQueue() << "]"
-                 << std::flush;
-    logger->info << "[J-PopAudio: Jitter-ms:" << audio_jitter.getJitterMs()
+    logger->debug << "[J-PopAudio: Q-depth:" << audio.mq.size() << "*"
+                 << audio.ms_per_audio_packet << "=" << audio.getMsInQueue()
                  << "]" << std::flush;
-    logger->info << "[J-PopAudio: Asking Length:" << length << "]"
+    logger->debug << "[J-PopAudio: Jitter-ms:" << audio_jitter.getJitterMs()
+                 << "]" << std::flush;
+    logger->debug << "[J-PopAudio: Asking Length:" << length << "]"
                  << std::flush;
-    logger->info << "[J-PopAudio: Playing total in buffers"
-                 << audio.playout.getTotalInBuffers() << "]" << std::flush;
+    logger->debug << "[J-PopAudio: Playing total in buffers"
+                 << audio.playout.getTotalInBuffers(nullptr) << "]" << std::flush;
 
     QueueMonitor(now);
     int num_depth_adjustments = 1;
 
     // loop to ensure clients asking for variable length data
-    while (audio.playout.getTotalInBuffers() < length)
+    while (audio.playout.getTotalInBuffers(logger) < length)
     {
         if (bucket.initialFill(audio.getMsInQueue(),
-                               audio_jitter.getJitterMs()))
+                               audio_jitter.getJitterMs(), logger))
         {
             // we don't have anything in our buffers, create PLC
             packet = audio.createPLC(audio.getFrameSize());
             packet->sourceRecordTime = 0;
-            logger->info << "F-plc" << std::flush;
         }
         else
         {
             double src_ratio = bucket.getSrcRatio();
-            logger->info << "src_ratio:" << src_ratio << std::flush;
             if (num_depth_adjustments > 0 && src_ratio > 1.0)
             {
                 // insert silence if we need to make
@@ -213,7 +223,6 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
                     // talk spurt)
                     packet = audio.createPLC(audio.getFrameSize());
                     packet->sourceRecordTime = 0;
-                    logger->info << "F-plc-silence" << std::flush;
                     --num_depth_adjustments;
                     bucket.adjustQueueDepthTrackerDiscardedPackets(1);
                 }
@@ -234,7 +243,6 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
                     bucket.emptyBucket(now);
                     packet = audio.createPLC(audio.getFrameSize());
                     packet->sourceRecordTime = 0;
-                    logger->debug << "F-plc-empty" << std::flush;
                 }
                 else
                 {
@@ -256,8 +264,6 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
                         sync.audio_popped(packet->sourceRecordTime,
                                           packet->encodedSequenceNum,
                                           now);
-                        logger->info << "[A:" << packet->encodedSequenceNum
-                                     << "]" << std::flush;
                     }
                 }
             }
@@ -290,12 +296,9 @@ PacketPointer Jitter::popAudio(uint64_t sourceID,
     packet->data.resize(0);
     packet->data.reserve(length);
     uint64_t timestamp;
-    audio.playout.fill(packet->data, length, timestamp);
+    audio.playout.fill(logger, packet->data, length, timestamp);
     packet->encodedSequenceNum = sync.audio_seq_popped;
     packet->sourceRecordTime = timestamp;
-    logger->info << "PopAudio-final- encoded-seq-no"
-                 << packet->encodedSequenceNum << std::flush;
-    logger->info << "[QA: " << audio.mq.size() << "]" << std::flush;
     return packet;
 }
 
@@ -518,22 +521,25 @@ void Jitter::QueueMonitor(std::chrono::steady_clock::time_point now)
 {
     std::lock_guard<std::mutex> lock(audio.mq.qMutex);
     unsigned int plcs = 0;
+    logger->debug << "[JQM: last_seq_popped:]" << sync.audio_seq_popped << std::flush;
     unsigned int lost_in_queue = audio.mq.lostInQueue(plcs,
                                                       sync.audio_seq_popped);
     logger->debug << "[JQM: lostInQueue:" << lost_in_queue << ",plcs:" << plcs
                   << "]" << std::flush;
     // total number of audio frames in queue
     unsigned int queue_size = audio.getMsInQueue();
-    logger->debug << "[JQM: Q-Size:" << queue_size << "]" << std::flush;
+    logger->debug << "[JQM: getMsPerAudioPacket" << audio.getMsPerAudioPacket() << "]" << std::flush;
+    logger->debug << "[JQM: Q-Size == getMsPerAudioPacket:" << queue_size << "]" << std::flush;
     // unsigned int queue_size = audio.mq.size();
     // average jitter since the last pop
     unsigned int jitter_ms = audio_jitter.getJitterMs();
-    logger->debug << "[JQM: audio-jitter-ms:" << jitter_ms << "]" << std::flush;
+    logger->debug << "[JQM: averagee audio-jitter-ms:" << jitter_ms << "]" << std::flush;
     unsigned int ms_per_audio = audio.getMsPerAudioPacket();
     logger->debug << "[JQM: ms_per_audio:" << ms_per_audio << "]" << std::flush;
     unsigned int client_fps = audio.fps.getFps();
+    logger->debug << "[JQM: client_fps:" << client_fps << "]" << std::flush;
     bucket.tick(
-        now, queue_size, lost_in_queue, jitter_ms, ms_per_audio, client_fps);
+        now, queue_size, lost_in_queue, jitter_ms, ms_per_audio, client_fps, logger);
 }
 
 ///
@@ -648,9 +654,12 @@ PacketPointer Jitter::Audio::pop(std::chrono::steady_clock::time_point now)
     return packet;
 }
 
-unsigned int Jitter::Audio::getMsPerPacketInQueue()
+unsigned int Jitter::Audio::getMsPerPacketInQueue(LoggerPointer logger)
 {
     std::lock_guard<std::mutex> lock(mq.qMutex);
+    if(logger) {
+        logger->debug << "Audio::getMsPerPacketInQueue:" << mq.Q.size() << std::flush;
+    }
     for (auto &mf : mq.Q)
     {
         if (mf->type == MetaFrame::Type::media)
@@ -668,13 +677,25 @@ unsigned int Jitter::Audio::getMsPerPacketInQueue()
                     break;
             }
             size_t num_bytes = mf->packet->data.size();
+            if(logger) {
+                logger->debug << "Audio::getMsPerPacketInQueue: num_bytes" << num_bytes << std::flush;
+            }
+
             if (num_bytes > 0)
             {
                 //
                 unsigned int samples_per_channel = num_bytes / audio_channels /
                                                    media_type_size;
+                if(logger) {
+                    logger->debug << "Audio::getMsPerPacketInQueue: samples_per_channel" << samples_per_channel << std::flush;
+                }
                 unsigned int msPerPacket = 1000 / (audio_sample_rate /
                                                    samples_per_channel);
+
+                if(logger) {
+                    logger->debug << "Audio::getMsPerPacketInQueue: audio_sample_rate" << audio_sample_rate << std::flush;
+                    logger->debug << "Audio::getMsPerPacketInQueue: msPerPacket" << msPerPacket << std::flush;
+                }
                 return msPerPacket;
             }
         }
@@ -683,11 +704,11 @@ unsigned int Jitter::Audio::getMsPerPacketInQueue()
     return 10;
 }
 
-unsigned int Jitter::Audio::getMsPerAudioPacket()
+unsigned int Jitter::Audio::getMsPerAudioPacket(LoggerPointer logger)
 {
     if (ms_per_audio_packet == 0)
     {
-        ms_per_audio_packet = getMsPerPacketInQueue();
+        ms_per_audio_packet = getMsPerPacketInQueue(logger);
     }
 
     return ms_per_audio_packet;
@@ -707,7 +728,7 @@ unsigned int Jitter::Audio::getFrameSize()
                                            // been received
     }
 
-    unsigned int samples_per_frame = audio_sample_rate / frames_per_sec;
+    unsigned int samples_per_frame = audio_sample_rate / 100;
     unsigned samples_per_channel = samples_per_frame * sizeof(float);
     return samples_per_channel * audio_channels;
 }

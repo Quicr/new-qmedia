@@ -4,6 +4,7 @@
 #include <qmedia/media_client.hh>
 #include "media_transport.hh"
 #include "media_stream.hh"
+#include "packet.hh"
 
 namespace qmedia
 {
@@ -19,7 +20,7 @@ void MediaClient::init_transport(TransportType /*transport_type*/,
                                  const std::string &remote_address,
                                  unsigned int remote_port)
 {
-    media_transport = std::make_shared<MediaTransport>(
+    media_transport = std::make_shared<QuicRMediaTransport>(
         remote_address, remote_port, log);
 
     work_thread = std::thread(start_work_thread, this);
@@ -129,41 +130,44 @@ void MediaClient::do_work()
     // Wait on a condition variable
     while (!shutdown)
     {
-        auto messages = std::vector<TransportMessageInfo>{};
-        media_transport->check_network_messages(messages);
+        media_transport->wait_for_messages();
+        auto message = media_transport->recv();
 
-        if (messages.empty())
+        if (message.data.empty())
         {
             continue;
         }
 
-        for (auto &message : messages)
+        log->info << "do_work: got message, data:" << message.data.size() << std::flush;
+
+        MediaStreamId media_stream_id{0};
+        std::istringstream iss(message.name);
+        iss >> media_stream_id;
+
+        //  Note: since a subscribe should preceed before
+        // data arrive, we should find an entry when
+        // there is data for a given stream
+        if (!active_streams.count(media_stream_id))
         {
-            MediaStreamId media_stream_id{0};
-            std::istringstream iss(message.name);
-            iss >> media_stream_id;
-            //  Note: since a subscribe should preceed before
-            // data arrive, we should find an entry when
-            // there is data for a given stream
-            if (!active_streams.count(media_stream_id))
-            {
-                log->warning << media_stream_id << " not found, ignoring data"
-                             << std::flush;
-                continue;
-            }
-            // hand the data to appropriate media stream
-            active_streams[media_stream_id]->handle_media(new_stream_callback,
-                                                          message.group_id,
-                                                          message.object_id,
-                                                          std::move(message.data));
+            log->warning << media_stream_id << " not found, ignoring data"
+                         << std::flush;
+            continue;
         }
+
+        // hand the data to appropriate media stream
+        active_streams[media_stream_id]->handle_media(new_stream_callback,
+                                                      message.group_id,
+                                                      message.object_id,
+                                                      std::move(message.data));
+
     }
 }
 
 int MediaClient::get_audio(MediaStreamId streamId,
                            uint64_t &timestamp,
                            unsigned char **buffer,
-                           unsigned int max_len)
+                           unsigned int max_len,
+                           void  **to_free)
 {
     uint32_t recv_length = 0;
     // happens on client thread
@@ -176,8 +180,7 @@ int MediaClient::get_audio(MediaStreamId streamId,
     auto audio_stream = std::dynamic_pointer_cast<AudioStream>(
         active_streams[streamId]);
     MediaConfig config{};
-    recv_length = audio_stream->get_media(timestamp, config, buffer, max_len);
-
+    return audio_stream->get_media(timestamp, config, buffer, max_len, to_free);
 }
 
 std::uint32_t MediaClient::get_video(MediaStreamId streamId,
@@ -185,7 +188,8 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
                                      uint32_t &width,
                                      uint32_t &height,
                                      uint32_t &format,
-                                     unsigned char **buffer)
+                                     unsigned char **buffer,
+                                     void **to_free)
 {
     uint32_t recv_length = 0;
     // happens on client thread
@@ -199,11 +203,16 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
         active_streams[streamId]);
 
     MediaConfig config{};
-    recv_length = video_stream->get_media(timestamp, config, buffer, 0);
+    recv_length = video_stream->get_media(timestamp, config, buffer, 0, to_free);
     width = config.video_max_width;
     height = config.video_max_height;
     format = (uint32_t) config.video_decode_pixel_format;
     return recv_length;
+}
+
+void MediaClient::release_media_buffer(void *buffer)
+{
+    delete((Packet*) buffer);
 }
 
 }        // namespace qmedia

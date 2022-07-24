@@ -77,6 +77,7 @@ public:
     unsigned int totalPacketBytes();
     uint64_t getNextSeq();
     uint64_t getNextSourceTime();
+    LoggerPointer logger = nullptr;
 
 private:
     void drainToMax();

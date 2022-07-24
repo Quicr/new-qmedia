@@ -30,20 +30,10 @@ public:
         client_id(client_id_in),
         config(config_in),
         logger(logger_in)
-    {
-    }
+    {}
 
     virtual ~MediaStream() = default;
 
-    void set_transport(std::shared_ptr<MediaTransport> transport)
-    {
-        media_transport = transport;
-    }
-
-    void handle_media(MediaClient::NewSourceCallback stream_callback,
-                      uint64_t group_id,
-                      uint64_t object_id,
-                      std::vector<uint8_t> &&bytes);
     virtual MediaStreamId id() = 0;
     virtual void handle_media(MediaConfig::CodecType codec_type,
                               uint8_t *buffer,
@@ -53,7 +43,19 @@ public:
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
                              unsigned char **buffer,
-                             unsigned int max_len) = 0;
+                             unsigned int max_len,
+                             void** to_free) = 0;
+
+    // self
+    void set_transport(std::shared_ptr<MediaTransport> transport)
+    {
+        media_transport = transport;
+    }
+
+    void handle_media(MediaClient::NewSourceCallback stream_callback,
+                      uint64_t group_id,
+                      uint64_t object_id,
+                      std::vector<uint8_t> &&bytes);
 
 protected:
     // jitter helpers
@@ -94,11 +96,12 @@ struct AudioStream : public MediaStream
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
                              unsigned char **buffer,
-                             unsigned int max_len) override;
+                             unsigned int max_len,
+                             void** to_free) override;
 
 private:
     std::shared_ptr<AudioEncoder> setupAudioEncoder();
-    void audio_encoder_callback(std::vector<uint8_t> &&bytes);
+    void audio_encoder_callback(std::vector<uint8_t> &&bytes, uint64_t timestamp);
     std::shared_ptr<AudioEncoder> encoder = nullptr;
     uint64_t encode_sequence_num = 0;
 };
@@ -125,7 +128,8 @@ struct VideoStream : public MediaStream
     virtual size_t get_media(uint64_t &timestamp,
                              MediaConfig &config,
                              unsigned char **buffer,
-                             unsigned int max_len) override;
+                             unsigned int max_len,
+                             void** to_free) override;
 
 private:
     PacketPointer encode_h264(uint8_t *buffer,

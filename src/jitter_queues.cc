@@ -107,7 +107,6 @@ void MetaQueue::queueAudioFrame(PacketPointer raw_packet,
                                 std::chrono::steady_clock::time_point now)
 {
     uint64_t new_seq = raw_packet->encodedSequenceNum;
-
     // check if it is not too old play - throw it
     if (last_seq_popped != 0 && new_seq <= last_seq_popped)
     {
@@ -150,7 +149,6 @@ void MetaQueue::queueAudioFrame(PacketPointer raw_packet,
                     // skip
                     ++metrics.discarded_repeats;
                     return;
-                    break;
                 case MetaFrame::Type::plc_dual:
                     if (frame->type == MetaFrame::Type::media)
                     {
@@ -186,6 +184,7 @@ void MetaQueue::queueAudioFrame(PacketPointer raw_packet,
             }
         }
     }
+
 }
 
 PacketPointer MetaQueue::pop(std::chrono::steady_clock::time_point now)

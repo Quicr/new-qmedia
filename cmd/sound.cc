@@ -166,7 +166,7 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 
         std::chrono::steady_clock::time_point get_audio =
             std::chrono::steady_clock::now();
-        int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size);
+        int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size, nullptr);
         auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - get_audio);
         logger->info << "{A:" << audio_delta.count() << "}" << std::flush;
@@ -406,6 +406,18 @@ int main(int argc, char *argv[])
         config.sample_rate = 48000;
         config.sample_type = AudioConfig::SampleType::Float32;
         stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
+        threads.emplace_back(playThreadFunc, &client, stream_id);
+        threads.at(0).detach();
+    } else if (mode == "sendrecv") {
+        MediaConfig config{};
+        config.media_direction = MediaConfig::MediaDirection::sendrecv;
+        config.media_codec = MediaConfig::CodecType::opus;
+        config.channels = 1;
+        config.sample_rate = 48000;
+        config.sample_type = AudioConfig::SampleType::Float32;
+        stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
+        // start and play threads
+        threads.emplace_back(recordThreadFunc, &client, stream_id);
         threads.emplace_back(playThreadFunc, &client, stream_id);
         threads.at(0).detach();
     }

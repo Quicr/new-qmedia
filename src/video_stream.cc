@@ -111,10 +111,11 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
 size_t VideoStream::get_media(uint64_t &timestamp,
                               MediaConfig &config,
                               unsigned char **buffer,
-                              unsigned int /*max_len*/)
+                              unsigned int /*max_len*/,
+                              void** /*to_free*/)
 {
     size_t recv_length = 0;
-    logger->debug << "GetvideoFrame called" << std::flush;
+    logger->debug << "GetVideoFrame called" << std::flush;
 
     auto jitter = getJitter(client_id);
     if (jitter == nullptr)
@@ -173,13 +174,10 @@ PacketPointer VideoStream::encode_h264(uint8_t *buffer,
     if (encoded_frame_type == VideoEncoder::EncodedFrameType::Skip ||
         encoded_frame_type == VideoEncoder::EncodedFrameType::Invalid)
     {
-        logger->info << "Encoded Frame Type ignored due "
+        logger->info << "[VideoStream::encode_h264] Encoded Frame Type ignored due "
                      << (int) encoded_frame_type << std::flush;
         return nullptr;
     }
-
-    logger->info << "Encoded Frame Type is  " << (int) encoded_frame_type
-                 << std::flush;
 
     auto packet = std::make_unique<Packet>();
 

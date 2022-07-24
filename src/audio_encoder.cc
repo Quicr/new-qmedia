@@ -136,15 +136,15 @@ std::vector<uint8_t> AudioEncoder::encode(const std::vector<uint8_t> &data)
 
 void AudioEncoder::pop_and_encode()
 {
-    while (buffers.getTotalInBuffers() >= output_bytes)
+    while (buffers.getTotalInBuffers(logger) >= output_bytes)
     {
         std::vector<uint8_t> fill_buffer;
         unsigned int fill_length = output_bytes;
         uint64_t timestamp;
-        if (buffers.fill(fill_buffer, fill_length, timestamp))
+        if (buffers.fill(logger, fill_buffer, fill_length, timestamp))
         {
             auto output = encode(fill_buffer);
-            encoded_frame_ready(std::move(output));
+            encoded_frame_ready(std::move(output), timestamp);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace qmedia
 struct AudioEncoder
 {
 public:
-    typedef std::function<void(std::vector<uint8_t> &&)> frameReadyCallback;
+    typedef std::function<void(std::vector<uint8_t> &&, uint64_t)> frameReadyCallback;
 
     AudioEncoder(unsigned int audio_sample_rate,
                  int audio_channels,

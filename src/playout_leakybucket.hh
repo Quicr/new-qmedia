@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <deque>
+#include <qmedia/logger.hh>
 
 namespace qmedia
 {
@@ -46,9 +47,10 @@ public:
               unsigned int lost_in_queue,
               unsigned int audio_jitter_ms,
               unsigned int ms_per_audio,
-              unsigned int fps);
+              unsigned int fps,
+              LoggerPointer logger = nullptr);
     void adjustQueueDepthTrackerDiscardedPackets(int num);
-    bool initialFill(unsigned int ms_in_queue, unsigned int jitter_ms);
+    bool initialFill(unsigned int ms_in_queue, unsigned int jitter_ms, LoggerPointer logger=nullptr);
     double getSrcRatio();
 
 private:

@@ -3,7 +3,7 @@
 #include <list>
 #include <vector>
 #include <mutex>
-
+#include <qmedia/logger.hh>
 namespace qmedia
 {
 /**
@@ -15,11 +15,11 @@ public:
     fullFill();
     ~fullFill() = default;
 
-    unsigned int getTotalInBuffers();
+    unsigned int getTotalInBuffers(LoggerPointer logger);
     void addBuffer(const uint8_t *buffer,
                    unsigned int length,
                    std::uint64_t timestamp);
-    bool fill(std::vector<uint8_t> &fill_buffer,
+    bool fill(LoggerPointer logger, std::vector<uint8_t> &fill_buffer,
               unsigned int fill_length,
               std::uint64_t &timestamp);
 
@@ -29,7 +29,8 @@ public:
     unsigned int read_front;
     std::mutex buff_mutex;
 
-    [[nodiscard]] uint64_t calculate_timestamp(unsigned int read_front,
+    [[nodiscard]] uint64_t calculate_timestamp(LoggerPointer logger,
+                                               unsigned int read_front,
                                                uint64_t timestamp) const;
     uint32_t sample_divisor = 1 * sizeof(float);        // per_sample_divisor is
                                                         // to translate the

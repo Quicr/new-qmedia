@@ -64,9 +64,10 @@ extern "C"
 
     EXPORT int CALL MediaClient_getAudio(void *instance,
                                          std::uint64_t streamId,
-                                         std::uint64_t &timestamp,
+                                         std::uint64_t *timestamp,
                                          unsigned char **buffer,
-                                         unsigned int max_len);
+                                         unsigned int max_len,
+                                         void **to_free);
 
     EXPORT void CALL MediaClient_sendVideoFrame(void *instance,
                                                 std::uint64_t streamId,
@@ -83,9 +84,12 @@ extern "C"
 
     EXPORT std::uint32_t CALL MediaClient_getVideoFrame(void *instance,
                                                         std::uint64_t streamId,
-                                                        std::uint64_t &timestamp,
-                                                        std::uint32_t &width,
-                                                        std::uint32_t &height,
-                                                        std::uint32_t &format,
-                                                        unsigned char **buffer);
+                                                        std::uint64_t *timestamp,
+                                                        std::uint32_t *width,
+                                                        std::uint32_t *height,
+                                                        std::uint32_t *format,
+                                                        unsigned char **buffer,
+                                                        void **to_free);
+
+    EXPORT void CALL release_media_buffer(void *instance, void* buffer);
 }

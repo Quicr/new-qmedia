@@ -135,14 +135,18 @@ public:
     int get_audio(MediaStreamId streamId,
                   uint64_t &timestamp,
                   unsigned char **buffer,
-                  unsigned int max_len);
+                  unsigned int max_len,
+                  void **to_free);
 
     std::uint32_t get_video(MediaStreamId streamId,
                             uint64_t &timestamp,
                             uint32_t &width,
                             uint32_t &height,
                             uint32_t &format,
-                            unsigned char **buffer);
+                            unsigned char **buffer,
+                            void **to_free);
+
+    void release_media_buffer(void* buffer);
 
 private:
     // Should this be exposed in public header ??
