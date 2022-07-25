@@ -77,6 +77,13 @@ private:
     LoggerPointer logger;
     std::mutex recv_queue_mutex;
     std::queue<TransportMessageInfo> receive_queue;
+
+    std::mutex recv_audio_queue_mutex;
+    std::queue<TransportMessageInfo> receive_audio_queue;
+
+    std::mutex recv_video_queue_mutex;
+    std::queue<TransportMessageInfo> receive_video_queue;
+
     std::condition_variable recv_cv;
     bool shutdown = false;
 };

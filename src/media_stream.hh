@@ -58,13 +58,6 @@ public:
                       std::vector<uint8_t> &&bytes);
 
 protected:
-    // jitter helpers
-    const unsigned int maxJitters = 2;
-    std::map<uint64_t, std::shared_ptr<Jitter>> jitters;
-    std::shared_ptr<Jitter> getJitter(uint64_t client_id);
-    std::shared_ptr<Jitter> createJitter(uint64_t clientID,
-                                         const MediaConfig &config);
-
     std::atomic<bool> mutedAudioEmptyFrames = false;
 
     uint64_t domain = 0;
@@ -139,6 +132,7 @@ private:
 
     std::unique_ptr<VideoEncoder> encoder = nullptr;
     uint64_t encode_sequence_num = 0;
+    std::atomic<bool> is_decoder_initialized = false;
 };
 
 // MediaStream Factory

@@ -15,7 +15,7 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
 {
     if (data.empty())
     {
-        // log here
+        logger->info << "[MediaStream::handle_media]: empty data " << std::flush;
         return;
     }
 
@@ -24,7 +24,7 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
     auto ret = Packet::decode(data, packet.get());
     if (!ret)
     {
-        // log here
+        logger->info << "[MediaStream::handle_media]: packet decoder error " << std::flush;
         return;
     }
 
@@ -45,31 +45,39 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
             media_type = MediaType::invalid;
     }
 
-    logger->debug <<"[MediaStream::handle_media]: id:"
-                 << packet->sourceID << ", media_type:" << media_type
-                 << ", seqNo:" << packet->encodedSequenceNum
-                 << ", is_intra:" << packet->is_intra_frame
-                 << ", size:" << packet->data.size()
-                 << ", timestamp:" << packet->sourceRecordTime
-                 << std::flush;
+    if (media_type == MediaType::video)
+    {
+        logger->info << "[MediaStream::handle_media]: id:" << packet->sourceID
+                     << ", media_type:" << media_type
+                     << ", seqNo:" << packet->encodedSequenceNum
+                     << ", is_intra:" << packet->is_intra_frame
+                     << ", size:" << packet->data.size()
+                     << ", timestamp:" << packet->sourceRecordTime
+                     << std::flush;
+    } else if (media_type == MediaType::audio) {
+        logger->debug << "[MediaStream::handle_media]: id:" << packet->sourceID
+                     << ", media_type:" << media_type
+                     << ", seqNo:" << packet->encodedSequenceNum
+                     << ", size:" << packet->data.size()
+                     << std::flush;
+    }
 
     bool new_stream = false;
-    auto jitter_instance = getJitter(client_id);
+    auto jitter_instance = JitterFactory::GetJitter(logger, client_id);
     if (jitter_instance == nullptr)
     {
-        jitter_instance = createJitter(client_id, config);
+        logger->warning << "[MediaStream::handle_media]: jitter is null" << std::flush;
+        return;
     }
 
-    if (jitter_instance != nullptr)
+    new_stream = jitter_instance->push(std::move(packet));
+    // jitter assembles packets to frames, decodes, conceals
+    // and makes frames available to client
+    if (new_stream && stream_callback)
     {
-        new_stream = jitter_instance->push(std::move(packet));
-        // jitter assembles packets to frames, decodes, conceals
-        // and makes frames available to client
-        if (new_stream && stream_callback)
-        {
-            stream_callback(client_id, source_id, source_ts, media_type);
-        }
+        stream_callback(client_id, source_id, source_ts, media_type);
     }
+
 }
 
 ///
@@ -103,6 +111,28 @@ void AudioStream::configure()
         default:
             assert("Invalid media direction");
     }
+
+    // setup jitters
+    auto jitter = JitterFactory::GetJitter(logger, client_id);
+    if (jitter == nullptr)
+    {
+        logger->error << "[VideoStream::configure]: jitter is null" << std::flush;
+    }
+
+    Packet::MediaType packet_media_type = Packet::MediaType::Bad;
+    switch (config.sample_type)
+    {
+        case AudioConfig::SampleType::Float32:
+            packet_media_type = Packet::MediaType::F32;
+            break;
+        case AudioConfig::SampleType::PCMint16:
+            packet_media_type = Packet::MediaType::L16;
+            break;
+        default:
+            assert(0);
+    }
+
+    jitter->set_audio_params(config.sample_rate, config.channels, packet_media_type);
 }
 
 MediaStreamId AudioStream::id()
@@ -159,7 +189,7 @@ size_t AudioStream::get_media(uint64_t &timestamp,
                               void** to_free)
 {
     int recv_length = 0;
-    auto jitter = getJitter(client_id);
+    auto jitter = JitterFactory::GetJitter(logger, client_id);
     if (jitter == nullptr) {
         logger->error << "[AudioStream::get_media] Jitter not found" << std::flush;
         return 0;
@@ -229,44 +259,6 @@ std::shared_ptr<AudioEncoder> AudioStream::setupAudioEncoder()
     }
 
     return encoder;
-}
-
-std::shared_ptr<Jitter> MediaStream::getJitter(uint64_t client_id)
-{
-    if (auto it{jitters.find(client_id)}; it != std::end(jitters))
-    {
-        return it->second;
-    }
-    return nullptr;
-}
-
-std::shared_ptr<Jitter> MediaStream::createJitter(uint64_t clientID,
-                                                  const MediaConfig &config)
-{
-    Packet::MediaType packet_media_type = Packet::MediaType::Bad;
-    switch (config.sample_type)
-    {
-        case AudioConfig::SampleType::Float32:
-            packet_media_type = Packet::MediaType::F32;
-            break;
-        case AudioConfig::SampleType::PCMint16:
-            packet_media_type = Packet::MediaType::L16;
-            break;
-        default:
-            assert(0);
-    }
-
-    if (jitters.size() < maxJitters)
-    {
-        // todo: add metrics
-        auto jitter = std::make_shared<Jitter>(logger);
-        jitter->set_audio_params(
-            config.sample_rate, config.channels, packet_media_type);
-        auto ret = jitters.emplace(clientID, jitter);
-        return ret.first->second;
-    }
-
-    return nullptr;
 }
 
 }        // namespace qmedia

@@ -16,11 +16,14 @@ VideoStream::VideoStream(uint64_t domain,
 void VideoStream::configure()
 {
     media_direction = config.media_direction;
-
+    logger->info << "[VideoStream::configure]: dir :" << (int) media_direction
+                 << "width=" << config.video_max_width
+                 << "height=" << config.video_max_height
+                 << std::flush;
     switch (config.media_direction)
     {
         case MediaConfig::MediaDirection::recvonly:
-            // setup decoder
+            // setup decoder, done in jitter
             break;
         case MediaConfig::MediaDirection::sendonly:
             // setup encoder
@@ -40,11 +43,22 @@ void VideoStream::configure()
             break;
         case MediaConfig::MediaDirection::sendrecv:
             // setup encoder and decoder
+            // todo we mgiht not need this case
             break;
         case MediaConfig::MediaDirection::unknown:
         default:
             assert("Invalid media direction");
     }
+
+    auto jitter =  JitterFactory::GetJitter(logger, client_id);
+    if (jitter == nullptr)
+    {
+        logger->error << "[VideoStream::configure]: jitter is null" << std::flush;
+    }
+
+    jitter->set_video_params(config.video_max_width,
+                             config.video_max_height,
+                             (uint32_t ) config.video_decode_pixel_format);
 }
 
 MediaStreamId VideoStream::id()
@@ -90,16 +104,16 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                     // log err
                     return;
                 }
+                logger->info << "[VideoStream::handle_media]: " << id()
+                             << ", sending " << encoded->encodedSequenceNum
+                             << std::flush;
                 media_transport->send_data(id(),
                                            std::move(encoded->encoded_data));
             }
         }
         break;
         case MediaConfig::CodecType::raw:
-        {
-            // decode and send to render
-            // decode(codec_type, *buffer, length, timestamp)
-        }
+        {}
         break;
         default:
             assert("Incorrect codec type");
@@ -107,28 +121,19 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
 }
 
 size_t VideoStream::get_media(uint64_t &timestamp,
-                              MediaConfig &config,
+                              MediaConfig &config_in,
                               unsigned char **buffer,
                               unsigned int /*max_len*/,
                               void** /*to_free*/)
 {
-    static auto got_first_frame = false;
-
     size_t recv_length = 0;
 
-    auto jitter = getJitter(client_id);
+    auto jitter = JitterFactory::GetJitter(logger, client_id);
     if (jitter == nullptr)
     {
         logger->warning << "[VideoStream::get_media]: jitter is nullptr"
                         << std::flush;
         return 0;
-    }
-
-    if(!got_first_frame) {
-        got_first_frame = true;
-        jitter->set_video_params(config.video_max_width,
-                                 config.video_max_height,
-                                 (uint32_t ) config.video_decode_pixel_format);
     }
 
     uint32_t pixel_format;
@@ -140,7 +145,11 @@ size_t VideoStream::get_media(uint64_t &timestamp,
                                    buffer);
 
     config.video_decode_pixel_format = (VideoConfig::PixelFormat) pixel_format;
-    logger->debug << "[VideoStream::get_media]: recv_length " << recv_length << std::flush;
+    logger->info << "[VideoStream::get_media]: recv_length " << recv_length << std::flush;
+    if(buffer == nullptr) {
+        assert(0);
+    }
+
     return recv_length;
 }
 

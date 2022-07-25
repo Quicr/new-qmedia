@@ -19,6 +19,7 @@
 
 namespace qmedia
 {
+
 class Jitter
 {
 public:
@@ -143,6 +144,13 @@ private:
                            std::chrono::steady_clock::time_point now);
 
     void idleClientPruneAudio(std::chrono::steady_clock::time_point now);
+};
+
+struct JitterFactory {
+
+    static std::shared_ptr<Jitter> GetJitter(LoggerPointer logger, uint64_t client_id);
+    static const unsigned int maxJitters = 2;
+    static std::map<uint64_t, std::shared_ptr<Jitter>> jitters;
 };
 
 }        // namespace qmedia

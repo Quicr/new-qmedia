@@ -20,8 +20,11 @@ void Delegate::on_data_arrived(const std::string &name,
                                std::uint64_t group_id,
                                std::uint64_t object_id)
 {
-    log(quicr::LogLevel::debug, "on_data_arrived: " + name);
     if(message_handler) {
+        if(data.size() > 100)
+        {
+            log(quicr::LogLevel::debug, "on_data_arrived: name " + name);
+        }
         message_handler->handle(TransportMessageInfo{name, group_id, object_id, data});
     }
 }
@@ -48,9 +51,8 @@ void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
     // todo: add support for inserting logger
     if (logger)
     {
-        logger->debug << message << std::flush;
+        logger->info << message << std::flush;
     }
-    // std::clog << message << std::endl;
 }
 
 ///
@@ -108,6 +110,7 @@ void QuicRMediaTransport::wait_for_messages()
 
 TransportMessageInfo QuicRMediaTransport::recv()
 {
+
     TransportMessageInfo info;
     {
         std::lock_guard<std::mutex> lock(recv_queue_mutex);
@@ -116,6 +119,12 @@ TransportMessageInfo QuicRMediaTransport::recv()
             info = std::move(receive_queue.front());
             receive_queue.pop();
         }
+    }
+
+    if(info.data.size() > 200) {
+        logger->info << "[QuicRMediaTransport:recv]: Got a message off the queue "
+                     << info.name << ", size:" << info.data.size() << ", q-size: "
+                     << receive_queue.size() << std::flush;
     }
     return info;
 }
@@ -127,7 +136,6 @@ void QuicRMediaTransport::handle(TransportMessageInfo &&info)
         std::lock_guard<std::mutex> lock(recv_queue_mutex);
         receive_queue.push(std::move(info));
     }
-
     recv_cv.notify_all();
 }
 

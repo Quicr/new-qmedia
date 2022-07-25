@@ -133,13 +133,11 @@ void MediaClient::do_work()
     {
         media_transport->wait_for_messages();
         auto message = media_transport->recv();
-
         if (message.data.empty())
         {
+            log->info << "[MediaClient::do_work]: Message data is empty" << std::flush;
             continue;
         }
-
-        log->debug << "do_work: got message, data:" << message.data.size() << std::flush;
 
         MediaStreamId media_stream_id{0};
         std::istringstream iss(message.name);
@@ -153,6 +151,13 @@ void MediaClient::do_work()
             log->warning << media_stream_id << " not found, ignoring data"
                          << std::flush;
             continue;
+        }
+
+        if (message.data.size() > 100)
+        {
+            log->info << "[MediaClient::do_work]: got message for "
+                      << media_stream_id << " data:" << message.data.size()
+                      << std::flush;
         }
 
         // hand the data to appropriate media stream
@@ -198,13 +203,14 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
     // happens on client thread
     if (!active_streams.count(streamId))
     {
-        // log and return
+        log->warning << "[MediaClient::get_video]: media stream inactive" << std::flush;
         return 0;
     }
 
-    log->debug << "MediaClient::get_video:" << streamId << std::flush;
     auto video_stream = std::dynamic_pointer_cast<VideoStream>(
         active_streams[streamId]);
+
+    log->info << "MediaClient::get_video:" << streamId << std::flush;
 
     MediaConfig config{};
     recv_length = video_stream->get_media(timestamp, config, buffer, 0, to_free);
