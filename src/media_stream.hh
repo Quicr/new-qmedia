@@ -46,7 +46,6 @@ public:
                              unsigned int max_len,
                              void** to_free) = 0;
 
-    // self
     void set_transport(std::shared_ptr<MediaTransport> transport)
     {
         media_transport = transport;
@@ -56,6 +55,8 @@ public:
                       uint64_t group_id,
                       uint64_t object_id,
                       std::vector<uint8_t> &&bytes);
+
+    void remove_stream();
 
 protected:
     std::atomic<bool> mutedAudioEmptyFrames = false;

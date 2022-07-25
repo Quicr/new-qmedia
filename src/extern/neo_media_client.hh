@@ -54,7 +54,8 @@ extern "C"
                                std::uint32_t video_max_bitrate);
 
     EXPORT void CALL
-    MediaClient_RemoveVideoStream(std::uint64_t media_stream_id);
+    MediaClient_RemoveMediaStream(void *instance,
+                                  std::uint64_t media_stream_id);
 
     EXPORT void CALL MediaClient_sendAudio(void *instance,
                                            uint64_t media_stream_id,

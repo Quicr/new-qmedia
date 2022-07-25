@@ -93,6 +93,25 @@ void QuicRMediaTransport::register_stream(uint64_t id,
     }
 }
 
+void QuicRMediaTransport::unregister_stream(uint64_t id, MediaConfig::MediaDirection direction)
+{
+    logger->info << "[MediaTransport]: unregister_stream " << id << std::flush;
+    auto qname = quicr::QuicrName{std::to_string(id), 0};
+    if (direction == MediaConfig::MediaDirection::sendonly)
+    {
+        qr_client.unregister_names({qname});
+    }
+    else if (direction == MediaConfig::MediaDirection::recvonly)
+    {
+        qr_client.unsubscribe({qname});
+    }
+    else
+    {
+        qr_client.unregister_names({qname});
+        qr_client.unsubscribe({qname});
+    }
+}
+
 void QuicRMediaTransport::send_data(uint64_t id, quicr::bytes &&data)
 {
     auto qname = quicr::QuicrName{std::to_string(id), 0};

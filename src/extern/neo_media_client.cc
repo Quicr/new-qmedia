@@ -114,8 +114,16 @@ extern "C"
             domain, conference_id, client_id, config);
     }
 
-    void CALL MediaClient_RemoveVideoStream(std::uint64_t /*media_stream_id*/)
+    void CALL MediaClient_RemoveMediaStream(void *instance,
+                                            std::uint64_t media_stream_id)
     {
+        if (!instance)
+        {
+            return;
+        }
+
+        auto media_client = static_cast<MediaClient *>(instance);
+        media_client->remove_media_stream(media_stream_id);
     }
 
     void CALL MediaClient_sendAudio(void *instance,

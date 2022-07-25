@@ -223,6 +223,18 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
     return recv_length;
 }
 
+void MediaClient::remove_media_stream(MediaStreamId media_stream_id)
+{
+    // happens on client thread
+    if (!active_streams.count(media_stream_id))
+    {
+        log->warning << "[MediaClient::get_video]: media stream inactive" << std::flush;
+        return;
+    }
+
+    active_streams[media_stream_id]->remove_stream();
+}
+
 void MediaClient::release_media_buffer(void *buffer)
 {
     delete((Packet*) buffer);

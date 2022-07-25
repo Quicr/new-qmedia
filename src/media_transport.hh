@@ -48,6 +48,7 @@ private:
 struct MediaTransport : TransportMessageHandler {
     virtual ~MediaTransport() = default;
     virtual void register_stream(uint64_t id, MediaConfig::MediaDirection direction) = 0;
+    virtual void unregister_stream(uint64_t id, MediaConfig::MediaDirection direction) = 0;
     virtual void send_data(uint64_t id, quicr::bytes &&data) = 0;
     virtual void wait_for_messages() = 0;
     virtual TransportMessageInfo recv() = 0;
@@ -62,6 +63,8 @@ struct QuicRMediaTransport : public MediaTransport
     ~QuicRMediaTransport() = default;
 
     virtual void register_stream(uint64_t id, MediaConfig::MediaDirection direction) override;
+
+    virtual void unregister_stream(uint64_t id, MediaConfig::MediaDirection direction) override;
 
     virtual void send_data(uint64_t id, quicr::bytes &&data) override;
 

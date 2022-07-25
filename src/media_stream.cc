@@ -80,6 +80,13 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
 
 }
 
+void MediaStream::remove_stream()
+{
+    if(media_transport) {
+        media_transport->unregister_stream(id(), media_direction);
+    }
+}
+
 ///
 /// Audio Stream Api
 ///
