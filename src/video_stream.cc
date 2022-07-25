@@ -138,14 +138,13 @@ size_t VideoStream::get_media(uint64_t &timestamp,
 
     uint32_t pixel_format;
     recv_length = jitter->popVideo(id(),
-                                   config.video_max_width,
-                                   config.video_max_height,
+                                   config_in.video_max_width,
+                                   config_in.video_max_height,
                                    pixel_format,
                                    timestamp,
                                    buffer);
 
-    config.video_decode_pixel_format = (VideoConfig::PixelFormat) pixel_format;
-    logger->info << "[VideoStream::get_media]: recv_length " << recv_length << std::flush;
+    config_in.video_decode_pixel_format = (VideoConfig::PixelFormat) pixel_format;
     if(buffer == nullptr) {
         assert(0);
     }

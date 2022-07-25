@@ -137,7 +137,6 @@ bool Jitter::push(PacketPointer packet,
 
                 break;
             }
-            break;
             case Packet::MediaType::Opus:
             {
                 if (audio.opus_assembler == nullptr)
@@ -346,10 +345,10 @@ int Jitter::setDecodedFrame(uint64_t /*sourceID*/,
                  << ",height:" << height
                  << ",format:" << (int) format
                  << ",timestamp:" << timestamp
+                 << ",size:" << video.lastDecodedFrame.size()
                  << std::flush;
 
-
-                                  return video.lastDecodedFrame.size();
+    return video.lastDecodedFrame.size();
 }
 
 void Jitter::decodeVideoPacket(PacketPointer packet,
@@ -367,6 +366,10 @@ void Jitter::decodeVideoPacket(PacketPointer packet,
     switch (packet->mediaType)
     {
         case Packet::MediaType::H264:
+            logger->info << "[Jitter::decodeVideoPacket]. Attempting to decode, seq:"
+                         << packet->encodedSequenceNum
+                         << ",is_intra " << packet->is_intra_frame
+                         << ",size " << packet->data.size() << std::flush;
             error = video.decoder->decode((const char *) &packet->data[0],
                                           packet->data.size(),
                                           width,
@@ -381,13 +384,14 @@ void Jitter::decodeVideoPacket(PacketPointer packet,
                 sync.video_popped(
                     packet->sourceRecordTime, packet->encodedSequenceNum, now);
                 // update the last decoded frame / parameters
-                video.last_decoded_format = format;
+                video.last_decoded_format = (uint8_t) VideoConfig::PixelFormat::I420;
                 video.last_decoded_height = height;
                 video.last_decoded_width = width;
                 video.last_decoded_timestamp = packet->sourceRecordTime;
-                logger->info << "[Jitter::decodeVideoPacket]: Successfully decoded: seq:"
-                             <<  packet->encodedSequenceNum
+                logger->info << "[Jitter::decodeVideoPacket]: Successfully decoded: seq: "
+                             <<  packet->encodedSequenceNum << ","
                              << width << "," << height << "," << format
+                             << "," << video.lastDecodedFrame.size()
                              << std::flush;
 
             }
@@ -471,6 +475,7 @@ int Jitter::popVideo(uint64_t sourceID,
                 packet = video.pop(now);
                 if (packet != nullptr)
                 {
+                    logger->info << "[POP]: popped:" << packet->encodedSequenceNum << std::flush;
                     decodeVideoPacket(std::move(packet),
                                       sourceID,
                                       width,
@@ -821,11 +826,15 @@ std::shared_ptr<Jitter> JitterFactory::GetJitter(LoggerPointer logger, uint64_t 
 {
     if (auto it{jitters.find(client_id)}; it != std::end(jitters))
     {
+        logger->info << "[JitterFactory::GetJitter]: clientId: "
+                     << client_id << " - jitter exists" << std::flush;
         return it->second;
     }
 
     // create a new jitter
     auto jitter = std::make_shared<Jitter>(logger);
     jitters.emplace(client_id, jitter);
+    logger->info << "[JitterFactory::GetJitter]: clientId: "
+                 << client_id << " - jitter created" << std::flush;
     return jitters.at(client_id);
 }

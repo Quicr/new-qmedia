@@ -94,6 +94,8 @@ int H264Decoder::decode(const char *input_buffer,
                       << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
         }
 
+        format = color_fmt;
+
         auto y_size = width * height;
         auto uv_size = y_size >> 2;
 

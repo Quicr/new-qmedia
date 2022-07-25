@@ -210,13 +210,16 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
     auto video_stream = std::dynamic_pointer_cast<VideoStream>(
         active_streams[streamId]);
 
-    log->info << "MediaClient::get_video:" << streamId << std::flush;
-
     MediaConfig config{};
     recv_length = video_stream->get_media(timestamp, config, buffer, 0, to_free);
     width = config.video_max_width;
     height = config.video_max_height;
     format = (uint32_t) config.video_decode_pixel_format;
+
+    log->info << "MediaClient::get_video: w=" << width
+              << ",h=" << height << ",format=" << format
+              << std::flush;
+
     return recv_length;
 }
 
