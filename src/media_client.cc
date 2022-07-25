@@ -155,7 +155,7 @@ void MediaClient::do_work()
 
         if (message.data.size() > 100)
         {
-            log->info << "[MediaClient::do_work]: got message for "
+            log->debug << "[MediaClient::do_work]: got message for "
                       << media_stream_id << " data:" << message.data.size()
                       << std::flush;
         }
@@ -215,10 +215,6 @@ std::uint32_t MediaClient::get_video(MediaStreamId streamId,
     width = config.video_max_width;
     height = config.video_max_height;
     format = (uint32_t) config.video_decode_pixel_format;
-
-    log->info << "MediaClient::get_video: w=" << width
-              << ",h=" << height << ",format=" << format
-              << std::flush;
 
     return recv_length;
 }

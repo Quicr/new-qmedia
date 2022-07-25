@@ -51,7 +51,7 @@ void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
     // todo: add support for inserting logger
     if (logger)
     {
-        logger->info << message << std::flush;
+        logger->debug << message << std::flush;
     }
 }
 
@@ -141,7 +141,7 @@ TransportMessageInfo QuicRMediaTransport::recv()
     }
 
     if(info.data.size() > 200) {
-        logger->info << "[QuicRMediaTransport:recv]: Got a message off the queue "
+        logger->debug << "[QuicRMediaTransport:recv]: Got a message off the queue "
                      << info.name << ", size:" << info.data.size() << ", q-size: "
                      << receive_queue.size() << std::flush;
     }

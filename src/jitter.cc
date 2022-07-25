@@ -132,7 +132,7 @@ bool Jitter::push(PacketPointer packet,
                 // we got assembled frame, add it to jitter queue
                 auto seq = packet->encodedSequenceNum;
                 video.push(std::move(packet), sync.video_seq_popped, now);
-                logger->info << "[jitter-v: seq_no:" << seq
+                logger->debug << "[jitter-v: seq_no:" << seq
                              << ", q-size:" << video.mq.size() << std::flush;
 
                 break;
@@ -341,13 +341,6 @@ int Jitter::setDecodedFrame(uint64_t /*sourceID*/,
     height = video.last_decoded_height;
     format = video.last_decoded_format;
     timestamp = video.last_decoded_timestamp;
-    logger->info <<"[Jitter::setDecodedFrame]: width:" << width
-                 << ",height:" << height
-                 << ",format:" << (int) format
-                 << ",timestamp:" << timestamp
-                 << ",size:" << video.lastDecodedFrame.size()
-                 << std::flush;
-
     return video.lastDecodedFrame.size();
 }
 
@@ -366,10 +359,6 @@ void Jitter::decodeVideoPacket(PacketPointer packet,
     switch (packet->mediaType)
     {
         case Packet::MediaType::H264:
-            logger->info << "[Jitter::decodeVideoPacket]. Attempting to decode, seq:"
-                         << packet->encodedSequenceNum
-                         << ",is_intra " << packet->is_intra_frame
-                         << ",size " << packet->data.size() << std::flush;
             error = video.decoder->decode((const char *) &packet->data[0],
                                           packet->data.size(),
                                           width,
@@ -388,12 +377,6 @@ void Jitter::decodeVideoPacket(PacketPointer packet,
                 video.last_decoded_height = height;
                 video.last_decoded_width = width;
                 video.last_decoded_timestamp = packet->sourceRecordTime;
-                logger->info << "[Jitter::decodeVideoPacket]: Successfully decoded: seq: "
-                             <<  packet->encodedSequenceNum << ","
-                             << width << "," << height << "," << format
-                             << "," << video.lastDecodedFrame.size()
-                             << std::flush;
-
             }
 
             len = setDecodedFrame(
@@ -451,7 +434,7 @@ int Jitter::popVideo(uint64_t sourceID,
         // return the last decoded frame
         len = setDecodedFrame(
             sourceID, width, height, format, timestamp, buffer);
-        logger->info << "[EQ]" << std::flush;
+        logger->debug << "[EQ]" << std::flush;
         return len;
     }
 
@@ -466,16 +449,15 @@ int Jitter::popVideo(uint64_t sourceID,
         case Sync::sync_action::hold:
             len = setDecodedFrame(
                 sourceID, width, height, format, timestamp, buffer);
-            logger->info << "[H]" << std::flush;
+            logger->debug << "[H]" << std::flush;
             break;
         case Sync::sync_action::pop:
-            logger->info << "[POP]: num_pops:" << num_pop << std::flush;
+            logger->debug << "[POP]: num_pops:" << num_pop << std::flush;
             for (unsigned int pops = 0; pops < num_pop; pops++)
             {
                 packet = video.pop(now);
                 if (packet != nullptr)
                 {
-                    logger->info << "[POP]: popped:" << packet->encodedSequenceNum << std::flush;
                     decodeVideoPacket(std::move(packet),
                                       sourceID,
                                       width,
@@ -501,7 +483,7 @@ int Jitter::popVideo(uint64_t sourceID,
             }
             len = setDecodedFrame(
                 sourceID, width, height, format, timestamp, buffer);
-            logger->info << "jitter: popDiscard: keyFrame requested"
+            logger->debug << "jitter: popDiscard: keyFrame requested"
                          << std::flush;
             break;
         case Sync::sync_action::pop_video_only:
@@ -526,7 +508,7 @@ int Jitter::popVideo(uint64_t sourceID,
             // set the final decoded frame as output frame
             len = setDecodedFrame(
                 sourceID, width, height, format, timestamp, buffer);
-            logger->info << "jitter: popVideoOnly" << std::flush;
+            logger->debug << "jitter: popVideoOnly" << std::flush;
             break;
     }
 
@@ -826,15 +808,11 @@ std::shared_ptr<Jitter> JitterFactory::GetJitter(LoggerPointer logger, uint64_t 
 {
     if (auto it{jitters.find(client_id)}; it != std::end(jitters))
     {
-        logger->info << "[JitterFactory::GetJitter]: clientId: "
-                     << client_id << " - jitter exists" << std::flush;
         return it->second;
     }
 
     // create a new jitter
     auto jitter = std::make_shared<Jitter>(logger);
     jitters.emplace(client_id, jitter);
-    logger->info << "[JitterFactory::GetJitter]: clientId: "
-                 << client_id << " - jitter created" << std::flush;
     return jitters.at(client_id);
 }

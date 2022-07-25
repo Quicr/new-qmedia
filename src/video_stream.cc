@@ -16,10 +16,6 @@ VideoStream::VideoStream(uint64_t domain,
 void VideoStream::configure()
 {
     media_direction = config.media_direction;
-    logger->info << "[VideoStream::configure]: dir :" << (int) media_direction
-                 << "width=" << config.video_max_width
-                 << "height=" << config.video_max_height
-                 << std::flush;
     switch (config.media_direction)
     {
         case MediaConfig::MediaDirection::recvonly:
@@ -104,9 +100,6 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                     // log err
                     return;
                 }
-                logger->info << "[VideoStream::handle_media]: " << id()
-                             << ", sending " << encoded->encodedSequenceNum
-                             << std::flush;
                 media_transport->send_data(id(),
                                            std::move(encoded->encoded_data));
             }

@@ -45,23 +45,6 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
             media_type = MediaType::invalid;
     }
 
-    if (media_type == MediaType::video)
-    {
-        logger->info << "[MediaStream::handle_media]: id:" << packet->sourceID
-                     << ", media_type:" << media_type
-                     << ", seqNo:" << packet->encodedSequenceNum
-                     << ", is_intra:" << packet->is_intra_frame
-                     << ", size:" << packet->data.size()
-                     << ", timestamp:" << packet->sourceRecordTime
-                     << std::flush;
-    } else if (media_type == MediaType::audio) {
-        logger->debug << "[MediaStream::handle_media]: id:" << packet->sourceID
-                     << ", media_type:" << media_type
-                     << ", seqNo:" << packet->encodedSequenceNum
-                     << ", size:" << packet->data.size()
-                     << std::flush;
-    }
-
     bool new_stream = false;
     auto jitter_instance = JitterFactory::GetJitter(logger, client_id);
     if (jitter_instance == nullptr)
