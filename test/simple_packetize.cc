@@ -1,7 +1,7 @@
 #include <doctest/doctest.h>
 #include <cstring>
 
-#include "packet.hh"
+#include "../src/packet.hh"
 #include "simple_packetize.hh"
 
 using namespace neo_media;

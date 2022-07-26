@@ -10,11 +10,11 @@
 #include <sstream>
 #include <chrono>
 
-#include "neo.hh"
-#include "resampler.hh"
-#include "logger.hh"
+#include <qmedia/media_client.hh>
+#include "../src/resampler.hh"
+#include "qmedia/logger.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 static bool shutDown;
 
@@ -31,18 +31,16 @@ static const unsigned int sample_rate = 48000;
 static const unsigned int frames_per_buffer = 10 * 48;        // 10 ms
 static const unsigned int audio_channels = 1;
 static const unsigned int bytesPerSample = 4;
-static const Neo::audio_sample_type sample_type_neo =
-    Neo::audio_sample_type::Float32;
+static const AudioConfig::SampleType sample_type =
+    AudioConfig::SampleType::Float32;
 static const double resample_ratio = 1.0;
 static Resampler resampler;
 
 static std::ofstream outg_sound_file;
 static LoggerPointer logger = std::make_shared<Logger>("Sound", true);
 
-void recordThreadFunc(Neo *neo)
+void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
 {
-    assert(audioStream);
-
     int buff_size = frames_per_buffer * bytesPerSample * audio_channels;
     char *zerobuff = (char *) malloc(buff_size);
     if (zerobuff == nullptr)
@@ -101,7 +99,10 @@ void recordThreadFunc(Neo *neo)
                             std::chrono::system_clock::now().time_since_epoch())
                             .count();
 
-                    neo->sendAudio(audioBuff, buff_size, timestamp, sourceID);
+                    client->send_audio(stream_id,
+                                       reinterpret_cast<uint8_t *>(const_cast<char *>(audioBuff)),
+                                       buff_size,
+                                       timestamp);
                     logger->debug << "-" << std::flush;
                     Pa_Sleep(10);
                 }
@@ -112,10 +113,8 @@ void recordThreadFunc(Neo *neo)
     free(zerobuff);
 }
 
-void playThreadFunc(Neo *neo)
+void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 {
-    assert(audioStream);
-
     std::chrono::steady_clock::time_point loop_time =
         std::chrono::steady_clock::now();
 
@@ -143,20 +142,20 @@ void playThreadFunc(Neo *neo)
         {
             std::lock_guard<std::mutex> lock(audioWriteMutex);
             playoutSpaceAvailable = Pa_GetStreamWriteAvailable(audioStream);
-            logger->debug << "[" << playoutSpaceAvailable << "]" << std::flush;
+            logger->info << "[" << playoutSpaceAvailable << "]" << std::flush;
         }
 
         if (playoutSpaceAvailable < 1000 /* 21 ms */)
         {
             // not enought space to play, wait till later
-            logger->debug << "$" << std::flush;
+            logger->info << "$" << std::flush;
             std::chrono::steady_clock::time_point sleep_time =
                 std::chrono::steady_clock::now();
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             auto sleep_delta =
                 std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - sleep_time);
-            logger->debug << "{S: " << sleep_delta.count() << "}" << std::flush;
+            logger->info << "{S: " << sleep_delta.count() << "}" << std::flush;
             continue;
         }
 
@@ -167,15 +166,10 @@ void playThreadFunc(Neo *neo)
 
         std::chrono::steady_clock::time_point get_audio =
             std::chrono::steady_clock::now();
-        int recv_actual = neo->getAudio(recvClientID,
-                                        recvSourceID,
-                                        timestamp,
-                                        &raw_data,
-                                        buff_size,
-                                        &freePacket);
+        int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size, nullptr);
         auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - get_audio);
-        logger->debug << "{A:" << audio_delta.count() << "}" << std::flush;
+        logger->info << "{A:" << audio_delta.count() << "}" << std::flush;
 
         PaError err;
         if (!recv_actual)
@@ -267,20 +261,6 @@ void playThreadFunc(Neo *neo)
     }
 }
 
-void streamCallBack(uint64_t clientID,
-                    uint64_t sourceID,
-                    uint64_t startTime,
-                    Packet::MediaType type)
-{
-    // TODO: This will change to post decode only stream type at some point.
-    if (type == Packet::MediaType::Opus)
-    {
-        recvMedia = true;
-        recvClientID = clientID;
-        recvSourceID = sourceID;
-    }
-}
-
 int main(int argc, char *argv[])
 {
     const uint64_t conference_id = 123456;
@@ -291,7 +271,7 @@ int main(int argc, char *argv[])
     if (argc < 4)
     {
         std::cerr << "Must provide mode of operation" << std::endl;
-        std::cerr << "Usage: sound <remote-address> <mode> <name> <source-id> "
+        std::cerr << "Usage: sound <remote-address> <port> <mode> <name> <source-id> "
                   << std::endl;
         std::cerr << "Mode: pub/sub/pubsub" << std::endl;
         std::cerr << "" << std::endl;
@@ -301,27 +281,20 @@ int main(int argc, char *argv[])
     std::string remote_address;
     remote_address.assign(argv[1]);
 
+    std::string port_str;
+    port_str.assign(argv[2]);
+    if (port_str.empty())
+    {
+        std::cout << "Port is empty" << std::endl;
+        exit(-1);
+    }
+    auto server_port = std::stoi(argv[2], nullptr);
+
     std::string mode;
-    mode.assign(argv[2]);
-    if (mode != "pub" && mode != "sub" && mode != "pubsub")
+    mode.assign(argv[3]);
+    if (mode != "send" && mode != "recv" && mode != "sendrecv")
     {
         std::cout << "Bad choice for mode.. Bye" << std::endl;
-        exit(-1);
-    }
-
-    std::string name;
-    name.assign(argv[3]);
-    if (mode.empty())
-    {
-        std::cout << "Name is missing .. Bye\n";
-        exit(-1);
-    }
-
-    std::string source;
-    source.assign(argv[4]);
-    if (source.empty())
-    {
-        std::cout << "SourceId is missing .. Bye\n";
         exit(-1);
     }
 
@@ -338,24 +311,22 @@ int main(int argc, char *argv[])
     auto clientID = distribution(engine);
     logger->info << "ClientID: " << clientID << std::flush;
 
-    Neo neo(logger);
-    neo.init(remote_address,
-             remote_port,        // network settings
-             sample_rate,
-             audio_channels,
-             sample_type_neo,        // audio settings
-             0,
-             0,
-             0,
-             0,                                  // no video settings
-             (Neo::video_pixel_format) 0,        // no video settings
-             (Neo::video_pixel_format) 0,        // no video settings
-             clientID,
-             conference_id,        // conferenceID
-             streamCallBack,
-             NetTransport::QUICR,
-             Neo::MediaDirection::publish_only,
-             false);
+    // configure new stream callback
+    auto wrapped_stream_callback = [](uint64_t client_id,
+                                                     uint64_t source_id,
+                                                     uint64_t source_ts,
+                                                     MediaType media_type)
+    {
+        logger->info << "[Sound]: New Sorcce" << source_id << std::flush;
+        recvMedia = true;
+        recvClientID = client_id;
+        recvSourceID = source_id;
+    };
+
+    // Create media library.
+    auto client = MediaClient{wrapped_stream_callback, logger};
+
+    client.init_transport(TransportType::QUIC, remote_address, remote_port);
 
     shutDown = false;
 
@@ -376,7 +347,6 @@ int main(int argc, char *argv[])
     assert(outputParameters.device != paNoDevice);
 
     assert(bytesPerSample == 4);
-    assert(sample_type_neo == Neo::audio_sample_type::Float32);
 
     inputParameters.channelCount = audio_channels;
     inputParameters.sampleFormat = paFloat32;
@@ -414,40 +384,45 @@ int main(int argc, char *argv[])
         assert(0);        // TODO
     }
 
-    if (mode == "pub")
+    std::vector<std::thread> threads;
+    uint64_t stream_id {0};
+    if (mode == "send")
     {
-        std::thread recordThread(recordThreadFunc, &neo);
+        MediaConfig config{};
+        config.media_direction = MediaConfig::MediaDirection::sendonly;
+        config.media_codec = MediaConfig::CodecType::opus;
+        config.channels = 1;
+        config.sample_rate = 48000;
+        config.sample_type = AudioConfig::SampleType::Float32;
+        stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
+        threads.emplace_back(recordThreadFunc, &client, stream_id);
     }
-    else if (mode == "sub")
+    else if (mode == "recv")
     {
-        std::thread playThread(playThreadFunc, &neo);
-        playThread.detach();
+        MediaConfig config{};
+        config.media_direction = MediaConfig::MediaDirection::recvonly;
+        config.media_codec = MediaConfig::CodecType::opus;
+        config.channels = 1;
+        config.sample_rate = 48000;
+        config.sample_type = AudioConfig::SampleType::Float32;
+        stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
+        threads.emplace_back(playThreadFunc, &client, stream_id);
+        threads.at(0).detach();
+    } else if (mode == "sendrecv") {
+        MediaConfig config{};
+        config.media_direction = MediaConfig::MediaDirection::sendrecv;
+        config.media_codec = MediaConfig::CodecType::opus;
+        config.channels = 1;
+        config.sample_rate = 48000;
+        config.sample_type = AudioConfig::SampleType::Float32;
+        stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
+        // start and play threads
+        threads.emplace_back(recordThreadFunc, &client, stream_id);
+        threads.emplace_back(playThreadFunc, &client, stream_id);
+        threads.at(0).detach();
     }
 
-    std::cout << "Mode:" << mode << std::endl;
-    if (mode == "pub")
-    {
-        // todo : use stringstream inseatd
-        auto url = "quicr://" + std::to_string(conference_id) + "/" +
-                   std::to_string(clientID) + "/" + name + "/" + source;
-        std::cout << "quicr publish url:" << url << std::endl;
-        neo.publish(1, Packet::MediaType::Opus, url);
-    }
-    else if (mode == "sub")
-    {
-        auto url = "quicr://" + std::to_string(conference_id) + "/" +
-                   std::to_string(clientID) + "/" + name + "/" + source;
-        std::cout << "quicr subscribe url:" << url << std::endl;
-        neo.subscribe(1, Packet::MediaType::Opus, url);
-    }
-    else
-    {
-        // pub/sub mode
-        std::cout << "Pub and Sub together isn't supported\n";
-        exit(-1);
-    }
-
-    logger->info << "Starting" << std::flush;
+    logger->info << "Starting Stream: " << stream_id << std::flush;
     int count = 0;
     while (!shutDown)
     {

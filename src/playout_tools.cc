@@ -2,7 +2,7 @@
 
 #include "playout_tools.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 ///
 /// PopFrequencyCounter
@@ -21,6 +21,9 @@ void PopFrequencyCounter::updatePopFrequency(
 
         if ((interval_sum + delta) > measure_interval_ms)
         {
+            if(pop_time.empty()) {
+                return;
+            }
             interval_sum -= pop_time.front();
             pop_time.pop_front();
         }

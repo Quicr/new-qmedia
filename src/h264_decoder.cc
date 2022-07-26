@@ -9,7 +9,7 @@
 
 #include "h264_decoder.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 using namespace std;
 
 static bool debug = false;
@@ -93,6 +93,8 @@ int H264Decoder::decode(const char *input_buffer,
             std::cerr << "Decoded Stride 1 : "
                       << dst_info.UsrData.sSystemBuffer.iStride[1] << std::endl;
         }
+
+        format = color_fmt;
 
         auto y_size = width * height;
         auto uv_size = y_size >> 2;

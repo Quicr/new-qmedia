@@ -1,12 +1,6 @@
-################################################################################
-# minimum cmake version - if your CMake version is less that this, then
-# configuration will fail.
+
 cmake_minimum_required(VERSION 3.13)
 
-################################################################################
-# we have vcpkg installed as a submodule, and this will ensure that we install
-# the dependencies that we need without much knowledge that vcpkg actually
-# exists.
 set(CMAKE_TOOLCHAIN_FILE
         ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
         CACHE STRING "Vcpkg toolchain file")
@@ -16,23 +10,12 @@ if(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
             "submodule?")
 endif(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
 
-################################################################################
-# top-level project name, version, and languages - this project will have
-# several projects, but this is declared as the top level project.
 project(qmedia VERSION 0.1 LANGUAGES C CXX)
 
-################################################################################
-# Options are public build variables that will be surfaced to a CMake GUI if
-# you might using one.
 option(BUILD_EXTERN "build external library" ON)
 option(BUILD_TESTS  "build tests" ON)
 option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
-
-
-################################################################################
-# dependencies
-#
 
 # Build PIC dependencies when created extern shared library.
 if (BUILD_EXTERN)
@@ -41,9 +24,6 @@ endif(BUILD_EXTERN)
 
 add_subdirectory(dependencies)
 
-###
-### Global Config
-###
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #set(CMAKE_OSX_ARCHITECTURES "arm64")
 
@@ -90,7 +70,8 @@ endif(WIN32)
 
 find_package(OpenSSL 1.1 REQUIRED)
 
-# custom openh264
+# custom openh264 - need a better way to support
+# multiple platforms
 if (APPLE)
      execute_process(
       COMMAND uname -m
@@ -107,14 +88,14 @@ if (APPLE)
       set(OpenH264_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/contrib/openh264/lib/x86_64)
   endif()
 
-    message(STATUS "openh64: ${OpenH264_LIB_DIR}")
-    message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
+  message(STATUS "openh64: ${OpenH264_LIB_DIR}")
+  message(STATUS "openh64-inc ${OpenH264_INCLUDE_DIR}")
 endif()
 
 ###
 ### Library Source
 ###
-#add_subdirectory(lib)
+# add_subdirectory(lib)
 
 add_subdirectory(src)
 

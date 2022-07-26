@@ -1,6 +1,6 @@
 #include <doctest/doctest.h>
 #include "simple_video_assembler.hh"
-#include "packet.hh"
+#include "../src/packet.hh"
 #include <iostream>
 #include "simple_packetize.hh"
 

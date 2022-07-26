@@ -2,7 +2,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
-#include "metrics.hh"
+#include "../src/metrics.hh"
 
 using namespace neo_media;
 

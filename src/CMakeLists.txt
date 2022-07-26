@@ -7,21 +7,17 @@ add_library(qmedia
     jitter_queues.cc
     jitter_silence.cc
     logger.cc
-    loopback-jitter.cc
+    media_client.cc
+    media_stream.cc
+    media_transport.cc
     metrics.cc
-    modulus_deque.cc
-    neo.cc
-    netTransportQuicR.cc
     opus_assembler.cc
     packet.cc
     playout_leakybucket.cc
     playout_sync.cc
     playout_tools.cc
     resampler.cc
-    rtx_manager.cc
-    simple_packetize.cc
-    simple_video_assembler.cc
-    transport_manager.cc)
+    video_stream.cc)
 target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
 target_link_libraries(qmedia
     PUBLIC

@@ -7,7 +7,7 @@
 
 #include "metrics.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 const std::string MetricsConfig::URL = "";
 const std::string MetricsConfig::ORG = "";

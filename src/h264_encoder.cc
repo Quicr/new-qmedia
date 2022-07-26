@@ -8,7 +8,7 @@
 
 #include "h264_encoder.hh"
 
-using namespace neo_media;
+using namespace qmedia;
 
 static bool debug = false;
 
@@ -21,6 +21,24 @@ static std::string to_hex(unsigned char *data, int stop)
         hex << std::setw(2) << std::setfill('0') << int(data[i]);
     }
     return hex.str();
+}
+
+static VideoEncoder::EncodedFrameType toEncodedFrameType(EVideoFrameType frame)
+{
+    switch (frame)
+    {
+        case EVideoFrameType::videoFrameTypeIDR:
+            return VideoEncoder::EncodedFrameType::IDR;
+        case EVideoFrameType::videoFrameTypeI:
+            return VideoEncoder::EncodedFrameType::I;
+        case EVideoFrameType::videoFrameTypeP:
+            return VideoEncoder::EncodedFrameType::P;
+        case EVideoFrameType::videoFrameTypeSkip:
+            return VideoEncoder::EncodedFrameType::Skip;
+        case EVideoFrameType::videoFrameTypeInvalid:
+        default:
+            return VideoEncoder::EncodedFrameType::Invalid;
+    }
 }
 
 H264Encoder::H264Encoder(unsigned int video_max_width,
@@ -105,24 +123,25 @@ H264Encoder::~H264Encoder()
     }
 }
 
-int H264Encoder::encode(const char *input_buffer,
-                        std::uint32_t input_length,
-                        std::uint32_t width,
-                        std::uint32_t height,
-                        std::uint32_t stride_y,
-                        std::uint32_t stride_uv,
-                        std::uint32_t offset_u,
-                        std::uint32_t offset_v,
-                        std::uint32_t format,
-                        std::uint64_t timestamp,
-                        std::vector<std::uint8_t> &output_bitstream,
-                        bool genKeyFrame)
+VideoEncoder::EncodedFrameType
+H264Encoder::encode(const char *input_buffer,
+                    std::uint32_t input_length,
+                    std::uint32_t width,
+                    std::uint32_t height,
+                    std::uint32_t stride_y,
+                    std::uint32_t stride_uv,
+                    std::uint32_t offset_u,
+                    std::uint32_t offset_v,
+                    std::uint32_t format,
+                    std::uint64_t timestamp,
+                    std::vector<std::uint8_t> &output_bitstream,
+                    bool genKeyFrame)
 {
     static std::uint64_t total_frames_encoded = 0;
     static std::uint64_t total_bytes_encoded = 0;
     static std::uint64_t total_time_encoded = 0;        // microseconds
     // static unsigned char uv_array[max_width * max_height] = {0};
-    static auto uv_array = (unsigned char*) malloc(stride_uv * stride_y);
+    static auto uv_array = (unsigned char *) malloc(stride_uv * stride_y);
 
     if (stride_uv != max_width || height != max_height)
     {
@@ -190,10 +209,10 @@ int H264Encoder::encode(const char *input_buffer,
     bool idr_frame = total_frames_encoded & 63 ? false : true;
     if (genKeyFrame || idr_frame)
     {
-        logger->info << "h264Encoder:: Force IDR, total_frames_encoded: "
+        logger->debug << "h264Encoder:: Force IDR, total_frames_encoded: "
                      << total_frames_encoded << std::flush;
         auto ret = encoder->ForceIntraFrame(true);
-        logger->error << "h264Encoder:: IDR Frame Generation Result " << ret
+        logger->debug << "h264Encoder:: IDR Frame Generation Result " << ret
                       << std::flush;
     }
 
@@ -206,10 +225,10 @@ int H264Encoder::encode(const char *input_buffer,
             case videoFrameTypeSkip:
                 logger->info << "h264Encoder:: videoFrameTypeSkip"
                              << std::flush;
-                return 0;
+                return VideoEncoder::EncodedFrameType::Skip;
             case videoFrameTypeInvalid:
                 logger->info << "h264Encoder: failed: " << ret << std::flush;
-                return -1;
+                return VideoEncoder::EncodedFrameType::Invalid;
         }
     }
 
@@ -245,5 +264,5 @@ int H264Encoder::encode(const char *input_buffer,
     total_frames_encoded++;
 
     // success
-    return encodedFrame.eFrameType == videoFrameTypeIDR ? 1 : 0;
+    return toEncodedFrameType(encodedFrame.eFrameType);
 }

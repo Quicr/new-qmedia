@@ -57,3 +57,17 @@ cmake-build-release
 .cmake
 .tmp.dprobes.h
 _deps
+
+
+proto/CMakeFiles 
+proto/Makefile 
+proto/cmake_install.cmake
+
+src/CMakeFiles
+src/Makefile 
+src/cmake_install.cmake
+src/extern/CMakeFiles
+src/extern/Makefile 
+src/extern/cmake_install.cmake
+
+third_party/

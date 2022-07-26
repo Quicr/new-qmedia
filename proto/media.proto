@@ -6,7 +6,7 @@ package media_message;
 
 enum MediaType {
   OPUS_40K_20MS = 0; // 40 Kbps at 20 ms packet time
-  AV1 = 1;
+  H264 = 1;
   L16 = 2;
   F32 = 3;
   RAW = 4;
@@ -17,37 +17,19 @@ enum PacketizeType {
   Simple = 1;
 }
 
-
 // E2E Authenticated header per media packet
 message MediaDataHeader {
-  MediaType mediaType= 1;
+  MediaType mediaType = 1;
   uint64  sourceID = 2;            // audio/video/... unique source identifier
   fixed64 sourceRecordTime = 3;    // nanoseconds since unix epoch
-  uint64  sequenceNumber = 4;      // starts at 1, unique within a source
-  PacketizeType packetizeType = 9; // are we splitting up packets?
-  uint64 packetNumber = 10;         // packet number
-  uint64 packetCount = 11;          // total packets
-  uint64 frameSize = 12;            // total bytes in frame
-  uint32 priorityLevel = 13;
-  enum VideoFrameType {
-    None = 0;
-    Idr = 1;
-  }
+  uint64  encodedSeqNumber = 4;
 
   oneof header {
-    Audio audio_header = 7;
     Video video_header = 8;
-  }
-
-  // Audio payload header
-  message Audio {
-    float audioEnergyLevel = 1;
   }
 
   // Video payload Header
   message Video {
-    // soon to be deprecated, this is here for backwards compatible
-    VideoFrameType marker = 1;
     bool intraFrame = 2;
     bool discardable = 3;
     uint32 spatialLayerId = 4;
@@ -65,52 +47,12 @@ message MediaData {
 message StreamMessage {
   uint64 conference_id = 1;
   uint64 client_id = 2;
-  uint64 transport_seq_num = 3;
 
   oneof payload {
     StreamContent stream_content = 5;
-    StreamContentNack stream_content_nack = 6;
-    StreamContentAck stream_content_ack = 9;
-    Join join = 7;
-    JoinAck join_ack = 8;
-    IdrRequest idr_request = 10;
-  }
-
-  // aggregate packet level retransmission
-  // maps to transport_seq_num
-  bool retransmitted = 15;
-
-  message Join {
-    bool echo = 1;
-  }
-
-  message JoinAck {}
-
-  message IdrRequest {
-    uint64 client_id = 1;
-    uint64 source_id = 2;
-    uint64 source_timestamp = 3; // last successful sync point
   }
 
   message StreamContent {
     repeated MediaData mediaData = 1;
-  }
-
-  message StreamContentAck {
-     uint64 stream_seq_num = 1; // this should match the transport_seq_num
-  }
-  
-  message StreamContentNack {
-     message Ack {
-       uint64    sequenceNumber = 1;
-       fixed64   senderTimeMs = 2;
-       fixed64   receiverTimeMs = 3;
-       uint32    packetSize = 4;
-       MediaType mediaType= 5;;
-     }
-
-     uint64 sourceUserID = 1;
-     repeated uint64 nackSequenceNumber = 2;
-     repeated Ack acks = 3;
   }
 }
