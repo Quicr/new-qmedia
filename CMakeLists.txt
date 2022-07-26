@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_TOOLCHAIN_FILE
         ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake
@@ -12,16 +12,9 @@ endif(NOT EXISTS ${CMAKE_TOOLCHAIN_FILE})
 
 project(qmedia VERSION 0.1 LANGUAGES C CXX)
 
-if("${CMAKE_GENERATOR}" MATCHES "Makefiles" AND NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-if("${CMAKE_GENERATOR}" MATCHES "Makefiles")
-    set(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
-endif()
-
 option(BUILD_EXTERN "build external library" ON)
 option(BUILD_TESTS  "build tests" ON)
+option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
 
 # Build PIC dependencies when created extern shared library.
@@ -29,18 +22,10 @@ if (BUILD_EXTERN)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif(BUILD_EXTERN)
 
+add_subdirectory(dependencies)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# clang & gcc
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_options(-pedantic -Wextra)
-elseif(MSVC)
-    #add_compile_options(/W4)
-endif()
+#set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 if(CLANG_TIDY)
     find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
@@ -51,20 +36,11 @@ if(CLANG_TIDY)
     endif()
 endif()
 
-
-
-include_directories( include src/extern )
-
-
 ###
 ### Dependencies
 ###
-add_subdirectory(contrib/quicr)
-add_subdirectory(contrib/sframe)
 
-include_directories(include lib tests ${OPENSSL_INCLUDE_DIR})
-
-set(LIBRARIES media_api gsl sframe quicr)
+set(LIBRARIES media_api gsl sframe)
 
 # samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)
@@ -120,29 +96,8 @@ endif()
 ### Library Source
 ###
 # add_subdirectory(lib)
+
 add_subdirectory(src)
-
-###
-### Library Config
-###
-
-set(LIB_NAME "${PROJECT_NAME}")
-
-file(GLOB_RECURSE LIB_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh")
-file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
-
-add_library(${LIB_NAME} ${LIB_HEADERS} ${LIB_SOURCES})
-target_link_directories(${LIB_NAME} PUBLIC ${PROJECT_LIBS_LIBRARY_DIR} ${OpenH264_LIB_DIR})
-target_link_libraries(${LIB_NAME} ${LIBRARIES} OpenSSL::Crypto openh264)
-target_include_directories(${LIB_NAME}
-        PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${Protobuf_INCLUDE_DIRS}
-        ${OpenH264_INCLUDE_DIR}
-        $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
-        )
-
 
 ###
 ### Applications
@@ -153,6 +108,7 @@ add_subdirectory(cmd)
 ###
 ### Tests
 ###
-if(BUILD_TESTS)
-   # add_subdirectory(test)
-endif(BUILD_TESTS)
+include(CTest)
+if(BUILD_TESTING AND qmedia_BUILD_TESTS)
+    add_subdirectory(test)
+endif()
