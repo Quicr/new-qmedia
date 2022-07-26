@@ -7,6 +7,13 @@ MacOs client on top of [libquicr](https://github.com/Quicr/libquicr)
 Note: This project is under active development and might be breaking 
 and fixing things ;)
 
+
+Here is a simple demo of 1 publisher and 3 subscribers connecting 
+to the Relay in Ohio
+
+https://user-images.githubusercontent.com/947528/181114950-400c22da-f623-4bc5-a8d6-7f4e3188a9c5.mp4
+
+
 Quickstart
 ----------
 ```
