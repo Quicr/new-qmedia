@@ -1,32 +1,59 @@
-## Building
+qmedia
+========
 
-### Prerequisite
+Implementation of realtime audio/video library and experimental
+MacOs client on top of [libquicr](https://github.com/Quicr/libquicr)
 
-Building QuicR transport requires following 3 projects
+Note: This project is under active development and might be breaking 
+and fixing things ;)
 
-1: picoTLS
-
-2: picoQuic
-
-3: quicrq
-
-These 3 projects needs to be clone in the directories
-parallel to qmedia project and have to be buit successfully.
-
-On OSX you will need to install  xcode, cmake, nasm, and likely more ..
-
-Please see BUILD-PREREQUISITES.md for additional details.
-
-### Build 
-
-Using the convenient Makefile that wraps CMake:
-
+Quickstart
+----------
 ```
-> make
-> make test
+git clone https://github.com/Quicr/qmedia
+cd qmedia
 ```
 
-CMake options:
+vcpkg is used for some non-cmake friendly dependencies
+```
+git submodule init
+git submodule update
+```
 
-* BUILD_TESTS defaults to OFF
-* BUILD_EXTERN defaults to ON
+Rest of the dependencies are fetched via cmake and should build
+libqmedia.a and libneo_media_client.dylib
+```
+mkdir build
+cd build
+cmake ..
+make all
+
+or with the convenient Makefile
+
+make cclean
+make all
+```
+
+Please check [Build Prequisites](BUILD-PREREQUISITES.md) in case of
+errors.
+
+Running Mac Client 
+------------------
+The source code for Mac client is under mac-client/
+
+mac-client can be run with
+```
+ 1. Copy libneo_media_client.dylib into mac-client/Neo directory
+ 2. Open RTMC.xcodeproj under mac-client
+ 3. Build and Run
+   3.1 This needs a QuicR relay to be started as explained below
+```
+
+Running mac-client needs a backend QuicR relay server which 
+can be run locally with
+```
+1. cd build/_deps/quicrq-build
+2.  ./quicrq_app -p 7777 -c ../picoquic-src/certs/cert.pem -k ../picoquic-src/certs/key.pem  server
+```
+
+

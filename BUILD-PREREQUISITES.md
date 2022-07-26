@@ -18,40 +18,6 @@ These instructions are for MacOS and have been validated on Apple Silicon/M1.
 
 2. **brew** - Follow the instructions at https://brew.sh/
 3. **cmake** - Run ```brew install cmake```
-4. **nasm** - Run ```brew install nasm```
-5. **picotls** - Run the below
-   ```   
-   git clone git@github.com:h2o/picotls.git
-   cd picotls
-   git submodule init
-   git submodule update
-  
-   export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
-   cmake .
-   make
-   ```
-
-6. **picoquic** - Run the below
-   ```
-   git clone git@github.com:private-octopus/picoquic.git
-   cd picoquic
-   
-   export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
-   cmake -B build -S . .
-   cmake --build build
-   ```
-
-7. **quicrq** - Run the below
-   ```
-   git clone git@github.com:Quicr/quicrq.git
-   
-   cd quicrq
-   
-   export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
-   cmake .
-   make
-   ```
-
 
 ### Setup vcpkg dependency
 
