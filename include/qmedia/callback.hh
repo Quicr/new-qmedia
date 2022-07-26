@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <utility>
 #include <type_traits>
 
 #if defined(__linux__) || defined(__APPLE__)

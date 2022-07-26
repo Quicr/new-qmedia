@@ -1,6 +1,7 @@
 #include <cstring>        // memeset
 #include <cassert>
 #include <iostream>
+#include <iomanip>
 
 #include "jitter.hh"
 #include "h264_decoder.hh"

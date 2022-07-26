@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <map>
+#include <assert.h>
 
 #include "callback.hh"
 #include "logger.hh"

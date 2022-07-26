@@ -24,9 +24,7 @@ target_link_libraries(qmedia
         ${LIBRARIES}
         OpenSSL::Crypto
         openh264
-        quicr
-        picoquic-core
-        picotls-core)
+        quicr)
 target_include_directories(qmedia
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
