@@ -100,7 +100,7 @@ public:
     virtual bool doSends() override;
     virtual bool doRecvs() override;
     virtual void shutdown() override {}
-    virtual NetTransport::PeerConnectionInfo getConnectionInfo()
+    virtual NetTransport::PeerConnectionInfo getConnectionInfo() override
     {
         return PeerConnectionInfo{quicr_client_ctx.server_address,
                                   quicr_client_ctx.server_address_len,
