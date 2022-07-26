@@ -16,6 +16,6 @@ public:
 
 protected:
     std::map<std::uint64_t, DepacketizerPointer> deques;
-    void decodeMedia(Packet *packet);
+    void decodeMedia(Packet *packet) override;
 };
 }        // namespace neo_media

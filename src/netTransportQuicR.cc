@@ -30,7 +30,6 @@
 #include "picoquic_logger.h"
 #include "picoquic_utils.h"
 #include "picosocks.h"
-#include "picotls.h"
 #include "autoqlog.h"
 #include "performance_log.h"
 
@@ -699,7 +698,7 @@ NetTransportQUICR::NetTransportQUICR(TransportManager *t,
     xport_ctx.port = sfuPort;
 
     quicr_client_ctx.port = sfuPort;
-    memcpy(&quicr_client_ctx.server_address, &addr, addr.ss_len);
+    memcpy(&quicr_client_ctx.server_address, &addr, sizeof(addr));
     quicr_client_ctx.server_address_len = sizeof(
         quicr_client_ctx.server_address);
     assert(ret == 0);

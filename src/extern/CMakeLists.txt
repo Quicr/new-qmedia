@@ -1,6 +1,13 @@
 
 project(neo_media_client)
-set(headers neo_media_client.hh)
-set(sources neo_media_client.cc)
-add_library(${PROJECT_NAME} SHARED ${sources} ${headers})
-target_link_libraries(${PROJECT_NAME} PUBLIC qmedia)
+add_library(neo_media_client SHARED neo_media_client.cc)
+target_link_libraries(neo_media_client PRIVATE qmedia)
+target_compile_options(neo_media_client
+    PRIVATE
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
+        $<$<CXX_COMPILER_ID:MSVC>: >)
+set_target_properties(neo_media_client
+    PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS OFF)
