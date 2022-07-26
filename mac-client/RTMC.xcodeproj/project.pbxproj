@@ -1,0 +1,739 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9C2EBA4325C4D128000B2D10 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C2EBA4225C4D128000B2D10 /* Constants.swift */; };
+		9C2EBA4B25C4D585000B2D10 /* Bool+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C2EBA4A25C4D585000B2D10 /* Bool+Extension.swift */; };
+		9C34070825AF559900F57602 /* RemoteVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C34070725AF559900F57602 /* RemoteVideoView.swift */; };
+		9C6A026625ACD9DB00E7A855 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6A026525ACD9DB00E7A855 /* AppDelegate.swift */; };
+		9C6A026A25ACD9DC00E7A855 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9C6A026925ACD9DC00E7A855 /* Assets.xcassets */; };
+		9C6A026D25ACD9DC00E7A855 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9C6A026B25ACD9DC00E7A855 /* Main.storyboard */; };
+		9C6A027925ACD9DC00E7A855 /* RTMCTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6A027825ACD9DC00E7A855 /* RTMCTests.swift */; };
+		9C6A028425ACD9DC00E7A855 /* RTMCUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6A028325ACD9DC00E7A855 /* RTMCUITests.swift */; };
+		9C6A029825AD0D1300E7A855 /* JoinViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6A029725AD0D1300E7A855 /* JoinViewController.swift */; };
+		9C6A02AA25AD0E8700E7A855 /* CallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6A02A925AD0E8700E7A855 /* CallViewController.swift */; };
+		9CF2C71F25ADFFD40028A520 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF2C71E25ADFFD40028A520 /* CaptureManager.swift */; };
+		9CF2C72825AE7EA50028A520 /* LocalVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF2C72725AE7EA50028A520 /* LocalVideoView.swift */; };
+		9CF573AB25B89F7000CF73D8 /* NSView+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF573AA25B89F7000CF73D8 /* NSView+Extension.swift */; };
+		9CF573B625B8F35F00CF73D8 /* NSButton+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF573B525B8F35F00CF73D8 /* NSButton+Extension.swift */; };
+		9CF573BE25B8F67E00CF73D8 /* NSColor+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF573BD25B8F67E00CF73D8 /* NSColor+Extension.swift */; };
+		9CF573C325B8FAAF00CF73D8 /* InCallButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF573C225B8FAAF00CF73D8 /* InCallButton.swift */; };
+		A115250E25D44D2500146465 /* CFString+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A115250D25D44D2500146465 /* CFString+Extension.swift */; };
+		A14EDAF725BF262000AAF663 /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14EDAF625BF262000AAF663 /* String+Extension.swift */; };
+		A1A2D23425D6C1360053953D /* RenderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A2D23325D6C1360053953D /* RenderManager.swift */; };
+		A1A2D23E25D6E3F50053953D /* Notification+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A2D23D25D6E3F50053953D /* Notification+Extension.swift */; };
+		A1A2D26125DC5A8F0053953D /* CGImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A2D26025DC5A8F0053953D /* CGImage+Extension.swift */; };
+		A1A2D2A725E01DFC0053953D /* libneo_media_client.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */; };
+		A1A2D2A825E01DFC0053953D /* libneo_media_client.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9C6A027525ACD9DC00E7A855 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C6A025A25ACD9DB00E7A855 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C6A026125ACD9DB00E7A855;
+			remoteInfo = RTMC;
+		};
+		9C6A028025ACD9DC00E7A855 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C6A025A25ACD9DB00E7A855 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C6A026125ACD9DB00E7A855;
+			remoteInfo = RTMC;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A1A2D2A925E01DFC0053953D /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A1A2D2A825E01DFC0053953D /* libneo_media_client.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		9C2EBA4225C4D128000B2D10 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		9C2EBA4A25C4D585000B2D10 /* Bool+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bool+Extension.swift"; sourceTree = "<group>"; };
+		9C34070725AF559900F57602 /* RemoteVideoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteVideoView.swift; sourceTree = "<group>"; };
+		9C6A026225ACD9DB00E7A855 /* RTMC.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RTMC.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C6A026525ACD9DB00E7A855 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9C6A026925ACD9DC00E7A855 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9C6A026C25ACD9DC00E7A855 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		9C6A026E25ACD9DC00E7A855 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9C6A026F25ACD9DC00E7A855 /* RTMC.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RTMC.entitlements; sourceTree = "<group>"; };
+		9C6A027425ACD9DC00E7A855 /* RTMCTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RTMCTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C6A027825ACD9DC00E7A855 /* RTMCTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTMCTests.swift; sourceTree = "<group>"; };
+		9C6A027A25ACD9DC00E7A855 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9C6A027F25ACD9DC00E7A855 /* RTMCUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RTMCUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C6A028325ACD9DC00E7A855 /* RTMCUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTMCUITests.swift; sourceTree = "<group>"; };
+		9C6A028525ACD9DC00E7A855 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9C6A029725AD0D1300E7A855 /* JoinViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinViewController.swift; sourceTree = "<group>"; };
+		9C6A02A925AD0E8700E7A855 /* CallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallViewController.swift; sourceTree = "<group>"; };
+		9CF2C71E25ADFFD40028A520 /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
+		9CF2C72725AE7EA50028A520 /* LocalVideoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalVideoView.swift; sourceTree = "<group>"; };
+		9CF573AA25B89F7000CF73D8 /* NSView+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSView+Extension.swift"; sourceTree = "<group>"; };
+		9CF573B525B8F35F00CF73D8 /* NSButton+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSButton+Extension.swift"; sourceTree = "<group>"; };
+		9CF573BD25B8F67E00CF73D8 /* NSColor+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSColor+Extension.swift"; sourceTree = "<group>"; };
+		9CF573C225B8FAAF00CF73D8 /* InCallButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InCallButton.swift; sourceTree = "<group>"; };
+		A115250D25D44D2500146465 /* CFString+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CFString+Extension.swift"; sourceTree = "<group>"; };
+		A14EDAF625BF262000AAF663 /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
+		A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libneo_media_client.dylib; path = Neo/libneo_media_client.dylib; sourceTree = "<group>"; };
+		A195039E25C46B42003C5ED4 /* neo_media_client.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = neo_media_client.hh; path = Neo/neo_media_client.hh; sourceTree = SOURCE_ROOT; };
+		A19503D025C46F40003C5ED4 /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
+		A1A2D23325D6C1360053953D /* RenderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderManager.swift; sourceTree = "<group>"; };
+		A1A2D23D25D6E3F50053953D /* Notification+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extension.swift"; sourceTree = "<group>"; };
+		A1A2D26025DC5A8F0053953D /* CGImage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGImage+Extension.swift"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9C6A025F25ACD9DB00E7A855 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1A2D2A725E01DFC0053953D /* libneo_media_client.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027125ACD9DC00E7A855 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027C25ACD9DC00E7A855 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9C6A025925ACD9DB00E7A855 = {
+			isa = PBXGroup;
+			children = (
+				9C6A026425ACD9DB00E7A855 /* RTMC */,
+				9C6A027725ACD9DC00E7A855 /* RTMCTests */,
+				9C6A028225ACD9DC00E7A855 /* RTMCUITests */,
+				9C6A026325ACD9DB00E7A855 /* Products */,
+				A195039925C46B05003C5ED4 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		9C6A026325ACD9DB00E7A855 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A026225ACD9DB00E7A855 /* RTMC.app */,
+				9C6A027425ACD9DC00E7A855 /* RTMCTests.xctest */,
+				9C6A027F25ACD9DC00E7A855 /* RTMCUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9C6A026425ACD9DB00E7A855 /* RTMC */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A02B225AD100D00E7A855 /* Application */,
+				9C6A02B125AD0FEE00E7A855 /* Controllers */,
+				9CF573A925B89F5C00CF73D8 /* Extensions */,
+				9CF2C71D25ADFFBC0028A520 /* Managers */,
+				9CF2C72625AE7E960028A520 /* Views */,
+				9C6A026E25ACD9DC00E7A855 /* Info.plist */,
+				9C2EBA4225C4D128000B2D10 /* Constants.swift */,
+				9C6A026925ACD9DC00E7A855 /* Assets.xcassets */,
+				9C6A026B25ACD9DC00E7A855 /* Main.storyboard */,
+				9C6A026F25ACD9DC00E7A855 /* RTMC.entitlements */,
+				A19503D025C46F40003C5ED4 /* Bridging-Header.h */,
+				A195039E25C46B42003C5ED4 /* neo_media_client.hh */,
+			);
+			path = RTMC;
+			sourceTree = "<group>";
+		};
+		9C6A027725ACD9DC00E7A855 /* RTMCTests */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A027825ACD9DC00E7A855 /* RTMCTests.swift */,
+				9C6A027A25ACD9DC00E7A855 /* Info.plist */,
+			);
+			path = RTMCTests;
+			sourceTree = "<group>";
+		};
+		9C6A028225ACD9DC00E7A855 /* RTMCUITests */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A028325ACD9DC00E7A855 /* RTMCUITests.swift */,
+				9C6A028525ACD9DC00E7A855 /* Info.plist */,
+			);
+			path = RTMCUITests;
+			sourceTree = "<group>";
+		};
+		9C6A02B125AD0FEE00E7A855 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A029725AD0D1300E7A855 /* JoinViewController.swift */,
+				9C6A02A925AD0E8700E7A855 /* CallViewController.swift */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		9C6A02B225AD100D00E7A855 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				9C6A026525ACD9DB00E7A855 /* AppDelegate.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		9CF2C71D25ADFFBC0028A520 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				9CF2C71E25ADFFD40028A520 /* CaptureManager.swift */,
+				A1A2D23325D6C1360053953D /* RenderManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		9CF2C72625AE7E960028A520 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9CF573C225B8FAAF00CF73D8 /* InCallButton.swift */,
+				9CF2C72725AE7EA50028A520 /* LocalVideoView.swift */,
+				9C34070725AF559900F57602 /* RemoteVideoView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9CF573A925B89F5C00CF73D8 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				9CF573AA25B89F7000CF73D8 /* NSView+Extension.swift */,
+				9CF573B525B8F35F00CF73D8 /* NSButton+Extension.swift */,
+				9CF573BD25B8F67E00CF73D8 /* NSColor+Extension.swift */,
+				A14EDAF625BF262000AAF663 /* String+Extension.swift */,
+				9C2EBA4A25C4D585000B2D10 /* Bool+Extension.swift */,
+				A115250D25D44D2500146465 /* CFString+Extension.swift */,
+				A1A2D23D25D6E3F50053953D /* Notification+Extension.swift */,
+				A1A2D26025DC5A8F0053953D /* CGImage+Extension.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		A195039925C46B05003C5ED4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9C6A026125ACD9DB00E7A855 /* RTMC */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C6A028825ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMC" */;
+			buildPhases = (
+				9C6A025E25ACD9DB00E7A855 /* Sources */,
+				9C6A025F25ACD9DB00E7A855 /* Frameworks */,
+				9C6A026025ACD9DB00E7A855 /* Resources */,
+				A1A2D2A925E01DFC0053953D /* Embed Libraries */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RTMC;
+			productName = RTMC;
+			productReference = 9C6A026225ACD9DB00E7A855 /* RTMC.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9C6A027325ACD9DC00E7A855 /* RTMCTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C6A028B25ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMCTests" */;
+			buildPhases = (
+				9C6A027025ACD9DC00E7A855 /* Sources */,
+				9C6A027125ACD9DC00E7A855 /* Frameworks */,
+				9C6A027225ACD9DC00E7A855 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9C6A027625ACD9DC00E7A855 /* PBXTargetDependency */,
+			);
+			name = RTMCTests;
+			productName = RTMCTests;
+			productReference = 9C6A027425ACD9DC00E7A855 /* RTMCTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9C6A027E25ACD9DC00E7A855 /* RTMCUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C6A028E25ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMCUITests" */;
+			buildPhases = (
+				9C6A027B25ACD9DC00E7A855 /* Sources */,
+				9C6A027C25ACD9DC00E7A855 /* Frameworks */,
+				9C6A027D25ACD9DC00E7A855 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9C6A028125ACD9DC00E7A855 /* PBXTargetDependency */,
+			);
+			name = RTMCUITests;
+			productName = RTMCUITests;
+			productReference = 9C6A027F25ACD9DC00E7A855 /* RTMCUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9C6A025A25ACD9DB00E7A855 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1230;
+				LastUpgradeCheck = 1230;
+				TargetAttributes = {
+					9C6A026125ACD9DB00E7A855 = {
+						CreatedOnToolsVersion = 12.3;
+					};
+					9C6A027325ACD9DC00E7A855 = {
+						CreatedOnToolsVersion = 12.3;
+						TestTargetID = 9C6A026125ACD9DB00E7A855;
+					};
+					9C6A027E25ACD9DC00E7A855 = {
+						CreatedOnToolsVersion = 12.3;
+						TestTargetID = 9C6A026125ACD9DB00E7A855;
+					};
+				};
+			};
+			buildConfigurationList = 9C6A025D25ACD9DB00E7A855 /* Build configuration list for PBXProject "RTMC" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9C6A025925ACD9DB00E7A855;
+			productRefGroup = 9C6A026325ACD9DB00E7A855 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9C6A026125ACD9DB00E7A855 /* RTMC */,
+				9C6A027325ACD9DC00E7A855 /* RTMCTests */,
+				9C6A027E25ACD9DC00E7A855 /* RTMCUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9C6A026025ACD9DB00E7A855 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C6A026A25ACD9DC00E7A855 /* Assets.xcassets in Resources */,
+				9C6A026D25ACD9DC00E7A855 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027225ACD9DC00E7A855 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027D25ACD9DC00E7A855 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9C6A025E25ACD9DB00E7A855 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9CF573C325B8FAAF00CF73D8 /* InCallButton.swift in Sources */,
+				9CF573BE25B8F67E00CF73D8 /* NSColor+Extension.swift in Sources */,
+				9CF573B625B8F35F00CF73D8 /* NSButton+Extension.swift in Sources */,
+				9C34070825AF559900F57602 /* RemoteVideoView.swift in Sources */,
+				A1A2D23E25D6E3F50053953D /* Notification+Extension.swift in Sources */,
+				9CF2C72825AE7EA50028A520 /* LocalVideoView.swift in Sources */,
+				9C2EBA4B25C4D585000B2D10 /* Bool+Extension.swift in Sources */,
+				A14EDAF725BF262000AAF663 /* String+Extension.swift in Sources */,
+				A1A2D23425D6C1360053953D /* RenderManager.swift in Sources */,
+				9CF573AB25B89F7000CF73D8 /* NSView+Extension.swift in Sources */,
+				9C6A02AA25AD0E8700E7A855 /* CallViewController.swift in Sources */,
+				9C6A029825AD0D1300E7A855 /* JoinViewController.swift in Sources */,
+				9CF2C71F25ADFFD40028A520 /* CaptureManager.swift in Sources */,
+				A1A2D26125DC5A8F0053953D /* CGImage+Extension.swift in Sources */,
+				A115250E25D44D2500146465 /* CFString+Extension.swift in Sources */,
+				9C2EBA4325C4D128000B2D10 /* Constants.swift in Sources */,
+				9C6A026625ACD9DB00E7A855 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027025ACD9DC00E7A855 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C6A027925ACD9DC00E7A855 /* RTMCTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C6A027B25ACD9DC00E7A855 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C6A028425ACD9DC00E7A855 /* RTMCUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9C6A027625ACD9DC00E7A855 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C6A026125ACD9DB00E7A855 /* RTMC */;
+			targetProxy = 9C6A027525ACD9DC00E7A855 /* PBXContainerItemProxy */;
+		};
+		9C6A028125ACD9DC00E7A855 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C6A026125ACD9DB00E7A855 /* RTMC */;
+			targetProxy = 9C6A028025ACD9DC00E7A855 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		9C6A026B25ACD9DC00E7A855 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9C6A026C25ACD9DC00E7A855 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		9C6A028625ACD9DC00E7A855 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9C6A028725ACD9DC00E7A855 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		9C6A028925ACD9DC00E7A855 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RTMC/RTMC.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				EXCLUDED_ARCHS = arm64;
+				INFOPLIST_FILE = RTMC/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Neo",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMC;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/RTMC/Bridging-Header.h";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9C6A028A25ACD9DC00E7A855 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = RTMC/RTMC.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				EXCLUDED_ARCHS = arm64;
+				INFOPLIST_FILE = RTMC/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Neo",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMC;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/RTMC/Bridging-Header.h";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9C6A028C25ACD9DC00E7A855 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3GBQ2H4QX7;
+				INFOPLIST_FILE = RTMCTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMCTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RTMC.app/Contents/MacOS/RTMC";
+			};
+			name = Debug;
+		};
+		9C6A028D25ACD9DC00E7A855 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3GBQ2H4QX7;
+				INFOPLIST_FILE = RTMCTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMCTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RTMC.app/Contents/MacOS/RTMC";
+			};
+			name = Release;
+		};
+		9C6A028F25ACD9DC00E7A855 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3GBQ2H4QX7;
+				INFOPLIST_FILE = RTMCUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMCUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = RTMC;
+			};
+			name = Debug;
+		};
+		9C6A029025ACD9DC00E7A855 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 3GBQ2H4QX7;
+				INFOPLIST_FILE = RTMCUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ctoteam.RTMCUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = RTMC;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9C6A025D25ACD9DB00E7A855 /* Build configuration list for PBXProject "RTMC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C6A028625ACD9DC00E7A855 /* Debug */,
+				9C6A028725ACD9DC00E7A855 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C6A028825ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMC" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C6A028925ACD9DC00E7A855 /* Debug */,
+				9C6A028A25ACD9DC00E7A855 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C6A028B25ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMCTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C6A028C25ACD9DC00E7A855 /* Debug */,
+				9C6A028D25ACD9DC00E7A855 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C6A028E25ACD9DC00E7A855 /* Build configuration list for PBXNativeTarget "RTMCUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C6A028F25ACD9DC00E7A855 /* Debug */,
+				9C6A029025ACD9DC00E7A855 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9C6A025A25ACD9DB00E7A855 /* Project object */;
+}
