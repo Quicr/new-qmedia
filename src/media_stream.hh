@@ -134,6 +134,9 @@ private:
     std::unique_ptr<VideoEncoder> encoder = nullptr;
     uint64_t encode_sequence_num = 0;
     std::atomic<bool> is_decoder_initialized = false;
+    std::uint64_t group_id {0};
+    std::uint64_t object_id {0};
+    bool got_first_idr = false;
 };
 
 // MediaStream Factory

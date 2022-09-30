@@ -205,6 +205,9 @@ size_t AudioStream::get_media(uint64_t &timestamp,
 
 void AudioStream::audio_encoder_callback(std::vector<uint8_t> &&bytes, uint64_t timestamp)
 {
+    static uint64_t group_id = 0;
+    static uint64_t object_id = 0;
+
     if (media_direction == MediaConfig::MediaDirection::recvonly)
     {
         // no-op
@@ -231,7 +234,8 @@ void AudioStream::audio_encoder_callback(std::vector<uint8_t> &&bytes, uint64_t 
                  << ", timestamp " << packet->sourceRecordTime
                  << std::flush;
 
-    media_transport->send_data(id(), std::move(packet->encoded_data));
+    media_transport->send_data(id(), std::move(packet->encoded_data), group_id, object_id);
+    group_id += 1;
 }
 
 std::shared_ptr<AudioEncoder> AudioStream::setupAudioEncoder()

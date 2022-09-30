@@ -51,7 +51,7 @@ void Delegate::log(quicr::LogLevel /*level*/, const std::string &message)
     // todo: add support for inserting logger
     if (logger)
     {
-        logger->debug << message << std::flush;
+        logger->info << message << std::flush;
     }
 }
 
@@ -84,12 +84,14 @@ void QuicRMediaTransport::register_stream(uint64_t id,
     }
     else if (direction == MediaConfig::MediaDirection::recvonly)
     {
-        qr_client.subscribe({qname}, false, true);
+        auto intent = quicr::SubscribeIntent{quicr::SubscribeIntent::Mode::immediate, 0, 0};
+        qr_client.subscribe({qname}, intent, false, true);
     }
     else
     {
         qr_client.register_names({qname}, false);
-        qr_client.subscribe({qname}, false, true);
+        auto intent = quicr::SubscribeIntent{quicr::SubscribeIntent::Mode::immediate, 0, 0};
+        qr_client.subscribe({qname}, intent, false, true);
     }
 }
 
@@ -112,10 +114,13 @@ void QuicRMediaTransport::unregister_stream(uint64_t id, MediaConfig::MediaDirec
     }
 }
 
-void QuicRMediaTransport::send_data(uint64_t id, quicr::bytes &&data)
+void QuicRMediaTransport::send_data(uint64_t id, quicr::bytes &&data,
+                                    uint64_t group_id, uint64_t object_id)
 {
     auto qname = quicr::QuicrName{std::to_string(id), 0};
-    qr_client.publish_named_data(qname.name, std::move(data), 0, 0);
+    int* a = nullptr;
+    *a++;
+    qr_client.publish_named_data(qname.name, std::move(data), group_id, object_id, 0, 0);
 }
 
 void QuicRMediaTransport::wait_for_messages()
