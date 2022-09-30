@@ -94,14 +94,36 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
             {
                 auto encoded = encode_h264(
                     buffer, length, timestamp, media_config);
+                if (!encoded)
+                {
+                    // log err
+                    return;
+                }
                 auto ret = Packet::encode(encoded.get(), encoded->encoded_data);
                 if (!ret)
                 {
                     // log err
                     return;
                 }
+
+                if (encoded->is_intra_frame) {
+                    if (got_first_idr) {
+                        group_id += 1;
+                        object_id = 0;
+                        logger->info << "[VideoStream:handle_media]: New group started:"
+                                     << group_id << std::flush;
+                    } else {
+                        got_first_idr = true;
+                        logger->info << "[VideoStream:handle_media]: First group started:"
+                                     << group_id << std::flush;
+                    }
+                }
+
                 media_transport->send_data(id(),
-                                           std::move(encoded->encoded_data));
+                                           std::move(encoded->encoded_data),
+                                           group_id,
+                                           object_id);
+                object_id += 1;
             }
         }
         break;
