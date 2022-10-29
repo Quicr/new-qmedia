@@ -14,7 +14,8 @@ namespace qmedia
 class H264Encoder : public VideoEncoder
 {
 public:
-    H264Encoder(unsigned int video_max_width,
+    H264Encoder(MediaStreamId medias_stream_id,
+                unsigned int video_max_width,
                 unsigned int video_max_height,
                 unsigned int video_max_frame_rate,
                 unsigned int video_max_bitrate,
@@ -43,6 +44,7 @@ public:
     unsigned int idr_interval = 30;
     const unsigned int mtu_size = 1300;
 
+    MediaStreamId  stream_id = {0};
     ISVCEncoder *encoder = nullptr;
     SEncParamExt encParmExt;
     SFrameBSInfo encodedFrame;

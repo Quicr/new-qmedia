@@ -54,9 +54,9 @@ public:
     double getSrcRatio();
 
 private:
+    unsigned int target_fill_level;
     bool initial_fill;
     unsigned int max_bucket_size;
-    unsigned int target_fill_level;
     int fill_change;
 
     enum DrainSpeed

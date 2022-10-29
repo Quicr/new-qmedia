@@ -9,21 +9,17 @@ namespace metrics {
 
 enum struct MeasurementType
 {
-    PacketRate_Tx,
-    PacketRate_Rx,
-    FrameRate_Tx,
-    FrameRate_Rx,
-    QDepth_Tx,
-    QDepth_Rx,
+    FrameRate_Tx,    // frame count before transmit
+    FrameRate_Rx,    // frame count from transport after re-assembly
+    EncodeTime,      // time elapsed for encoding a raw sample (ms)
+    EndToEndFrameDelay, // tx to rx latency (ms)
 };
 
-const auto measurement_names = std::map<MeasurementType, std::string>{
-    {MeasurementType::PacketRate_Tx, "TxPacketCount"},
-    {MeasurementType::PacketRate_Rx, "RxPacketCount"},
+const auto MeasurementNames = std::map<MeasurementType, std::string>{
     {MeasurementType::FrameRate_Tx, "TxFrameCount"},
     {MeasurementType::FrameRate_Rx, "RxFrameCount"},
-    {MeasurementType::QDepth_Tx, "TxQueueDepth"},
-    {MeasurementType::QDepth_Rx, "RxQueueDepth"},
+    {MeasurementType::EncodeTime, "EncodeTimeInMs"},
+    {MeasurementType::EndToEndFrameDelay, "EndToEndFrameDelayInMs"},
 };
 
 ///
@@ -32,12 +28,10 @@ const auto measurement_names = std::map<MeasurementType, std::string>{
 ///
 
 struct Measurement {
-    virtual std::string toString() = 0;
     virtual ~Measurement() = default;
+    virtual std::string serialize() = 0;
 };
 
-/// Influx Measurement and Helpers
-///
 
 // handy defines
 using Field =  std::pair<std::string, uint64_t>;
@@ -46,23 +40,23 @@ using Tag = std::pair<std::string, uint64_t>;
 using Tags = std::list<Tag>;
 using TimePoint = std::pair<long long, Fields>;
 
-class InfluxMeasurement : public  Measurement
+class InfluxMeasurement : public Measurement
 {
 public:
+    static std::shared_ptr<InfluxMeasurement> create(std::string name, Tags tags);
 
-    static std::unique_ptr<InfluxMeasurement> createMeasurement(std::string name, Tags tags);
-
-    InfluxMeasurement(std::string &name, Tags &tags);
+    InfluxMeasurement(std::string &name_in, Tags &tags_in);
     ~InfluxMeasurement()  = default;
 
     // Measurement - to line protocol
-    std::string toString() override;
+    std::string serialize() override;
 
     struct TimeEntry
     {
         Tags tags;
         Fields fields;
     };
+
     using TimeSeriesEntry = std::pair<long long, TimeEntry>;
 
     // Setters for the measurement

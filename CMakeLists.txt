@@ -111,7 +111,7 @@ endif()
 ###
 ### Library Source
 ###
-# add_subdirectory(lib)
+add_subdirectory(lib)
 
 add_subdirectory(src)
 
