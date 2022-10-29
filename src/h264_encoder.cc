@@ -6,6 +6,7 @@
 #include <string.h>        // memcpy , strncat
 #include <iomanip>
 
+#include "metrics_reporter.hh"
 #include "h264_encoder.hh"
 
 using namespace qmedia;
@@ -41,13 +42,15 @@ static VideoEncoder::EncodedFrameType toEncodedFrameType(EVideoFrameType frame)
     }
 }
 
-H264Encoder::H264Encoder(unsigned int video_max_width,
+H264Encoder::H264Encoder(MediaStreamId  media_stream_id,
+                        unsigned int video_max_width,
                          unsigned int video_max_height,
                          unsigned int video_max_frame_rate,
                          unsigned int video_max_bitrate,
                          std::uint32_t video_pixel_format,
                          const LoggerPointer &logger_in)
 {
+    stream_id = media_stream_id;
     logger = logger_in;
     int rv = WelsCreateSVCEncoder(&encoder);
 
@@ -150,9 +153,7 @@ H264Encoder::encode(const char *input_buffer,
     }
 
     auto now = std::chrono::system_clock::now();
-    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      now.time_since_epoch())
-                      .count();
+    auto start_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
     // nv12 to i420 planar
     auto *input = reinterpret_cast<unsigned char *>(
@@ -262,6 +263,15 @@ H264Encoder::encode(const char *input_buffer,
 
     total_bytes_encoded += output_bitstream.size();
     total_frames_encoded++;
+
+    auto end_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto diff = end_ms - start_ms;
+    logger->debug << "h264Encoder: encode delta:" << diff << std::flush;
+
+    MetricsReporter::Report(stream_id,
+                            MediaType::video,
+                            metrics::MeasurementType::EncodeTime,
+                            diff);
 
     // success
     return toEncodedFrameType(encodedFrame.eFrameType);

@@ -24,6 +24,7 @@ void VideoStream::configure()
         case MediaConfig::MediaDirection::sendonly:
             // setup encoder
             encoder = std::make_unique<H264Encoder>(
+                media_stream_id,
                 config.video_max_width,
                 config.video_max_height,
                 config.video_max_frame_rate,

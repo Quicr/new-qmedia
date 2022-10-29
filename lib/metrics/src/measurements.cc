@@ -1,12 +1,12 @@
 #include <algorithm>
-#include "measurements.hh"
+#include <metrics/measurements.hh>
 
 namespace metrics
 {
 
-std::unique_ptr<InfluxMeasurement> InfluxMeasurement::createMeasurement(std::string name, Tags tags)
+std::shared_ptr<InfluxMeasurement> InfluxMeasurement::create(std::string name, Tags tags)
 {
-        return std::make_unique<InfluxMeasurement>(name, tags);
+        return std::make_shared<InfluxMeasurement>(name, tags);
 }
 
 InfluxMeasurement::InfluxMeasurement(std::string &name_in, Tags &tags_in) :
@@ -14,22 +14,12 @@ InfluxMeasurement::InfluxMeasurement(std::string &name_in, Tags &tags_in) :
     name(name_in),
     tags(tags_in) {}
 
-void InfluxMeasurement::set(std::chrono::system_clock::time_point now, Field field)
-{
-    Fields fields;
-    fields.emplace_back(field);
-    set(now, fields);
-}
 
 void InfluxMeasurement::set_time_entry(std::chrono::system_clock::time_point now,
     TimeEntry &&entry)
 {
-    long long time = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         now.time_since_epoch())
-                         .count();
-    TimeSeriesEntry tse;
-    tse.first = time;
-    tse.second = entry;
+    long long time = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    TimeSeriesEntry tse {time, entry};
     {
         std::lock_guard<std::mutex> lock(series_lock);
         series.emplace_back(tse);
@@ -40,82 +30,14 @@ void InfluxMeasurement::set_time_entry(std::chrono::system_clock::time_point now
 void InfluxMeasurement::set(std::chrono::system_clock::time_point now,
                                Fields fields)
 {
-    long long time = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         now.time_since_epoch())
-                         .count();
-    TimePoint entry { time, fields};
+    long long time = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    TimePoint entry {time, fields};
     {
         std::lock_guard<std::mutex> lock(series_lock);
         time_points.emplace_back(entry);
     }
 }
 
-std::list<std::string> InfluxMeasurement::lineProtocol()
-{
-
-    std::list<std::string> lines;
-    std::string name_tags = lineProtocol_nameAndTags(tags);
-
-    {
-        std::lock_guard<std::mutex> lock(series_lock);
-
-        if (name_tags.empty() && series.empty()) {
-            return lines;
-        }
-
-        for (auto entry : time_points)
-        {
-            std::string line = name_tags;
-            line += lineProtocol_fields(entry.second);
-            line += " ";
-            line += std::to_string(entry.first);        // time
-            line += "\n";
-            lines.emplace_back(line);
-        }
-
-        time_points.clear();
-
-        // add series generated via TimeSeriesEntries
-        std::for_each(
-            series.begin(),
-            series.end(),
-            [&lines, this](auto &entry)
-            {
-                // gen tags
-                std::string line = lineProtocol_nameAndTags(entry.second.tags);
-                if (line.empty()) {
-                    return;
-                }
-
-                line += lineProtocol_fields(entry.second.fields);
-                line += " ";
-                line += std::to_string(entry.first);        // time
-                line += "\n";
-                lines.emplace_back(line);
-            });
-
-        series.clear();
-
-    }
-    return lines;
-}
-
-std::string InfluxMeasurement::toString() {
-
-    auto lines = lineProtocol();
-
-    // join all the lines collected so far
-    std::string points;
-    for (const auto &point : lines) {
-        points += point;
-    }
-
-    return points;
-}
-
-///
-/// Private
-///
 
 std::string InfluxMeasurement::lineProtocol_nameAndTags()
 {
@@ -124,11 +46,10 @@ std::string InfluxMeasurement::lineProtocol_nameAndTags()
 
 std::string InfluxMeasurement::lineProtocol_nameAndTags(Tags &tag_set)
 {
-    if (name.empty()) {
-        return "";
-    }
+    if (name.empty()) return "";
 
     std::string m = name;
+
     if (!tag_set.empty())
     {
         for (const auto &tag : tag_set)
@@ -139,7 +60,6 @@ std::string InfluxMeasurement::lineProtocol_nameAndTags(Tags &tag_set)
             m += std::to_string(tag.second);
         }
     }
-
     return m;
 }
 
@@ -160,6 +80,42 @@ std::string InfluxMeasurement::lineProtocol_fields(Fields &fields)
     }
 
     return line;
+}
+
+std::list<std::string> InfluxMeasurement::lineProtocol()
+{
+    std::list<std::string> lines;
+    std::string name_tags = lineProtocol_nameAndTags(tags);
+
+    {
+        std::lock_guard<std::mutex> lock(series_lock);
+        if (name_tags.empty() && series.empty()) return lines;
+
+        // add series generated via TimeSeriesEntries
+        std::for_each(series.begin(), series.end(), [&lines, this](auto &entry)
+            {
+                // gen tags
+                std::string line = lineProtocol_nameAndTags(entry.second.tags);
+                if (line.empty()) return;
+                line += lineProtocol_fields(entry.second.fields);
+                line += " ";
+                line += std::to_string(entry.first);        // time
+                line += "\n";
+                lines.emplace_back(line);
+            });
+        series.clear();
+    }        // lock guard
+
+    return lines;
+}
+
+std::string InfluxMeasurement::serialize() {
+    auto entries = lineProtocol();
+    std::string serialized = "";
+    for(const auto& entry: entries) {
+        serialized += entry;
+    }
+    return serialized;
 }
 
 }
