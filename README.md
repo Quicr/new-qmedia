@@ -8,9 +8,12 @@ Note: This project is under active development and might be breaking
 and fixing things ;)
 
 Here is a sample runnning 2-way realtime call with relay node deployed 
-in Atlanta, USA and clients running on mac-book in London (on Hilton Network)
+in Atlanta, USA and clients running on mac-book in London (on Hilton Hotel Network)
 
-https://github.com/Quicr/qmedia/blob/main/akamia-2-way-call-720.mp4
+
+https://user-images.githubusercontent.com/947528/201170693-629525d4-211e-4849-98c5-57b883bccba7.mp4
+
+
 
 Here is a simple demo of 1 publisher and 3 subscribers connecting 
 to the Relay in Ohio
@@ -66,5 +69,6 @@ can be run locally with
 1. cd build/_deps/quicrq-build
 2.  ./quicrq_app -p 7777 -c ../picoquic-src/certs/cert.pem -k ../picoquic-src/certs/key.pem  server
 ```
+
 
 
