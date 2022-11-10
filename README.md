@@ -8,7 +8,7 @@ Note: This project is under active development and might be breaking
 and fixing things ;)
 
 Here is a sample runnning 2-way realtime call with relay node deployed 
-in Atlanta, USA and clients running on mac-book in London
+in Atlanta, USA and clients running on mac-book in London (on Hilton Network)
 
 https://github.com/Quicr/qmedia/blob/main/akamia-2-way-call-720.mp4
 
