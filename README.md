@@ -10,8 +10,7 @@ and fixing things ;)
 Here is a sample runnning 2-way realtime call with relay node deployed 
 in Atlanta, USA and clients running on mac-book in London
 
-https://github.com/Quicr/qmedia/blob/533af39dd37e6df9f1a28e9e726ff4059a69cd20/akamia-2-way-call-low-res.mov
-
+https://github.com/Quicr/qmedia/blob/68de80ab82fd69d002322d36f95daae1e169930b/akamia-2-way-call-720.mp4
 
 Here is a simple demo of 1 publisher and 3 subscribers connecting 
 to the Relay in Ohio
