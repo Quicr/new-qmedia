@@ -21,7 +21,7 @@ based on the priority set by the application.
 https://user-images.githubusercontent.com/947528/201170693-629525d4-211e-4849-98c5-57b883bccba7.mp4
 
 
-## 1 Publisher and 3 Subscribers
+## 1 Publisher and 3 Subscribers audio/video flows over QUICR Datagrams
 
 Here is a simple demo of 1 publisher sending audio and video streams with 3 subscribers asking 
 for the same, The Relay node is running on AWS in Ohio with clients running in SanJose California
