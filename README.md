@@ -7,16 +7,24 @@ MacOs client on top of [libquicr](https://github.com/Quicr/libquicr)
 Note: This project is under active development and might be breaking 
 and fixing things ;)
 
-Here is a sample runnning 2-way realtime call with relay node deployed 
-in Atlanta, USA and clients running on mac-book in London (on Hilton Hotel Network)
+## 2-Way Realtime Call over QUICR Datagrams
+This video captures a 2-way realtime call with QUICR relay node deployed 
+in Akamai's Atlanta Network, USA and the 2 clients running on mac-book 
+in London (on Hilton Hotel Network)
 
+Here both the clients publish audio and video streams, as well as 
+subscribe to each other's audio and video streams. 
+
+The Relay node has experimental feature to drop/forward 
+based on the priority set by the application. 
 
 https://user-images.githubusercontent.com/947528/201170693-629525d4-211e-4849-98c5-57b883bccba7.mp4
 
 
+## 1 Publisher and 3 Subscribers
 
-Here is a simple demo of 1 publisher and 3 subscribers connecting 
-to the Relay in Ohio
+Here is a simple demo of 1 publisher sending audio and video streams with 3 subscribers asking 
+for the same, The Relay node is running on AWS in Ohio with clients running in SanJose California
 
 https://user-images.githubusercontent.com/947528/181114950-400c22da-f623-4bc5-a8d6-7f4e3188a9c5.mp4
 
