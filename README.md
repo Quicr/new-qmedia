@@ -8,9 +8,9 @@ Note: This project is under active development and might be breaking
 and fixing things ;)
 
 ## 2-Way Realtime Call over QUICR Datagrams
-This video captures a 2-way realtime call with QUICR relay node deployed 
-in Akamai's Atlanta Network, USA and the 2 clients running on mac-book 
-in London (on Hilton Hotel Network)
+This video captures a 2-way realtime call with QUICR relay node 
+deployed in Akamai's Atlanta Network, USA and the 2 clients running
+on mac-book in London (on Hilton Hotel Network)
 
 Here both the clients publish audio and video streams, as well as 
 subscribe to each other's audio and video streams. 
@@ -23,8 +23,9 @@ https://user-images.githubusercontent.com/947528/201170693-629525d4-211e-4849-98
 
 ## 1 Publisher and 3 Subscribers audio/video flows over QUICR Datagrams
 
-Here is a simple demo of 1 publisher sending audio and video streams with 3 subscribers asking 
-for the same, The Relay node is running on AWS in Ohio with clients running in SanJose California
+Here is a simple demo of 1 publisher sending audio and video streams 
+with 3 subscribers asking for the same, The Relay node is running on AWS 
+in Ohio with clients running in SanJose California
 
 https://user-images.githubusercontent.com/947528/181114950-400c22da-f623-4bc5-a8d6-7f4e3188a9c5.mp4
 
