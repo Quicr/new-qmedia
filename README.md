@@ -66,7 +66,7 @@ The source code for Mac client is under mac-client/
 
 mac-client can be run with
 ```
- 1. Copy libneo_media_client.dylib into mac-client/Neo directory
+ 1. Copy libneo_media_client.dylib from build/src/extern into mac-client/Neo directory
  2. Open RTMC.xcodeproj under mac-client
  3. Build and Run
    3.1 This needs a QuicR relay to be started as explained below
