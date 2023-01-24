@@ -29,9 +29,6 @@ test: ${BUILD_DIR} test/*
 tidy:
 	cmake -B${BUILD_DIR} -DCLANG_TIDY=ON -DCMAKE_BUILD_TYPE=Debug .
 
-vcpkg-status:
-	less build/vcpkg_installed/vcpkg/status
-
 everything: ${BUILD_DIR}
 	cmake --build ${BUILD_DIR}
 

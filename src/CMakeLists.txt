@@ -1,4 +1,5 @@
-add_library(qmedia
+
+add_library( new-qmedia
     audio_encoder.cc
     full_Fill.cc
     h264_decoder.cc
@@ -19,24 +20,26 @@ add_library(qmedia
     resampler.cc
     video_stream.cc
     metrics_reporter.cc)
-target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
-target_link_libraries(qmedia
+    
+#target_link_directories( new-qmedia PUBLIC )
+
+target_link_libraries( new-qmedia
     PUBLIC
         ${LIBRARIES}
-        OpenSSL::Crypto
-        openh264
         metrics
-        quicr)
-target_include_directories(qmedia
+        new-quicr )
+        
+target_include_directories( new-qmedia
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
         ${Protobuf_INCLUDE_DIRS}
-        ${OpenH264_INCLUDE_DIR})
-target_compile_options(qmedia
+        )
+        
+target_compile_options( new-qmedia
     PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
         $<$<CXX_COMPILER_ID:MSVC>: >)
-set_target_properties(qmedia
+set_target_properties(new-qmedia
     PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES

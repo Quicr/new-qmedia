@@ -1,23 +1,7 @@
-include(FetchContent)
 
-################################################################################
-# Project URL: https://github.com/cisco/sframe
-#     Git URL: https://github.com/cisco/sframe.git
-#      Branch: master
-#     Targets: sframe
-FetchContent_Declare(   sframe
-    GIT_REPOSITORY      https://github.com/cisco/sframe.git
-    GIT_TAG             master)
+#add_subdirectory( curl ) 
+#add_subdirectory( doctest ) 
+#add_subdirectory( libsamplerate ) 
+add_subdirectory( opus ) 
 
-################################################################################
-# Project URL: https://github.com/cisco/sframe
-#     Git URL: https://github.com/cisco/sframe.git
-#      Branch: master
-#     Targets: sframe
-FetchContent_Declare(quicr
-        GIT_REPOSITORY      git@github.com:Quicr/libquicr.git
-        GIT_TAG             main)
-set(quicr_BUILD_TESTS OFF)
-set(quicrq_BUILD_TESTS OFF)
-
-FetchContent_MakeAvailable(sframe quicr)
+add_subdirectory( new-libquicr ) 

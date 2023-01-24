@@ -1,3 +1,18 @@
-[submodule "vcpkg"]
-	path = vcpkg
-	url = https://github.com/microsoft/vcpkg.git
+[submodule "dependencies/curl"]
+	path = dependencies/curl
+	url = git@github.com:curl/curl.git
+[submodule "dependencies/protobuf"]
+	path = dependencies/protobuf
+	url = git@github.com:protocolbuffers/protobuf.git
+[submodule "dependencies/opus"]
+	path = dependencies/opus
+	url = https://github.com/xiph/opus
+[submodule "dependencies/doctest"]
+	path = dependencies/doctest
+	url = git@github.com:doctest/doctest.git
+[submodule "dependencies/libsamplerate"]
+	path = dependencies/libsamplerate
+	url = git@github.com:libsndfile/libsamplerate.git
+[submodule "dependencies/new-libquicr"]
+	path = dependencies/new-libquicr
+	url = git@github.com:Quicr/new-libquicr.git

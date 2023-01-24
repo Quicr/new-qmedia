@@ -1,7 +1,7 @@
 
 project(neo_media_client)
 add_library(neo_media_client SHARED neo_media_client.cc)
-target_link_libraries(neo_media_client PRIVATE qmedia)
+target_link_libraries(neo_media_client PRIVATE new-qmedia)
 target_compile_options(neo_media_client
     PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
