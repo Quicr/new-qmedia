@@ -1,3 +1,5 @@
+add_subdirectory(extern)
+
 add_library(qmedia
     audio_encoder.cc
     full_Fill.cc
@@ -41,8 +43,3 @@ set_target_properties(qmedia
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
-
-if(BUILD_EXTERN)
-    add_subdirectory(extern)
-endif(BUILD_EXTERN)
-

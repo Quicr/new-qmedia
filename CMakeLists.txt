@@ -28,15 +28,9 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
 endif()
 
-option(BUILD_EXTERN "build external library" ON)
 option(BUILD_TESTS  "build tests" ON)
 option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON)
 option(CLANG_TIDY "Perform linting with clang-tidy" OFF)
-
-# Build PIC dependencies when created extern shared library.
-if (BUILD_EXTERN)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif(BUILD_EXTERN)
 
 add_subdirectory(dependencies)
 
