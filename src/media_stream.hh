@@ -5,7 +5,7 @@
 #include <functional>
 
 #include <qmedia/media_client.hh>
-#include "media_transport.hh"
+//#include "media_transport.hh"
 
 #include "audio_encoder.hh"
 #include "codec.hh"
@@ -46,10 +46,12 @@ public:
                              unsigned int max_len,
                              void** to_free) = 0;
 
+/*
     void set_transport(std::shared_ptr<MediaTransport> transport)
     {
         media_transport = transport;
     }
+*/
 
     void handle_media(MediaClient::NewSourceCallback stream_callback,
                       uint64_t group_id,
@@ -67,7 +69,7 @@ protected:
     MediaStreamId media_stream_id = 0;
     MediaConfig config;
     MediaConfig::MediaDirection media_direction;
-    std::shared_ptr<MediaTransport> media_transport;
+    //std::shared_ptr<MediaTransport> media_transport;
     LoggerPointer logger;
     Metrics::MetricsPtr metrics = nullptr;
 };

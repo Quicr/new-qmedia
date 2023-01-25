@@ -119,7 +119,7 @@ add_subdirectory(src)
 ### Applications
 ###
 
-add_subdirectory(cmd)
+#add_subdirectory(cmd)
 
 ###
 ### Tests

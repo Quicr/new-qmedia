@@ -65,9 +65,11 @@ void MediaStream::handle_media(MediaClient::NewSourceCallback  stream_callback,
 
 void MediaStream::remove_stream()
 {
+#if 0
     if(media_transport) {
         media_transport->unregister_stream(id(), media_direction);
     }
+#endif
 }
 
 ///
@@ -234,7 +236,7 @@ void AudioStream::audio_encoder_callback(std::vector<uint8_t> &&bytes, uint64_t 
                  << ", timestamp " << packet->sourceRecordTime
                  << std::flush;
 
-    media_transport->send_data(id(), std::move(packet->encoded_data), group_id, object_id);
+    //media_transport->send_data(id(), std::move(packet->encoded_data), group_id, object_id);
     group_id += 1;
 }
 

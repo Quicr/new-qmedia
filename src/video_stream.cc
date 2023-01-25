@@ -120,10 +120,12 @@ void VideoStream::handle_media(MediaConfig::CodecType codec_type,
                     }
                 }
 
+/*
                 media_transport->send_data(id(),
                                            std::move(encoded->encoded_data),
                                            group_id,
                                            object_id);
+*/
                 object_id += 1;
             }
         }

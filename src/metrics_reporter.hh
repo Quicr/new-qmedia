@@ -5,7 +5,7 @@
 struct MetricsReporter
 {
     static void Report(qmedia::MediaStreamId streamId,
-                       qmedia::MediaType media_type,
+                       //qmedia::MediaType media_type,
                        metrics::MeasurementType measurement_type,
                        const long long& val);
 
