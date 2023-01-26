@@ -16,7 +16,6 @@ target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
 target_link_libraries(qmedia
     PUBLIC
         ${LIBRARIES}
-        metrics
         quicr)
 target_include_directories(qmedia
     PUBLIC
