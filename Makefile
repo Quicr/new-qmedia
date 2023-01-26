@@ -16,21 +16,14 @@ ${BUILD_DIR}: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
 	cmake -B${BUILD_DIR} -DBUILD_EXTERN=ON -DCMAKE_BUILD_TYPE=Debug .
 
 libs: ${BUILD_DIR}
-	cmake --build ${BUILD_DIR} --target metrics
+	cmake --build ${BUILD_DIR} 
 
-test-libs: ${BUILD_DIR}
-	cmake --build ${BUILD_DIR} --target metrics_test
-	cd build/lib/metrics/test/ && ctest
 
 test: ${BUILD_DIR} test/*
-
 	cmake --build ${BUILD_DIR} --target neoMedia_test
 
 tidy:
 	cmake -B${BUILD_DIR} -DCLANG_TIDY=ON -DCMAKE_BUILD_TYPE=Debug .
-
-vcpkg-status:
-	less build/vcpkg_installed/vcpkg/status
 
 everything: ${BUILD_DIR}
 	cmake --build ${BUILD_DIR}
