@@ -11,7 +11,8 @@ add_library(qmedia
 #    playout_tools.cc
 #    resampler.cc
     metrics_reporter.cc)
-target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
+    
+
 target_link_libraries(qmedia
     PUBLIC
         ${LIBRARIES}
