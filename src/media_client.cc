@@ -232,8 +232,8 @@ void MediaClient::remove_audio_subscribe(MediaStreamId streamId)
         quicr_name = publish_names[streamid];
     }
 
+    quicr::bytes b(data, data+length-1);
 
-    quicr::bytes b;
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
 
     quicr_name += 1;
