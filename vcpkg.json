@@ -4,10 +4,6 @@
   "dependencies": [
     "openssl",
     "doctest",
-    "curl",
-    {
-      "name": "portaudio",
-      "platform": "!uwp"
-    }
+    "curl"
   ]
 }
