@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 {
     void *sub_handle = 0;
 
-    MediaClient_Create("127.0.0.1", 1234, &sub_handle);
+    MediaClient_Create("127.0.0.1", 10080, &sub_handle);
 
     std::uint64_t sub_audio_streamId = MediaClient_AddAudioStreamSubscribe(sub_handle, 0, sub_cb);
     std::uint64_t sub_video_streamId = MediaClient_AddVideoStreamSubscribe(sub_handle, 0, sub_cb);

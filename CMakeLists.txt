@@ -45,4 +45,4 @@ if(BUILD_TESTING AND qmedia_BUILD_TESTS)
 #    add_subdirectory(test)
 endif()
 
-#add_subdirectory(ctest)
+add_subdirectory(ctest)

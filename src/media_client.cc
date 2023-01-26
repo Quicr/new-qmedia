@@ -47,8 +47,9 @@ void MediaTransportSubDelegate:: onSubscribedObject(const quicr::Name& quicr_nam
                                     bool use_reliable_transport,
                                     quicr::bytes&& data)
 {
-    std::cerr << "sub::onSubscribedObject" << std::endl;
-    callback(id, data.data(), data.size() );
+    std::cerr << "sub::onSubscribedObject " << data.size() << std::endl;
+    quicr::bytes b = data;
+    callback(id, b.data(), b.size() );
 }
 
 MediaTransportPubDelegate::MediaTransportPubDelegate(MediaStreamId id) : 
