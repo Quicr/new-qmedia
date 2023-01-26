@@ -5,12 +5,13 @@ add_library(qmedia
 #    jitter_silence.cc
     logger.cc
     media_client.cc
-    metrics.cc
+#    metrics.cc
 #    playout_leakybucket.cc
 #    playout_sync.cc
 #    playout_tools.cc
 #    resampler.cc
-    metrics_reporter.cc)
+#    metrics_reporter.cc)
+)
 target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
 target_link_libraries(qmedia
     PUBLIC

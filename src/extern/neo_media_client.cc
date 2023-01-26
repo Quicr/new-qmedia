@@ -3,14 +3,11 @@
 
 using namespace qmedia;
 
-
-
 extern "C"
 {
-
-    void CALL MediaClient_Create(const char *remote_address,
-                                 std::uint16_t remote_port,
-                                 void **media_client)
+    void  MediaClient_Create(const char *remote_address,
+                             uint16_t remote_port,
+                             void **media_client)
     {
         if (!media_client || !remote_address)
         {
@@ -31,29 +28,26 @@ extern "C"
         *media_client = client.release();
     }
 
-    void CALL MediaClient_Destroy(void *media_client)
+    void  MediaClient_Destroy(void *media_client)
     {
         delete (MediaClient *) media_client;
     }
 
-    std::uint64_t CALL MediaClient_AddAudioStreamPublish(void *instance,
-                                                  std::uint8_t media_type,
-                                                  std::uint8_t codec_type)
+    uint64_t
+    MediaClient_AddAudioStreamPublish(void *instance,
+                                      uint8_t codec_type)
     {
         if (!instance)
         {
             return 0;        // invalid
         }
         auto media_client = static_cast<MediaClient *>(instance);
-        return media_client->add_audio_publish_intent(media_type, codec_type);  
+        return media_client->add_audio_publish_intent(codec_type);  
     }
 
-
-
-     std::uint64_t CALL 
+     uint64_t  
      MediaClient_AddAudioStreamSubscribe(void *instance,
-                                                  std::uint8_t media_type,
-                                                  std::uint8_t codec_type,
+                                                  uint8_t codec_type,
                                                   SubscribeCallback callback)
     {
         if (!instance)
@@ -62,14 +56,13 @@ extern "C"
         }
 
         auto media_client = static_cast<MediaClient *>(instance);
-        return media_client->add_audio_stream_subscribe(media_type, codec_type, callback);
+        return media_client->add_audio_stream_subscribe(codec_type, callback);
     }
 
 
-    std::uint64_t CALL
-    MediaClient_AddVideoStreamPublishIntent(void *instance,
-                               std::uint8_t media_type,
-                               std::uint8_t codec_type)
+    uint64_t 
+    MediaClient_AddAudioStreamPublishIntent(void *instance,
+                               uint8_t codec_type)
     {
         if (!instance)
         {
@@ -77,20 +70,24 @@ extern "C"
         }
 
         auto media_client = static_cast<MediaClient *>(instance);
-        return media_client->add_audio_publish_intent(media_type, codec_type);
+        return media_client->add_audio_publish_intent( codec_type);
     }
-/*
-    std::uint64_t CALL
-    MediaClient_AddVideoStreamSubscribe((void *instance,
-                                        std::uint8_t media_type,
-                                        std::uint8_t codec_type
-                                        SubscribeCallback callback)
-    {
 
+    uint64_t 
+    MediaClient_AddVideoStreamPublishIntent(void *instance,
+                               uint8_t codec_type)
+    {
+        if (!instance)
+        {
+            return 0;        // invalid
+        }
+
+        auto media_client = static_cast<MediaClient *>(instance);
+        return media_client->add_video_publish_intent(codec_type);
     }
-*/
-    void CALL MediaClient_RemoveMediaStream(void *instance,
-                                            std::uint64_t media_stream_id)
+
+    void  MediaClient_RemoveMediaStream(void *instance,
+                                            uint64_t media_stream_id)
     {
         if (!instance)
         {
@@ -102,11 +99,11 @@ extern "C"
        // media_client->remove_object_stream(media_stream_id);
     }
 
-    void CALL MediaClient_sendAudio(void *instance,
+    void  MediaClient_sendAudio(void *instance,
                                     uint64_t media_stream_id,
                                     const char *buffer,
-                                    std::uint16_t length,
-                                    std::uint64_t timestamp)
+                                    uint16_t length,
+                                    uint64_t timestamp)
     {
         if (!instance)
         {
@@ -123,11 +120,12 @@ extern "C"
         );
     }
 
- void CALL MediaClient_sendVideo(void *instance,
+ void  MediaClient_sendVideoFrame(void *instance,
                                     uint64_t media_stream_id,
                                     const char *buffer,
-                                    std::uint16_t length,
-                                    std::uint64_t timestamp)
+                                    uint16_t length,
+                                    uint64_t timestamp,
+                                    bool flag)
     {
         if (!instance)
         {
