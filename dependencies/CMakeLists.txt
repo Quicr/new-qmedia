@@ -1,13 +1,5 @@
 include(FetchContent)
 
-################################################################################
-# Project URL: https://github.com/cisco/sframe
-#     Git URL: https://github.com/cisco/sframe.git
-#      Branch: master
-#     Targets: sframe
-FetchContent_Declare(   sframe
-    GIT_REPOSITORY      https://github.com/cisco/sframe.git
-    GIT_TAG             master)
 
 ################################################################################
 # Project URL: https://github.com/cisco/sframe
@@ -20,4 +12,4 @@ FetchContent_Declare(quicr
 set(quicr_BUILD_TESTS OFF)
 set(quicrq_BUILD_TESTS OFF)
 
-FetchContent_MakeAvailable(sframe quicr)
+FetchContent_MakeAvailable( quicr)

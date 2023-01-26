@@ -37,6 +37,13 @@ git clone https://github.com/Quicr/qmedia
 cd qmedia
 ```
 
+Install and set variable to point at OpenSSL. On mac this would be 
+```
+brew install openssl
+brew info openssl
+export PKG_CONFIG_PATH=/opt/homebrew/opt/openssl@3/lib/pkgconfig
+```
+
 vcpkg is used for some non-cmake friendly dependencies
 ```
 git submodule init
