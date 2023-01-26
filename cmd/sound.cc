@@ -31,8 +31,10 @@ static const unsigned int sample_rate = 48000;
 static const unsigned int frames_per_buffer = 10 * 48;        // 10 ms
 static const unsigned int audio_channels = 1;
 static const unsigned int bytesPerSample = 4;
+/**/
 static const AudioConfig::SampleType sample_type =
     AudioConfig::SampleType::Float32;
+    */
 static const double resample_ratio = 1.0;
 static Resampler resampler;
 
@@ -326,7 +328,7 @@ int main(int argc, char *argv[])
     // Create media library.
     auto client = MediaClient{wrapped_stream_callback, logger};
 
-    client.init_transport(TransportType::QUIC, remote_address, remote_port);
+    // SAH - client.init_transport(TransportType::QUIC, remote_address, remote_port);
 
     shutDown = false;
 

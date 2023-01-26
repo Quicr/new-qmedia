@@ -71,22 +71,17 @@ int main(int argc, char **argv)
     auto logcb = [](const char *message) { std::cout << message << std::endl; };
 
     void *client;
-    MediaClient_Create(logcb, source_callback, "127.0.0.1", 7777, &client);
+    MediaClient_Create("127.0.0.1", 7777, &client);
 
     std::vector<std::thread> threads;
 
+    quicr::QUICRName name;
+    name.hi = 0x01;
+    name.low = 0x01;
+
     if (mode == "send")
     {
-        auto stream_id = MediaClient_AddVideoStream(client,
-                                                    0x1000,
-                                                    0x2000,
-                                                    0x3000,
-                                                    0,
-                                                    enc_format,
-                                                    image_width,
-                                                    image_height,
-                                                    30,
-                                                    200000);
+        auto stream_id = MediaClient_AddVideoStream(client, name);
 
         // Send frames.
         threads.emplace_back(

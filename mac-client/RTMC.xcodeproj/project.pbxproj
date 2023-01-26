@@ -30,6 +30,7 @@
 		A1A2D26125DC5A8F0053953D /* CGImage+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A2D26025DC5A8F0053953D /* CGImage+Extension.swift */; };
 		A1A2D2A725E01DFC0053953D /* libneo_media_client.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */; };
 		A1A2D2A825E01DFC0053953D /* libneo_media_client.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		D759AC4B2980CCDB00624BC1 /* MediaClient.mm in Sources */ = {isa = PBXBuildFile; fileRef = D759AC4A2980CCDB00624BC1 /* MediaClient.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +96,9 @@
 		A1A2D23325D6C1360053953D /* RenderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderManager.swift; sourceTree = "<group>"; };
 		A1A2D23D25D6E3F50053953D /* Notification+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Notification+Extension.swift"; sourceTree = "<group>"; };
 		A1A2D26025DC5A8F0053953D /* CGImage+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGImage+Extension.swift"; sourceTree = "<group>"; };
+		D759AC4A2980CCDB00624BC1 /* MediaClient.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MediaClient.mm; sourceTree = "<group>"; };
+		D759AC4C2980CCFE00624BC1 /* MediaClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaClient.h; sourceTree = "<group>"; };
+		D759AC4D2980CED100624BC1 /* MediaClientI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaClientI.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +151,7 @@
 		9C6A026425ACD9DB00E7A855 /* RTMC */ = {
 			isa = PBXGroup;
 			children = (
+				D759AC492980CCB300624BC1 /* Bridge */,
 				9C6A02B225AD100D00E7A855 /* Application */,
 				9C6A02B125AD0FEE00E7A855 /* Controllers */,
 				9CF573A925B89F5C00CF73D8 /* Extensions */,
@@ -238,6 +243,16 @@
 				A173803625D1C20C00A4AF61 /* libneo_media_client.dylib */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D759AC492980CCB300624BC1 /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				D759AC4A2980CCDB00624BC1 /* MediaClient.mm */,
+				D759AC4C2980CCFE00624BC1 /* MediaClient.h */,
+				D759AC4D2980CED100624BC1 /* MediaClientI.h */,
+			);
+			path = Bridge;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -387,6 +402,7 @@
 				A115250E25D44D2500146465 /* CFString+Extension.swift in Sources */,
 				9C2EBA4325C4D128000B2D10 /* Constants.swift in Sources */,
 				9C6A026625ACD9DB00E7A855 /* AppDelegate.swift in Sources */,
+				D759AC4B2980CCDB00624BC1 /* MediaClient.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -560,6 +576,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				EXCLUDED_ARCHS = arm64;
+				"HEADER_SEARCH_PATHS[arch=*]" = ../include;
 				INFOPLIST_FILE = RTMC/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -591,6 +608,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				EXCLUDED_ARCHS = arm64;
+				"HEADER_SEARCH_PATHS[arch=*]" = ../include;
 				INFOPLIST_FILE = RTMC/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

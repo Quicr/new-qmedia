@@ -2,7 +2,7 @@
 #include "metrics_reporter.hh"
 #include <metrics/metrics.hh>
 #include <metrics/measurements.hh>
-#include "media_stream.hh"
+//#include "media_stream.hh"
 
 using namespace metrics;
 
@@ -10,7 +10,7 @@ uint64_t MetricsReporter::client_id = {0};
 
 //template <typename T>
 void MetricsReporter::Report(qmedia::MediaStreamId stream_id,
-                             qmedia::MediaType media_type,
+                             //qmedia::MediaType media_type,
                              metrics::MeasurementType measurement_type,
                              const long long& val)
 {
@@ -18,8 +18,8 @@ void MetricsReporter::Report(qmedia::MediaStreamId stream_id,
     auto msmt = InfluxMeasurement::create(MeasurementNames.at(measurement_type), {});
     auto entry = InfluxMeasurement::TimeEntry{};
     entry.tags = {{"clientID", client_id},
-                   {"sourceID", stream_id},
-                   {"mediaType", media_type}};
+                   {"sourceID", stream_id}}; 
+                  // {"mediaType", media_type}};
 
     // common fields
     entry.fields = {{"count", 1}};
