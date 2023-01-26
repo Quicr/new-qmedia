@@ -1,7 +1,7 @@
 #include "neo_media_client.hh"
 #include <qmedia/media_client.hh>
 
-using namespace qmedia;
+
 
 extern "C"
 {
@@ -20,7 +20,7 @@ extern "C"
 
 
         // Create media library.
-        auto client = std::make_unique<MediaClient>(remote_address,
+        auto client = std::make_unique<qmedia::MediaClient>(remote_address,
                         remote_port,
                         0,
                         logger);
@@ -30,7 +30,7 @@ extern "C"
 
     void  MediaClient_Destroy(void *media_client)
     {
-        delete (MediaClient *) media_client;
+        delete (qmedia::MediaClient *) media_client;
     }
 
     uint64_t
@@ -41,7 +41,7 @@ extern "C"
         {
             return 0;        // invalid
         }
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
         return media_client->add_audio_publish_intent(codec_type);  
     }
 
@@ -55,7 +55,7 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
         return media_client->add_audio_stream_subscribe(codec_type, callback);
     }
 
@@ -69,7 +69,7 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
         return media_client->add_audio_publish_intent( codec_type);
     }
 
@@ -82,7 +82,7 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
         return media_client->add_video_publish_intent(codec_type);
     }
 
@@ -94,7 +94,7 @@ extern "C"
             return;
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
    
        // media_client->remove_object_stream(media_stream_id);
     }
@@ -110,7 +110,7 @@ extern "C"
             return;
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
 
         media_client->send_audio_media(
             media_stream_id,
@@ -132,7 +132,7 @@ extern "C"
             return;
         }
 
-        auto media_client = static_cast<MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
 
         media_client->send_video_media(
             media_stream_id,

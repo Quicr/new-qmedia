@@ -101,7 +101,9 @@ private:
     
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 
-     qtransport::LogHandler logger;
+    qtransport::LogHandler logger;
+
+    uint8_t *buffer;
 };
 
 }        // namespace qmedia

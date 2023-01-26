@@ -50,10 +50,11 @@ void MediaTransportSubDelegate:: onSubscribedObject(const quicr::Name& quicr_nam
 {
     std::cerr << "sub::onSubscribedObject" << std::endl;
 
-    uint32_t length = 0; 
+    uint32_t length = data.size(); 
     uint8_t *dp = nullptr;
 
-    callback(id,dp,length );
+
+    callback(id, data.data(), data.size() );
 }
 
 MediaTransportPubDelegate::MediaTransportPubDelegate(MediaStreamId id) : 
@@ -86,6 +87,8 @@ MediaClient::MediaClient(const char *remote_address,
     relayInfo.hostname = remote_address;
     relayInfo.port = remote_port;
     relayInfo.proto = quicr::RelayInfo::Protocol::UDP;
+
+    buffer = new uint8_t[3000];
 
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
 }
@@ -127,8 +130,6 @@ MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type)
     ++streamId;
     
     auto delegate = std::make_shared<MediaTransportPubDelegate>(streamId); 
-    
-    
 
     //quicr::bytes e2e;
     //quicRClient->publishIntent(delegate, ns, "", "", std::move(e2e));
