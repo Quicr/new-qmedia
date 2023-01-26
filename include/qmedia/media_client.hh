@@ -97,7 +97,7 @@ private:
     std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
     std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
 
-    std::map<MediaStreamId, quicr::Name> public_names;
+    std::map<MediaStreamId, quicr::Name> publish_names;
     
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 

@@ -86,6 +86,20 @@ extern "C"
         return media_client->add_video_publish_intent(codec_type);
     }
 
+     uint64_t  
+     MediaClient_AddVideoStreamSubscribe(void *instance,
+                                        uint8_t codec_type,
+                                        SubscribeCallback callback)
+    {
+        if (!instance)
+        {
+            return 0;        // invalid
+        }
+
+        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        return media_client->add_video_stream_subscribe(codec_type, callback);
+    }
+
     void  MediaClient_RemoveMediaStream(void *instance,
                                             uint64_t media_stream_id)
     {
