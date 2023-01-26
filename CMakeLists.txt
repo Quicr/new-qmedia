@@ -56,7 +56,8 @@ endif()
 ### Dependencies
 ###
 
-set(LIBRARIES media_api gsl sframe)
+#set(LIBRARIES media_api gsl sframe)
+set(LIBRARIES gsl sframe)
 
 # samplerate
 find_library(SAMPLE_RATE samplerate REQUIRED)
@@ -76,7 +77,7 @@ else(APPLE)
     list(APPEND LIBRARIES Opus::opus)
 endif(APPLE)
 
-add_subdirectory( proto )
+#add_subdirectory( proto )
 find_package(Opus REQUIRED)
 
 # Windows sockets.
@@ -128,3 +129,5 @@ include(CTest)
 if(BUILD_TESTING AND qmedia_BUILD_TESTS)
     add_subdirectory(test)
 endif()
+
+add_subdirectory(ctest)

@@ -16,86 +16,96 @@
 namespace qmedia
 {
 
-enum struct MediaDirection
-{
-    sendonly = 0,
-    recvonly,
-    sendrecv,
-    unknown
-};
+typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
 
+using MediaStreamId = uint64_t;
+
+//typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
 
 class MediaTransportSubDelegate : public quicr::SubscriberDelegate
 {
 public:
-    MediaTransportSubDelegate();
+    MediaTransportSubDelegate(MediaStreamId id, 
+                            quicr::QUICRNamespace quicr_namespace, 
+                            SubscribeCallback callback);
 
     virtual void onSubscribeResponse(const quicr::QUICRNamespace& quicr_namespace,
-                                    const quicr::SubscribeResult& result);
+                                    const quicr::SubscribeResult::SubscribeStatus& result);
+
     virtual void onSubscriptionEnded(const quicr::QUICRNamespace& quicr_namespace,
                                     const quicr::SubscribeResult& result);
+
+    virtual void onSubscribedObject(const quicr::QUICRName& quicr_name,
+                                    uint8_t priority,
+                                    uint16_t expiry_age_ms,
+                                    bool use_reliable_transport,
+                                    quicr::bytes&& data);
+                                   
+
+    bool isActive() { return canReceiveSubs; }
 private:
-    bool canReciveSubs;
+    bool canReceiveSubs;
+    MediaStreamId id;
+    quicr::QUICRNamespace quicr_namespace;
+    SubscribeCallback callback;
 };
 
 class MediaTransportPubDelegate : public quicr::PublisherDelegate
 {
 public:
-    MediaTransportPubDelegate();
-
+    MediaTransportPubDelegate(MediaStreamId id);
     virtual void onPublishIntentResponse(const quicr::QUICRNamespace& quicr_namespace,
                                         const quicr::PublishIntentResult& result);
 private:
     bool canPublish;
+    MediaStreamId id;
 };
 
-// handy typedefs
-using MediaStreamId = uint64_t;
 
-// forward declarations
-struct MediaStream;
-struct MediaTransport;
 
 class MediaClient
 {
 public:
-    explicit MediaClient(const LoggerPointer &s = nullptr);
+    explicit MediaClient(const char *remote_address,
+                        std::uint16_t remote_port,
+                        std::uint16_t protocol,
+                        const LoggerPointer &s = nullptr);
 
-    // Stream API
-    MediaStreamId add_object_stream(const quicr::QUICRName& quicr_name,
-                                   MediaDirection media_direction);
+    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type,
+                                             std::uint8_t codec_type,
+                                             SubscribeCallback callback);
 
-    void remove_object_stream(MediaStreamId media_stream_id);
+    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type,
+                                             std::uint8_t codec_type,
+                                             SubscribeCallback callback);
+                                                                      
+    MediaStreamId add_audio_publish_intent(uint8_t media_type,
+                                           uint8_t codec_type);
 
-    // media apis
-    void send_object(MediaStreamId streamId,
-                    uint8_t *buffer,
-                    unsigned int length,
-                    uint64_t timestamp);
+    MediaStreamId add_video_publish_intent(std::uint8_t media_type,
+                                           std::uint8_t codec_type);
 
-    // returns actual bytes filled
-    std::uint32_t get_object(MediaStreamId streamId,
-                  uint64_t &timestamp,
-                  unsigned char **buffer);
+    void remove_video_publish(MediaStreamId streamId);
+    void remove_video_subscribe(MediaStreamId streamId);
+    void remove_audio_publish(MediaStreamId streamId);
+    void remove_audio_subscribe(MediaStreamId streamId);
 
-    void release_media_buffer(void* buffer);
-
-private:
-    uint64_t get_next_id(void);
+    void send_audio_media(MediaStreamId streamid, uint8_t *data, std::uint32_t length, std::uint64_t timestamp);
+    void send_video_media(MediaStreamId streamid, uint8_t *data, std::uint32_t length, std::uint64_t timestamp); 
 
 private:
     LoggerPointer log;
 
-    // SAH - I really don't like these maps...
-    // list of media streams
-    std::map<MediaStreamId, quicr::QUICRName> active_stream;
+    std::uint32_t streamId;
+
     std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
     std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
 
-    // underlying media transport
+    std::map<MediaStreamId, quicr::QUICRName> public_names;
+    
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 
-    MediaStreamId streamId;
+     qtransport::LogHandler logger;
 };
 
 }        // namespace qmedia

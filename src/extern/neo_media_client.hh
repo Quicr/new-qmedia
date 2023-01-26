@@ -11,6 +11,10 @@
 
 #include <qmedia/callback.hh>
 
+typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
+
+
+
 extern "C"
 {
     EXPORT void CALL MediaClient_Create(const char *remote_address,
@@ -20,16 +24,28 @@ extern "C"
     EXPORT void CALL MediaClient_Destroy(void *media_client);
 
     EXPORT std::uint64_t CALL
-    MediaClient_AddAudioStream(void *instance,
+    MediaClient_AddAudioStreamPublishIntent(void *instance,
                                std::uint8_t media_type,
-                               std::uint8_t codec_type,
-                               std::uint8_t media_direction);
+                               std::uint8_t codec_type);
 
     EXPORT std::uint64_t CALL
-    MediaClient_AddVideoStream(void *instance,
+    MediaClient_AddAudioStreamSubscribe(void *instance,
                                std::uint8_t media_type,
                                std::uint8_t codec_type,
-                               std::uint8_t media_direction);
+                               SubscribeCallback callback);
+
+    EXPORT std::uint64_t CALL
+    MediaClient_AddVideoStreamPublishIntent(void *instance,
+                               std::uint8_t media_type,
+                               std::uint8_t codec_type);
+
+
+    EXPORT std::uint64_t CALL
+    MediaClient_AddVideoStreamSubscribe(void *instance,
+                               std::uint8_t media_type,
+                               std::uint8_t codec_type,
+                               SubscribeCallback callback);
+
 
     EXPORT void CALL
     MediaClient_RemoveMediaStream(void *instance,

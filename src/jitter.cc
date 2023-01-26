@@ -45,6 +45,7 @@ void Jitter::set_audio_params(unsigned int audio_sample_rate,
     decode_audio_as = audio_decode_type;
 }
 
+#if 0
 void Jitter::set_video_params(uint32_t video_max_width,
                               uint32_t video_max_height,
                               uint32_t video_decode_pixel_format)
@@ -64,6 +65,7 @@ void Jitter::set_video_params(uint32_t video_max_width,
                  << video.last_decoded_format << std::flush;
     assert(video.decoder);
 }
+#endif
 
 void Jitter::recordMetrics(MetaQueue &q,
                            MetaQueue::media_type type,
@@ -181,6 +183,7 @@ PacketPointer Jitter::popAudio(uint64_t sourceID, unsigned int length)
     return popAudio(sourceID, length, std::chrono::steady_clock::now());
 }
 
+#if 0
 PacketPointer Jitter::popAudio(uint64_t sourceID,
                                unsigned int length,
                                std::chrono::steady_clock::time_point now)
@@ -330,6 +333,7 @@ int Jitter::popVideo(uint64_t sourceID,
                     std::chrono::steady_clock::now());
 }
 
+#if 0
 int Jitter::setDecodedFrame(uint64_t /*sourceID*/,
                             uint32_t &width,
                             uint32_t &height,
@@ -344,7 +348,9 @@ int Jitter::setDecodedFrame(uint64_t /*sourceID*/,
     timestamp = video.last_decoded_timestamp;
     return video.lastDecodedFrame.size();
 }
+#endif
 
+#if 0
 void Jitter::decodeVideoPacket(PacketPointer packet,
                                uint64_t sourceID,
                                uint32_t &width,
@@ -397,6 +403,8 @@ void Jitter::decodeVideoPacket(PacketPointer packet,
             break;
     }
 }
+
+#endif
 
 // Client is requesting for a video frame to render
 int Jitter::popVideo(uint64_t sourceID,
@@ -574,6 +582,8 @@ PacketPointer Jitter::Audio::createPLC(unsigned int size)
     }
     return packet;
 }
+
+
 
 PacketPointer Jitter::Audio::createZeroPayload(unsigned int size)
 {
