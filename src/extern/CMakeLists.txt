@@ -1,8 +1,12 @@
 
 project(neo_media_client)
 
-add_library(neo_media_client SHARED neo_media_client.cc)
+add_library( neo_media_client SHARED neo_media_client.cc)
 
+target_include_directories( neo_media_client
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/include)
+        
 target_link_libraries(neo_media_client PRIVATE qmedia)
 
 target_compile_options(neo_media_client
@@ -11,7 +15,7 @@ target_compile_options(neo_media_client
         $<$<CXX_COMPILER_ID:MSVC>: >)
 
 set_target_properties(neo_media_client
-    PROPERTIES
+        PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
