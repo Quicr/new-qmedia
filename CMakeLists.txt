@@ -5,11 +5,11 @@ project(qmedia VERSION 0.1.1 LANGUAGES C CXX)
 
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    option(QMEDIA_BUILD_TESTS "Build tests for quicr" ON)
+    option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON) 
+else()
     option(QMEDIA_BUILD_TESTS "Build tests for quicr" OFF)
     option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" OFF) 
-else()
-    option(QUICR QMEDIA_BUILD_TESTS "Build tests for quicr" ON)
-    option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON) 
 endif()
 
 
@@ -21,6 +21,7 @@ add_subdirectory(dependencies)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #set(CMAKE_OSX_ARCHITECTURES "arm64")
+#CFLAG -target x86_64-apple-ios13.0-macabi.
 
 if(CLANG_TIDY)
     find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
@@ -43,15 +44,18 @@ add_subdirectory(src)
 ### Applications
 ###
 
-add_subdirectory(cmd)
+if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
+  add_subdirectory(cmd)
+endif()
+
+if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
+  add_subdirectory(ctest)
+endif()
 
 ###
 ### Tests
 ###
 include(CTest)
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
-      #find_package(doctest QUIET)
      add_subdirectory(test)
 endif()
-
-add_subdirectory(ctest)
