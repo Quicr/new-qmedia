@@ -13,7 +13,7 @@ all: ${BUILD_DIR}
 	cmake --build ${BUILD_DIR}
 
 ${BUILD_DIR}: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
-	cmake -B${BUILD_DIR} -DBUILD_EXTERN=ON -DCMAKE_BUILD_TYPE=Debug .
+	cmake -B${BUILD_DIR} -DCMAKE_BUILD_TYPE=Debug .
 
 libs: ${BUILD_DIR}
 	cmake --build ${BUILD_DIR} 
