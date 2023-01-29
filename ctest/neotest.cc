@@ -1,8 +1,8 @@
 
-#include "../src/extern/neo_media_client.hh"
 #include <cstdint>
 #include <iostream>
 
+#include <qmedia/neo_media_client.hh>
 
 void sub_cb(std::uint64_t id, std::uint8_t *data, std::uint32_t length)
 {

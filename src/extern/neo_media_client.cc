@@ -1,7 +1,6 @@
-#include "neo_media_client.hh"
+
+#include <qmedia/neo_media_client.hh>
 #include <qmedia/media_client.hh>
-
-
 
 extern "C"
 {
