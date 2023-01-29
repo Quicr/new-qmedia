@@ -7,32 +7,19 @@
 BUILD_DIR=build
 CLANG_FORMAT=clang-format -i
 
-.PHONY: all tidy test libs test-libs test-all gen example everything clean cclean format
+.PHONY: all clean cclean format
 
-all: ${BUILD_DIR}
-	cmake --build ${BUILD_DIR}
+all: build
+	cmake --build build 
 
-${BUILD_DIR}: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
-	cmake -B${BUILD_DIR} -DBUILD_EXTERN=ON -DCMAKE_BUILD_TYPE=Debug .
-
-libs: ${BUILD_DIR}
-	cmake --build ${BUILD_DIR} 
-
-
-test: ${BUILD_DIR} test/*
-	cmake --build ${BUILD_DIR} --target neoMedia_test
-
-tidy:
-	cmake -B${BUILD_DIR} -DCLANG_TIDY=ON -DCMAKE_BUILD_TYPE=Debug .
-
-everything: ${BUILD_DIR}
-	cmake --build ${BUILD_DIR}
+build: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
+	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON  .
 
 clean:
-	cmake --build ${BUILD_DIR} --target clean
+	cmake --build build --target clean
 
 cclean:
-	rm -rf ${BUILD_DIR}
+	rm -rf build
 
 format:
 	find include -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}

@@ -12,14 +12,18 @@ add_library(qmedia
 #    resampler.cc
 #    metrics_reporter.cc)
 )
-target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
+
+#target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
+
 target_link_libraries(qmedia
     PUBLIC
         ${LIBRARIES}
         quicr)
+
 target_include_directories(qmedia
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include)
+
 target_compile_options(qmedia
     PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
@@ -30,7 +34,6 @@ set_target_properties(qmedia
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
-if(BUILD_EXTERN)
-    add_subdirectory(extern)
-endif(BUILD_EXTERN)
+add_subdirectory(extern)
+
 
