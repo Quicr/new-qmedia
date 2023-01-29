@@ -92,7 +92,7 @@ public:
 private:
     LoggerPointer log;
 
-    std::uint32_t streamId;
+    std::uint32_t _streamId;
 
     std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
     std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
