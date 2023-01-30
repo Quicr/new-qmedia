@@ -115,7 +115,7 @@ extern "C"
     void  MediaClient_sendAudio(void *instance,
                                     uint64_t media_stream_id,
                                     const char *buffer,
-                                    uint16_t length,
+                                    uint32_t length,
                                     uint64_t timestamp)
     {
         if (!instance)
@@ -136,7 +136,7 @@ extern "C"
  void  MediaClient_sendVideoFrame(void *instance,
                                     uint64_t media_stream_id,
                                     const char *buffer,
-                                    uint16_t length,
+                                    uint32_t length,
                                     uint64_t timestamp,
                                     bool flag)
     {
