@@ -5,8 +5,10 @@
 
 typedef void( *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
     void
     MediaClient_Create(const char *remote_address,
                        uint16_t remote_port,
@@ -51,7 +53,9 @@ extern "C"
                                const char *buffer,
                                uint32_t length,
                                uint64_t timestamp,
-                               bool flag);
+                               uint8_t flag);
 
+#ifdef __cplusplus
 }
+#endif
 #endif
