@@ -2,6 +2,7 @@
 #define NEO_MEDIA_CLIENT_HH
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef void( *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
 
@@ -53,7 +54,7 @@ extern "C"
                                const char *buffer,
                                uint32_t length,
                                uint64_t timestamp,
-                               uint8_t flag);
+                               bool flag);
 
 #ifdef __cplusplus
 }
