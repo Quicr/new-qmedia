@@ -16,6 +16,6 @@ target_compile_options(neo_media_client
 
 set_target_properties(neo_media_client
         PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
