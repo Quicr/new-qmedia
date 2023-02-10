@@ -1,5 +1,8 @@
-
 project(neo_media_client)
+
+set_property(TARGET qmedia PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET quicr PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET quicr-transport PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library( neo_media_client SHARED neo_media_client.cc)
 
