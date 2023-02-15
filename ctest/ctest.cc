@@ -5,7 +5,7 @@
 
 //typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
 
-void subscribe_callback(uint64_t id, uint8_t *data, uint32_t length)
+void subscribe_callback(uint64_t id, uint8_t *data, uint32_t length, uint64_t timestamp)
 {
     std::cerr << "subscribe_callback..." << id << std::endl;
 }
