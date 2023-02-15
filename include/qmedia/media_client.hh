@@ -16,7 +16,7 @@
 namespace qmedia
 {
 
-typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length);
+typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length, uint64_t timestamp);
 
 using MediaStreamId = uint64_t;
 
@@ -87,7 +87,7 @@ public:
     void remove_audio_subscribe(MediaStreamId streamId);
 
     void send_audio_media(MediaStreamId streamid, uint8_t *data, std::uint32_t length, std::uint64_t timestamp);
-    void send_video_media(MediaStreamId streamid, uint8_t *data, std::uint32_t length, std::uint64_t timestamp); 
+    void send_video_media(MediaStreamId streamid, uint8_t *data, std::uint32_t length, std::uint64_t timestamp, bool groupidflag = false); 
 
 private:
     LoggerPointer log;
@@ -99,7 +99,14 @@ private:
 
     std::map<MediaStreamId, quicr::Name> publish_names;
     
-    std::shared_ptr<quicr::QuicRClient> quicRClient;
+    std::shared_ptr<quicr::QuicRClient> quicRClientSubscribe;
+    std::shared_ptr<quicr::QuicRClient> quicRClientPublish;
+
+
+    const uint32_t _orgId;
+    const uint8_t  _appId;
+    const uint32_t _confId;
+
 
     qtransport::LogHandler logger;
 
