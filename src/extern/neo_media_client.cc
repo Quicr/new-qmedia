@@ -21,7 +21,7 @@ extern "C"
         // Create media library.
         auto client = std::make_unique<qmedia::MediaClient>(remote_address,
                         remote_port,
-                        0,
+                        quicr::RelayInfo::Protocol::UDP,
                         logger);
 
         *media_client = client.release();
@@ -100,15 +100,14 @@ extern "C"
     }
 
     void  MediaClient_RemoveMediaStream(void *instance,
-                                            uint64_t media_stream_id)
+                                            uint64_t /*media_stream_id*/)
     {
         if (!instance)
         {
             return;
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
-   
+        //auto media_client = static_cast<qmedia::MediaClient *>(instance);
        // media_client->remove_object_stream(media_stream_id);
     }
 
@@ -138,7 +137,7 @@ extern "C"
                                     const char *buffer,
                                     uint32_t length,
                                     uint64_t timestamp,
-                                    bool flag)
+                                    bool /*flag*/) // groupid flag
     {
         if (!instance)
         {
