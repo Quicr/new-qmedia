@@ -58,7 +58,6 @@ public:
                                         const quicr::PublishIntentResult& result);
 private:
     bool canPublish;
-    MediaStreamId id;
 };
 
 
@@ -68,7 +67,7 @@ class MediaClient
 public:
     explicit MediaClient(const char *remote_address,
                         std::uint16_t remote_port,
-                        std::uint16_t protocol,
+                        quicr::RelayInfo::Protocol protocol,
                         const LoggerPointer &s = nullptr);
 
     MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type,
@@ -102,15 +101,11 @@ private:
     std::shared_ptr<quicr::QuicRClient> quicRClientSubscribe;
     std::shared_ptr<quicr::QuicRClient> quicRClientPublish;
 
-
     const uint32_t _orgId;
     const uint8_t  _appId;
     const uint32_t _confId;
 
-
     qtransport::LogHandler logger;
-
-    uint8_t *buffer;
 };
 
 }        // namespace qmedia
