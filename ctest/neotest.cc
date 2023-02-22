@@ -5,11 +5,11 @@
 
 #include <qmedia/neo_media_client.hh>
 
-void sub_cb(std::uint64_t id, std::uint16_t client_id, std::uint8_t media_id, std::uint8_t * /*data*/, std::uint32_t length, uint64_t /*timestamp*/)
+void sub_cb(std::uint64_t id, std::uint8_t media_id, std::uint16_t client_id, std::uint8_t * /*data*/, std::uint32_t length, uint64_t /*timestamp*/)
 {
     std::cerr << "callback id " << id << 
         "\n\tlength " << length << 
-        "\n\tclient id " << client_id <<
+        "\n\tclient id " << std::hex << client_id <<
         "\n\tmedia id " << (int)media_id << std::endl;
 }
 
@@ -50,6 +50,6 @@ int main(int /*argc*/, char ** /*argv*/)
                           vbuffer,
                           length,
                           timestamp, true);
-        sleep(3);
+        //sleep(3);
     }
 }
