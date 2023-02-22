@@ -34,14 +34,15 @@ extern "C"
 
     uint64_t
     MediaClient_AddAudioStreamPublish(void *instance,
-                                      uint8_t codec_type)
+                                      uint8_t codec_type,
+                                      uint16_t client_id)
     {
         if (!instance)
         {
             return 0;        // invalid
         }
         auto media_client = static_cast<qmedia::MediaClient *>(instance);
-        return media_client->add_audio_publish_intent(codec_type);  
+        return media_client->add_audio_publish_intent(codec_type, client_id);  
     }
 
      uint64_t  
@@ -61,7 +62,8 @@ extern "C"
 
     uint64_t 
     MediaClient_AddAudioStreamPublishIntent(void *instance,
-                               uint8_t codec_type)
+                               uint8_t codec_type,
+                               uint16_t client_id)
     {
         if (!instance)
         {
@@ -69,12 +71,13 @@ extern "C"
         }
 
         auto media_client = static_cast<qmedia::MediaClient *>(instance);
-        return media_client->add_audio_publish_intent( codec_type);
+        return media_client->add_audio_publish_intent(codec_type, client_id);
     }
 
     uint64_t 
-    MediaClient_AddVideoStreamPublishIntent(void *instance,
-                               uint8_t codec_type)
+    MediaClient_AddVideoStreamPublishIntent(void *instance, 
+                               uint8_t codec_type,
+                               uint16_t client_id)
     {
         if (!instance)
         {
@@ -82,7 +85,7 @@ extern "C"
         }
 
         auto media_client = static_cast<qmedia::MediaClient *>(instance);
-        return media_client->add_video_publish_intent(codec_type);
+        return media_client->add_video_publish_intent(codec_type, client_id);
     }
 
      uint64_t  
