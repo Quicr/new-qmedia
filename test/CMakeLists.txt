@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(qmedia_test VERSION 0.0.1 LANGUAGES CXX)
 
-find_package(doctest REQUIRED)
+#find_package(doctest REQUIRED)
 
 #add_executable(qmedia_test media_client_test.cc)
 
