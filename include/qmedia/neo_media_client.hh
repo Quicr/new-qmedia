@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef void( *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length, uint64_t timestamp);
+typedef void( *SubscribeCallback)(uint64_t id, uint16_t client_id, uint8_t media_type, uint8_t *data, uint32_t length, uint64_t timestamp);
 
 #ifdef __cplusplus
 extern "C"
@@ -20,7 +20,8 @@ extern "C"
 
     uint64_t 
     MediaClient_AddAudioStreamPublishIntent(void *instance,
-                                            uint8_t codec_type);
+                                            uint8_t codec_type,
+                                            uint16_t client_id);
 
     uint64_t 
     MediaClient_AddAudioStreamSubscribe(void *instance,
@@ -29,7 +30,8 @@ extern "C"
 
     uint64_t 
     MediaClient_AddVideoStreamPublishIntent(void *instance,
-                                            uint8_t codec_type);
+                                            uint8_t codec_type,
+                                            uint16_t client_id);
 
 
     uint64_t 

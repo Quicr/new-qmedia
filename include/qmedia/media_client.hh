@@ -16,7 +16,7 @@
 namespace qmedia
 {
 
-typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t length, uint64_t timestamp);
+typedef void(CALL *SubscribeCallback)(uint64_t id, uint16_t client_id, uint8_t media_type, uint8_t *data, uint32_t length, uint64_t timestamp);
 
 using MediaStreamId = uint64_t;
 
@@ -57,7 +57,7 @@ public:
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                         const quicr::PublishIntentResult& result);
 private:
-    bool canPublish;
+    //bool canPublish;
 };
 
 
@@ -72,13 +72,11 @@ public:
 
     MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type,
                                              SubscribeCallback callback);
-
     MediaStreamId add_video_stream_subscribe(std::uint8_t codec_type,
                                              SubscribeCallback callback);
                                                                       
-    MediaStreamId add_audio_publish_intent(uint8_t codec_type);
-
-    MediaStreamId add_video_publish_intent(std::uint8_t codec_type);
+    MediaStreamId add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
+    MediaStreamId add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
 
     void remove_video_publish(MediaStreamId streamId);
     void remove_video_subscribe(MediaStreamId streamId);
