@@ -308,15 +308,16 @@ std::string Logger::GetTimestamp() const
     auto now = std::chrono::system_clock::now();
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
     std::time_t t = std::chrono::system_clock::to_time_t(now);
-    struct tm tm_result{};
+    struct tm tm_result
+    {
+    };
 #ifdef _WIN32
     localtime_s(&tm_result, &t);
 #else
     localtime_r(&t, &tm_result);
 #endif
-    oss << std::put_time(&tm_result, "%FT%T") << "."
-        << std::setfill('0') << std::setw(3)
-        << (now_ms.time_since_epoch().count()) % 1000;
+    oss << std::put_time(&tm_result, "%FT%T") << "." << std::setfill('0')
+        << std::setw(3) << (now_ms.time_since_epoch().count()) % 1000;
 
     return oss.str();
 }

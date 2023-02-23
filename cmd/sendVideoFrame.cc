@@ -150,7 +150,14 @@ int main(int argc, char **argv)
                     std::uint32_t height = 0;
                     std::uint32_t format = dec_format;        // I420
                     auto received_image_size = MediaClient_getVideoFrame(
-                        client, stream_id, &ts, &width, &height, &format, &buffer, nullptr);
+                        client,
+                        stream_id,
+                        &ts,
+                        &width,
+                        &height,
+                        &format,
+                        &buffer,
+                        nullptr);
                     std::cerr << " r " << ts << " " << received_image_size
                               << std::endl;
                 }

@@ -34,8 +34,7 @@ static const unsigned int bytesPerSample = 4;
 /**/
 static const AudioConfig::SampleType sample_type =
     AudioConfig::SampleType::Float32;
-    */
-static const double resample_ratio = 1.0;
+* / static const double resample_ratio = 1.0;
 static Resampler resampler;
 
 static std::ofstream outg_sound_file;
@@ -102,7 +101,8 @@ void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
                             .count();
 
                     client->send_audio(stream_id,
-                                       reinterpret_cast<uint8_t *>(const_cast<char *>(audioBuff)),
+                                       reinterpret_cast<uint8_t *>(
+                                           const_cast<char *>(audioBuff)),
                                        buff_size,
                                        timestamp);
                     logger->debug << "-" << std::flush;
@@ -115,7 +115,7 @@ void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
     free(zerobuff);
 }
 
-void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
+void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
 {
     std::chrono::steady_clock::time_point loop_time =
         std::chrono::steady_clock::now();
@@ -168,7 +168,8 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 
         std::chrono::steady_clock::time_point get_audio =
             std::chrono::steady_clock::now();
-        int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size, nullptr);
+        int recv_actual = client->get_audio(
+            stream_id, timestamp, &raw_data, buff_size, nullptr);
         auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - get_audio);
         logger->info << "{A:" << audio_delta.count() << "}" << std::flush;
@@ -273,7 +274,8 @@ int main(int argc, char *argv[])
     if (argc < 4)
     {
         std::cerr << "Must provide mode of operation" << std::endl;
-        std::cerr << "Usage: sound <remote-address> <port> <mode> <name> <source-id> "
+        std::cerr << "Usage: sound <remote-address> <port> <mode> <name> "
+                     "<source-id> "
                   << std::endl;
         std::cerr << "Mode: pub/sub/pubsub" << std::endl;
         std::cerr << "" << std::endl;
@@ -315,9 +317,9 @@ int main(int argc, char *argv[])
 
     // configure new stream callback
     auto wrapped_stream_callback = [](uint64_t client_id,
-                                                     uint64_t source_id,
-                                                     uint64_t source_ts,
-                                                     MediaType media_type)
+                                      uint64_t source_id,
+                                      uint64_t source_ts,
+                                      MediaType media_type)
     {
         logger->info << "[Sound]: New Sorcce" << source_id << std::flush;
         recvMedia = true;
@@ -328,7 +330,8 @@ int main(int argc, char *argv[])
     // Create media library.
     auto client = MediaClient{wrapped_stream_callback, logger};
 
-    // SAH - client.init_transport(TransportType::QUIC, remote_address, remote_port);
+    // SAH - client.init_transport(TransportType::QUIC, remote_address,
+    // remote_port);
 
     shutDown = false;
 
@@ -387,7 +390,7 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::thread> threads;
-    uint64_t stream_id {0};
+    uint64_t stream_id{0};
     if (mode == "send")
     {
         MediaConfig config{};
@@ -410,7 +413,9 @@ int main(int argc, char *argv[])
         stream_id = client.add_audio_stream(0x1000, 0x2000, 0x3000, config);
         threads.emplace_back(playThreadFunc, &client, stream_id);
         threads.at(0).detach();
-    } else if (mode == "sendrecv") {
+    }
+    else if (mode == "sendrecv")
+    {
         MediaConfig config{};
         config.media_direction = MediaConfig::MediaDirection::sendrecv;
         config.media_codec = MediaConfig::CodecType::opus;
