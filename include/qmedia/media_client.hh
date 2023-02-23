@@ -113,7 +113,7 @@ private:
         active_publish_delegates;
 
     std::map<MediaStreamId, quicr::Name> publish_names;
-    
+
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 
     const uint32_t _orgId;
