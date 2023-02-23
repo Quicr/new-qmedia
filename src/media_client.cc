@@ -95,8 +95,8 @@ MediaClient::MediaClient(const char *remote_address,
 
     // We need two QuicRClients since the relay can't send published messages to
     // the same client that sent them.
-    quicRClientSubscribe = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
-    quicRClientPublish = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
+    quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
+    quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
 }
 
 MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type,
@@ -115,7 +115,7 @@ MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type,
     auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
 
     quicr::bytes e2e;
-    quicRClientSubscribe->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
+    quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
     active_subscription_delegates.insert({_streamId, delegate});
     return _streamId;
 }
@@ -136,7 +136,7 @@ MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t codec_type,
     auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
 
     quicr::bytes e2e;
-    quicRClientSubscribe->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
+    quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
     active_subscription_delegates.insert({_streamId, delegate});
     return _streamId;  
 }
@@ -159,7 +159,7 @@ MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type,
 
     //quicr::bytes e2e;
     // quicr::Namespace quicr_namespace{{nstring},64}; // build namespace
-    //quicRClientPublish->publishIntent(delegate, ns, "", "", std::move(e2e));
+    //quicRClient->publishIntent(delegate, ns, "", "", std::move(e2e));
 
     return _streamId;      
 }
@@ -183,7 +183,7 @@ MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type,
 
     //quicr::bytes e2e;
     // quicr::Namespace quicr_namespace{{nstring},64}; // build namespace SAH - what should the maek be?
-    //quicRClientPublish->publishIntent(delegate, quicr_namespace, "", "", std::move(e2e));
+    //quicRClient->publishIntent(delegate, quicr_namespace, "", "", std::move(e2e));
 
     return _streamId;    
 }
@@ -220,7 +220,7 @@ void MediaClient::remove_audio_subscribe(MediaStreamId /*streamid*/)
     quicr::bytes b(data, data+length);
     std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(&timestamp);
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));
-    quicRClientPublish->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
+    quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
     publish_names[streamid] = ++quicr_name;
  }
 
@@ -254,7 +254,7 @@ void MediaClient::remove_audio_subscribe(MediaStreamId /*streamid*/)
     quicr::bytes b(data, data+length);
     std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(&timestamp); // look into network byte order
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));      
-    quicRClientPublish->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
+    quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
     publish_names[streamid] = quicr_name;
  }
 

@@ -96,8 +96,7 @@ private:
 
     std::map<MediaStreamId, quicr::Name> publish_names;
     
-    std::shared_ptr<quicr::QuicRClient> quicRClientSubscribe;
-    std::shared_ptr<quicr::QuicRClient> quicRClientPublish;
+    std::shared_ptr<quicr::QuicRClient> quicRClient;
 
     const uint32_t _orgId;
     const uint8_t  _appId;
