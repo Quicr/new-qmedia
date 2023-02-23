@@ -16,7 +16,7 @@
 namespace qmedia
 {
 
-typedef void(CALL *SubscribeCallback)(uint64_t id, uint16_t client_id, uint8_t media_type, uint8_t *data, uint32_t length, uint64_t timestamp);
+typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t media_id, uint16_t client_id, uint8_t *data, uint32_t length, uint64_t timestamp);
 
 using MediaStreamId = uint64_t;
 
