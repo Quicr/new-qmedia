@@ -13,15 +13,12 @@ using namespace std::chrono_literals;
 std::uint64_t source_id = 0;              // wait to receive something non-zero
 std::uint64_t send_source_id = 37;        // random choice in send direction
 
-void source_callback(std::uint64_t cid,
-                     std::uint64_t sid,
-                     std::uint64_t ts,
-                     int source_type)
+void source_callback(std::uint64_t cid, std::uint64_t sid, std::uint64_t ts, int source_type)
 {
     source_id = sid;
     std::cout << std::endl
-              << "Got New Source:" << sid << " Client:" << cid << " Time:" << ts
-              << " Type:" << source_type << std::endl;
+              << "Got New Source:" << sid << " Client:" << cid << " Time:" << ts << " Type:" << source_type
+              << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -85,21 +82,14 @@ int main(int argc, char** argv)
 
         // Send frames.
         threads.emplace_back(
-            [client,
-             stream_id,
-             image,
-             image_size,
-             image_width,
-             image_height,
-             enc_format]()
+            [client, stream_id, image, image_size, image_width, image_height, enc_format]()
             {
                 while (true)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(33));
-                    std::uint64_t timestamp =
-                        std::chrono::duration_cast<std::chrono::microseconds>(
-                            std::chrono::system_clock::now().time_since_epoch())
-                            .count();
+                    std::uint64_t timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+                                                  std::chrono::system_clock::now().time_since_epoch())
+                                                  .count();
                     std::cerr << " S ";        // << sourceRecordTime << "ns "
                                                // << image_size << "bytes" <<
                                                // std::endl;
@@ -150,16 +140,8 @@ int main(int argc, char** argv)
                     std::uint32_t height = 0;
                     std::uint32_t format = dec_format;        // I420
                     auto received_image_size = MediaClient_getVideoFrame(
-                        client,
-                        stream_id,
-                        &ts,
-                        &width,
-                        &height,
-                        &format,
-                        &buffer,
-                        nullptr);
-                    std::cerr << " r " << ts << " " << received_image_size
-                              << std::endl;
+                        client, stream_id, &ts, &width, &height, &format, &buffer, nullptr);
+                    std::cerr << " r " << ts << " " << received_image_size << std::endl;
                 }
             });
     }

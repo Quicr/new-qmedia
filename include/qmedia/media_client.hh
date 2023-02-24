@@ -31,16 +31,12 @@ using MediaStreamId = uint64_t;
 class MediaTransportSubDelegate : public quicr::SubscriberDelegate
 {
 public:
-    MediaTransportSubDelegate(MediaStreamId id,
-                              quicr::Namespace quicr_namespace,
-                              SubscribeCallback callback);
+    MediaTransportSubDelegate(MediaStreamId id, quicr::Namespace quicr_namespace, SubscribeCallback callback);
 
-    virtual void
-    onSubscribeResponse(const quicr::Namespace& quicr_namespace,
-                        const quicr::SubscribeResult::SubscribeStatus& result);
+    virtual void onSubscribeResponse(const quicr::Namespace& quicr_namespace,
+                                     const quicr::SubscribeResult::SubscribeStatus& result);
 
-    virtual void onSubscriptionEnded(const quicr::Namespace& quicr_namespace,
-                                     const quicr::SubscribeResult& result);
+    virtual void onSubscriptionEnded(const quicr::Namespace& quicr_namespace, const quicr::SubscribeResult& result);
 
     virtual void onSubscribedObject(const quicr::Name& quicr_name,
                                     uint8_t priority,
@@ -61,9 +57,8 @@ class MediaTransportPubDelegate : public quicr::PublisherDelegate
 {
 public:
     MediaTransportPubDelegate(MediaStreamId id);
-    virtual void
-    onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
-                            const quicr::PublishIntentResult& result);
+    virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
+                                         const quicr::PublishIntentResult& result);
 
 private:
     // bool canPublish;
@@ -77,25 +72,18 @@ public:
                          quicr::RelayInfo::Protocol protocol,
                          const LoggerPointer& s = nullptr);
 
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type,
-                                             SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t codec_type,
-                                             SubscribeCallback callback);
+    MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
+    MediaStreamId add_video_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
 
-    MediaStreamId add_audio_publish_intent(std::uint8_t codec_type,
-                                           std::uint16_t client_id);
-    MediaStreamId add_video_publish_intent(std::uint8_t codec_type,
-                                           std::uint16_t client_id);
+    MediaStreamId add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
+    MediaStreamId add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
 
     void remove_video_publish(MediaStreamId streamId);
     void remove_video_subscribe(MediaStreamId streamId);
     void remove_audio_publish(MediaStreamId streamId);
     void remove_audio_subscribe(MediaStreamId streamId);
 
-    void send_audio_media(MediaStreamId streamid,
-                          uint8_t* data,
-                          std::uint32_t length,
-                          std::uint64_t timestamp);
+    void send_audio_media(MediaStreamId streamid, uint8_t* data, std::uint32_t length, std::uint64_t timestamp);
     void send_video_media(MediaStreamId streamid,
                           uint8_t* data,
                           std::uint32_t length,
@@ -107,10 +95,8 @@ private:
 
     std::uint32_t _streamId;
 
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>>
-        active_subscription_delegates;
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>>
-        active_publish_delegates;
+    std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
+    std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
 
     std::map<MediaStreamId, quicr::Name> publish_names;
 

@@ -41,8 +41,7 @@ enum class LogFacility
  */
 class Logger;
 typedef std::shared_ptr<Logger> LoggerPointer;
-typedef std::function<void(LogLevel level, const std::string& message)>
-    LogCallback;
+typedef std::function<void(LogLevel level, const std::string& message)> LogCallback;
 
 // Logger object declaration
 class Logger : protected SyslogInterface
@@ -53,11 +52,7 @@ protected:
     {
     public:
         LoggingBuf(Logger* logger, LogLevel log_level, bool console = false) :
-            std::stringbuf(),
-            logger(logger),
-            log_level(log_level),
-            console(console),
-            busy(false)
+            std::stringbuf(), logger(logger), log_level(log_level), console(console), busy(false)
         {
         }
 
@@ -75,18 +70,14 @@ protected:
             bool wait_result;
 
             std::unique_lock<std::mutex> lock(buffer_mutex);
-            wait_result = signal.wait_for(
-                lock,
-                std::chrono::seconds(1),
-                [&]() -> bool {
-                    return (!busy || (busy && owning_thread ==
-                                                  std::this_thread::get_id()));
-                });
+            wait_result = signal.wait_for(lock,
+                                          std::chrono::seconds(1),
+                                          [&]() -> bool
+                                          { return (!busy || (busy && owning_thread == std::this_thread::get_id())); });
 
             if (!wait_result)
             {
-                logger->Log(LogLevel::ERROR,
-                            "Somebody forgot to call std::flush!?");
+                logger->Log(LogLevel::ERROR, "Somebody forgot to call std::flush!?");
                 busy = false;
             }
 
@@ -123,12 +114,11 @@ protected:
     };
 
     // Mapping of log level strings to LogLevel values
-    std::unordered_map<std::string, LogLevel> log_level_map = {
-        {"CRITICAL", LogLevel::CRITICAL},
-        {"ERROR", LogLevel::ERROR},
-        {"WARNING", LogLevel::WARNING},
-        {"INFO", LogLevel::INFO},
-        {"DEBUG", LogLevel::DEBUG}};
+    std::unordered_map<std::string, LogLevel> log_level_map = {{"CRITICAL", LogLevel::CRITICAL},
+                                                               {"ERROR", LogLevel::ERROR},
+                                                               {"WARNING", LogLevel::WARNING},
+                                                               {"INFO", LogLevel::INFO},
+                                                               {"DEBUG", LogLevel::DEBUG}};
 
 public:
     // Constructor
@@ -138,14 +128,10 @@ public:
     Logger(const std::string& process_name, bool output_to_console = false);
 
     // Constructor with process name and component name
-    Logger(const std::string& process_name,
-           const std::string& component_name,
-           bool output_to_console = false);
+    Logger(const std::string& process_name, const std::string& component_name, bool output_to_console = false);
 
     // Constructor for child Logger objects
-    Logger(const std::string& component_name,
-           const LoggerPointer& parent_logger,
-           bool output_to_console = false);
+    Logger(const std::string& component_name, const LoggerPointer& parent_logger, bool output_to_console = false);
 
     // Disallow the copy constructor, as this could be a problem for
     // creation of certain log types (e.g., logging to files)
@@ -188,10 +174,10 @@ protected:
            const LoggerPointer& parent_logger,
            bool output_to_console = false);
 
-    int MapLogLevel(LogLevel level) const;        // Map log level to syslog
-                                                  // level
+    int MapLogLevel(LogLevel level) const;                   // Map log level to syslog
+                                                             // level
     std::string LogLevelString(LogLevel level) const;        // Log level string
-    std::string GetTimestamp() const;        // Return current timestamp
+    std::string GetTimestamp() const;                        // Return current timestamp
 
     std::string process_name;                     // Program name for logging
     std::string component_name;                   // Component name for logging

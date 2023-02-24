@@ -25,38 +25,31 @@ namespace qmedia
  *
  * Delegate constructor.
  */
-MediaTransportSubDelegate::MediaTransportSubDelegate(
-    MediaStreamId id,
-    quicr::Namespace quicr_namespace,
-    SubscribeCallback callback) :
-    canReceiveSubs(false),
-    id(id),
-    quicr_namespace(quicr_namespace),
-    callback(callback)
+MediaTransportSubDelegate::MediaTransportSubDelegate(MediaStreamId id,
+                                                     quicr::Namespace quicr_namespace,
+                                                     SubscribeCallback callback) :
+    canReceiveSubs(false), id(id), quicr_namespace(quicr_namespace), callback(callback)
 {
     std::cerr << "MediaTransportSubDelegate" << std::endl;
 }
 
-void MediaTransportSubDelegate::onSubscribeResponse(
-    const quicr::Namespace& /* quicr_namespace */,
-    const quicr::SubscribeResult::SubscribeStatus& /* result */)
+void MediaTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
+                                                    const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
     std::cerr << "sub::onSubscribeResponse" << std::endl;
 }
 
-void MediaTransportSubDelegate::onSubscriptionEnded(
-    const quicr::Namespace& /* quicr_namespace */,
-    const quicr::SubscribeResult& /* result */)
+void MediaTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
+                                                    const quicr::SubscribeResult& /* result */)
 {
     std::cerr << "sub::onSubscriptionEnded" << std::endl;
 }
 
-void MediaTransportSubDelegate::onSubscribedObject(
-    const quicr::Name& quicr_name,
-    uint8_t /*priority*/,
-    uint16_t /*expiry_age_ms*/,
-    bool /*use_reliable_transport*/,
-    quicr::bytes&& data)
+void MediaTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name,
+                                                   uint8_t /*priority*/,
+                                                   uint16_t /*expiry_age_ms*/,
+                                                   bool /*use_reliable_transport*/,
+                                                   quicr::bytes&& data)
 {
     // get timestamp from end of data buffer
     std::uint64_t timestamp = 0;
@@ -67,23 +60,16 @@ void MediaTransportSubDelegate::onSubscribedObject(
     std::cerr << "onSubscribedObject " << quicr_name.to_hex() << std::endl;
 
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> name_format;
-    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] =
-        name_format.Decode(quicr_name.to_hex());
-    callback(id,
-             mediaType,
-             clientId,
-             data.data(),
-             data.size() - sizeof(std::uint64_t),
-             timestamp);
+    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = name_format.Decode(quicr_name.to_hex());
+    callback(id, mediaType, clientId, data.data(), data.size() - sizeof(std::uint64_t), timestamp);
 }
 
 MediaTransportPubDelegate::MediaTransportPubDelegate(MediaStreamId /*id*/)
 {
 }
 
-void MediaTransportPubDelegate::onPublishIntentResponse(
-    const quicr::Namespace& /* quicr_namespace */,
-    const quicr::PublishIntentResult& /* result */)
+void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
+                                                        const quicr::PublishIntentResult& /* result */)
 {
     std::cerr << "pub::onPublishIntentResponse" << std::endl;
 }
@@ -109,70 +95,51 @@ MediaClient::MediaClient(const char* remote_address,
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
 }
 
-MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type,
-                                                      SubscribeCallback callback)
+MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback)
 {
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> name_format;
     const uint8_t mediaType = codec_type << 4;        // First 4 bits is codec
     const uint16_t clientId = 0;                      // 16
     const uint64_t filler = 0;                        // 48
 
-    const std::string nstring = name_format.Encode(
-        _orgId, _appId, _confId, mediaType, clientId, filler);
+    const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler);
 
     std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 4;        // orgId + appId
                                                                // + confId +
                                                                // mediaType
     quicr::Namespace quicr_namespace{{nstring}, namespace_mask_bits};
 
-    auto delegate = std::make_shared<MediaTransportSubDelegate>(
-        ++_streamId, quicr_namespace, callback);
+    auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
 
     quicr::bytes e2e;
-    quicRClient->subscribe(delegate,
-                           quicr_namespace,
-                           quicr::SubscribeIntent::immediate,
-                           "",
-                           false,
-                           "",
-                           std::move(e2e));
+    quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
     active_subscription_delegates.insert({_streamId, delegate});
     return _streamId;
 }
 
-MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t codec_type,
-                                                      SubscribeCallback callback)
+MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback)
 {
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> name_format;
     const uint8_t mediaType = codec_type << 4;        // First 4 bits is codec
     const uint16_t clientId = 0;                      // 16
     const uint64_t filler = 0;                        // 48
 
-    const std::string nstring = name_format.Encode(
-        _orgId, _appId, _confId, mediaType, clientId, filler);
+    const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler);
 
     std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 4;        // orgId + appId
                                                                // + confId +
                                                                // mediaType
     quicr::Namespace quicr_namespace{{nstring}, namespace_mask_bits};
 
-    auto delegate = std::make_shared<MediaTransportSubDelegate>(
-        ++_streamId, quicr_namespace, callback);
+    auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
 
     quicr::bytes e2e;
-    quicRClient->subscribe(delegate,
-                           quicr_namespace,
-                           quicr::SubscribeIntent::immediate,
-                           "",
-                           false,
-                           "",
-                           std::move(e2e));
+    quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
     active_subscription_delegates.insert({_streamId, delegate});
     return _streamId;
 }
 
-MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type,
-                                                    std::uint16_t client_id)
+MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id)
 {
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> name_format;
     auto time = std::time(0);
@@ -181,8 +148,7 @@ MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type,
     const uint16_t clientId = client_id;         // 16
     const uint64_t uniqueId = time;              // 48 - using time for now
 
-    const std::string nstring = name_format.Encode(
-        _orgId, _appId, _confId, mediaType, clientId, uniqueId);
+    const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, uniqueId);
 
     quicr::Name quicr_name(nstring);
     auto delegate = std::make_shared<MediaTransportPubDelegate>(++_streamId);
@@ -196,8 +162,7 @@ MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type,
     return _streamId;
 }
 
-MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type,
-                                                    std::uint16_t client_id)
+MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id)
 {
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> name_format;
     auto time = std::time(0);
@@ -206,8 +171,7 @@ MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type,
     const uint16_t clientId = client_id;         // 16
     const uint64_t uniqueId = time;              // 48 - using time for now
 
-    const std::string nstring = name_format.Encode(
-        _orgId, _appId, _confId, mediaType, clientId, uniqueId);
+    const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, uniqueId);
 
     quicr::Name quicr_name(nstring);
 
@@ -237,10 +201,7 @@ void MediaClient::remove_audio_subscribe(MediaStreamId /*streamid*/)
 {
 }
 
-void MediaClient::send_audio_media(MediaStreamId streamid,
-                                   uint8_t* data,
-                                   std::uint32_t length,
-                                   std::uint64_t timestamp)
+void MediaClient::send_audio_media(MediaStreamId streamid, uint8_t* data, std::uint32_t length, std::uint64_t timestamp)
 {
     if (publish_names.find(streamid) == publish_names.end())
     {
@@ -274,8 +235,7 @@ void MediaClient::send_video_media(MediaStreamId streamid,
 
     auto quicr_name = publish_names[streamid];
     quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> name_format;
-    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] =
-        name_format.Decode(quicr_name.to_hex());
+    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = name_format.Decode(quicr_name.to_hex());
 
     ++objectId;
 
@@ -286,12 +246,10 @@ void MediaClient::send_video_media(MediaStreamId streamid,
         objectId = 0;
     }
 
-    const std::string nstring = name_format.Encode(
-        orgId, appId, confId, mediaType, clientId, groupId, objectId);
+    const std::string nstring = name_format.Encode(orgId, appId, confId, mediaType, clientId, groupId, objectId);
     quicr_name = quicr::Name(nstring);
     quicr::bytes b(data, data + length);
-    std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(
-        &timestamp);        // look into network byte order
+    std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(&timestamp);        // look into network byte order
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
     publish_names[streamid] = quicr_name;

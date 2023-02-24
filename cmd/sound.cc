@@ -32,8 +32,7 @@ static const unsigned int frames_per_buffer = 10 * 48;        // 10 ms
 static const unsigned int audio_channels = 1;
 static const unsigned int bytesPerSample = 4;
 /**/
-static const AudioConfig::SampleType sample_type =
-    AudioConfig::SampleType::Float32;
+static const AudioConfig::SampleType sample_type = AudioConfig::SampleType::Float32;
 * / static const double resample_ratio = 1.0;
 static Resampler resampler;
 
@@ -68,9 +67,7 @@ void recordThreadFunc(MediaClient* client, MediaStreamId stream_id)
             while ((err = Pa_IsStreamActive(audioStream)) == 1)
             {
                 long toRead = Pa_GetStreamReadAvailable(audioStream);
-                printf("available: %ld frames_per_buffer: %d\n",
-                       toRead,
-                       frames_per_buffer);
+                printf("available: %ld frames_per_buffer: %d\n", toRead, frames_per_buffer);
                 if (toRead == 0)
                 {
                     Pa_Sleep(10);
@@ -85,8 +82,7 @@ void recordThreadFunc(MediaClient* client, MediaStreamId stream_id)
                     err = Pa_ReadStream(audioStream, audioBuff, toRead);
                     if (err)
                     {
-                        logger->error << "Failed to read PA stream: "
-                                      << Pa_GetErrorText(err) << std::flush;
+                        logger->error << "Failed to read PA stream: " << Pa_GetErrorText(err) << std::flush;
                         continue;
                     }
 
@@ -95,16 +91,12 @@ void recordThreadFunc(MediaClient* client, MediaStreamId stream_id)
                         logger->debug << "0" << std::flush;
                     }
 
-                    timestamp =
-                        std::chrono::duration_cast<std::chrono::microseconds>(
-                            std::chrono::system_clock::now().time_since_epoch())
-                            .count();
+                    timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    std::chrono::system_clock::now().time_since_epoch())
+                                    .count();
 
-                    client->send_audio(stream_id,
-                                       reinterpret_cast<uint8_t*>(
-                                           const_cast<char*>(audioBuff)),
-                                       buff_size,
-                                       timestamp);
+                    client->send_audio(
+                        stream_id, reinterpret_cast<uint8_t*>(const_cast<char*>(audioBuff)), buff_size, timestamp);
                     logger->debug << "-" << std::flush;
                     Pa_Sleep(10);
                 }
@@ -117,25 +109,22 @@ void recordThreadFunc(MediaClient* client, MediaStreamId stream_id)
 
 void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 {
-    std::chrono::steady_clock::time_point loop_time =
-        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point loop_time = std::chrono::steady_clock::now();
 
     while (!shutDown)
     {
-        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - loop_time);
+        auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                           loop_time);
         logger->debug << "{" << delta.count() << "}" << std::flush;
         loop_time = std::chrono::steady_clock::now();
 
         if (!recvMedia)
         {
             logger->debug << "Z" << std::flush;
-            std::chrono::steady_clock::time_point sleep_time =
-                std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point sleep_time = std::chrono::steady_clock::now();
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            auto sleep_delta =
-                std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - sleep_time);
+            auto sleep_delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                                     sleep_time);
             logger->debug << "{S: " << sleep_delta.count() << "}" << std::flush;
             continue;
         }
@@ -151,12 +140,10 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
         {
             // not enought space to play, wait till later
             logger->info << "$" << std::flush;
-            std::chrono::steady_clock::time_point sleep_time =
-                std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point sleep_time = std::chrono::steady_clock::now();
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            auto sleep_delta =
-                std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - sleep_time);
+            auto sleep_delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                                     sleep_time);
             logger->info << "{S: " << sleep_delta.count() << "}" << std::flush;
             continue;
         }
@@ -166,12 +153,10 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
         uint64_t timestamp;
         Packet* freePacket = nullptr;
 
-        std::chrono::steady_clock::time_point get_audio =
-            std::chrono::steady_clock::now();
-        int recv_actual = client->get_audio(
-            stream_id, timestamp, &raw_data, buff_size, nullptr);
-        auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - get_audio);
+        std::chrono::steady_clock::time_point get_audio = std::chrono::steady_clock::now();
+        int recv_actual = client->get_audio(stream_id, timestamp, &raw_data, buff_size, nullptr);
+        auto audio_delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                                 get_audio);
         logger->info << "{A:" << audio_delta.count() << "}" << std::flush;
 
         PaError err;
@@ -189,9 +174,7 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
             }
             if (err)
             {
-                logger->error
-                    << "Pa_WriteStream (plc) failed: " << Pa_GetErrorText(err)
-                    << std::flush;
+                logger->error << "Pa_WriteStream (plc) failed: " << Pa_GetErrorText(err) << std::flush;
                 assert(0);        // TODO
             }
             // std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -200,8 +183,7 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 
         logger->debug << "+" << std::flush;
         {
-            std::chrono::steady_clock::time_point start_write =
-                std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point start_write = std::chrono::steady_clock::now();
             std::lock_guard<std::mutex> lock(audioWriteMutex);
 
             if (resample_ratio != 1.0)
@@ -210,56 +192,42 @@ void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
                 long input_frames = recv_actual / (bytesPerSample);
                 long resampled_output_frames = input_frames * resample_ratio;
                 float* resampled = new float[resampled_output_frames];
-                int ret = resampler.simple_resample(src,
-                                                    input_frames,
-                                                    resampled,
-                                                    resampled_output_frames,
-                                                    audio_channels,
-                                                    resample_ratio);
+                int ret = resampler.simple_resample(
+                    src, input_frames, resampled, resampled_output_frames, audio_channels, resample_ratio);
 
                 if (ret)
                 {
-                    logger->error << "Resample failed: " << src_strerror(ret)
-                                  << std::flush;
+                    logger->error << "Resample failed: " << src_strerror(ret) << std::flush;
                 }
                 else
                 {
                     err = Pa_WriteStream(
-                        audioStream,
-                        (const void*) resampled,
-                        resampled_output_frames / audio_channels);
+                        audioStream, (const void*) resampled, resampled_output_frames / audio_channels);
                 }
 
                 delete[] resampled;
             }
             else
             {
-                err = Pa_WriteStream(
-                    audioStream,
-                    raw_data,
-                    recv_actual / (audio_channels * bytesPerSample));
-                auto write_delta =
-                    std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::steady_clock::now() - start_write);
-                logger->debug << "{W: " << write_delta.count() << "}"
-                              << std::flush;
+                err = Pa_WriteStream(audioStream, raw_data, recv_actual / (audio_channels * bytesPerSample));
+                auto write_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - start_write);
+                logger->debug << "{W: " << write_delta.count() << "}" << std::flush;
             }
         }
         if (err)
         {
-            logger->error << "Pa_WriteStream failed: " << Pa_GetErrorText(err)
-                          << std::flush;
+            logger->error << "Pa_WriteStream failed: " << Pa_GetErrorText(err) << std::flush;
         }
 
         // hack until Packet is split into meta and data
-        std::chrono::steady_clock::time_point free_time =
-            std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point free_time = std::chrono::steady_clock::now();
         if (freePacket != nullptr)
         {
             delete (Packet*) freePacket;
         }
-        auto free_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - free_time);
+        auto free_delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() -
+                                                                                free_time);
         logger->debug << "{F: " << free_delta.count() << "}" << std::flush;
     }
 }
@@ -303,10 +271,8 @@ int main(int argc, char* argv[])
     }
 
     std::ostringstream oss;
-    std::chrono::steady_clock::time_point timePoint =
-        std::chrono::steady_clock::now();
-    auto min = std::chrono::duration_cast<std::chrono::minutes>(
-        timePoint.time_since_epoch());
+    std::chrono::steady_clock::time_point timePoint = std::chrono::steady_clock::now();
+    auto min = std::chrono::duration_cast<std::chrono::minutes>(timePoint.time_since_epoch());
 
     logger->SetLogLevel(LogLevel::INFO);
 
@@ -316,10 +282,7 @@ int main(int argc, char* argv[])
     logger->info << "ClientID: " << clientID << std::flush;
 
     // configure new stream callback
-    auto wrapped_stream_callback = [](uint64_t client_id,
-                                      uint64_t source_id,
-                                      uint64_t source_ts,
-                                      MediaType media_type)
+    auto wrapped_stream_callback = [](uint64_t client_id, uint64_t source_id, uint64_t source_ts, MediaType media_type)
     {
         logger->info << "[Sound]: New Sorcce" << source_id << std::flush;
         recvMedia = true;
@@ -355,24 +318,16 @@ int main(int argc, char* argv[])
 
     inputParameters.channelCount = audio_channels;
     inputParameters.sampleFormat = paFloat32;
-    inputParameters.suggestedLatency =
-        Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
     outputParameters.channelCount = audio_channels;
     outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency =
-        Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+    outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
 
-    err = Pa_OpenStream(&audioStream,
-                        &inputParameters,
-                        &outputParameters,
-                        sample_rate,
-                        frames_per_buffer,
-                        paClipOff,
-                        NULL,
-                        NULL);
+    err = Pa_OpenStream(
+        &audioStream, &inputParameters, &outputParameters, sample_rate, frames_per_buffer, paClipOff, NULL, NULL);
     if (err != paNoError)
     {
         logger->error << Pa_GetErrorText(err) << std::flush;
@@ -449,8 +404,7 @@ int main(int argc, char* argv[])
     err = Pa_StopStream(audioStream);
     if (err != paNoError)
     {
-        logger->error << "Failure to stop stream: " << Pa_GetErrorText(err)
-                      << std::flush;
+        logger->error << "Failure to stop stream: " << Pa_GetErrorText(err) << std::flush;
     }
 
     if (outg_sound_file.is_open()) outg_sound_file.close();
@@ -458,8 +412,7 @@ int main(int argc, char* argv[])
     err = Pa_Terminate();
     if (err != paNoError)
     {
-        logger->error << "Failure to shutdown portaudio: "
-                      << Pa_GetErrorText(err) << std::flush;
+        logger->error << "Failure to shutdown portaudio: " << Pa_GetErrorText(err) << std::flush;
     }
 
     return err;
