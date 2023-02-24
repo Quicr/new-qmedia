@@ -103,13 +103,13 @@ MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type,
                                             SubscribeCallback callback)
 {
     quicr::HexEndec<128,24,8,24,8,16,48> name_format;
-    const uint8_t  mediaType = 0x00 | codec_type; //  0 - [0 - first bit = audio, 1 - 7bits = opus]
+    const uint8_t  mediaType = codec_type << 4;  // First 4 bits is codec
     const uint16_t clientId  = 0; // 16
     const uint64_t filler = 0; // 48
 
     const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler);
 
-    std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 8; // orgId + appId + confId + mediaType    
+    std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 4; // orgId + appId + confId + mediaType
     quicr::Namespace quicr_namespace{{nstring},namespace_mask_bits};
 
     auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
@@ -124,13 +124,13 @@ MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t codec_type,
                                             SubscribeCallback callback)
 {
     quicr::HexEndec<128,24,8,24,8,16,48> name_format;
-    const uint8_t  mediaType = 0x80 | codec_type; //  8 - [0 - first bit = audio, 1 - 7bits = opus]
+    const uint8_t  mediaType = codec_type << 4; // First 4 bits is codec
     const uint16_t clientId  = 0; // 16
     const uint64_t filler = 0; // 48
 
     const std::string nstring = name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler);
 
-    std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 8; // orgId + appId + confId + mediaType    
+    std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 4; // orgId + appId + confId + mediaType
     quicr::Namespace quicr_namespace{{nstring},namespace_mask_bits};    
 
     auto delegate = std::make_shared<MediaTransportSubDelegate>(++_streamId, quicr_namespace, callback);
@@ -146,7 +146,7 @@ MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type,
 {
     quicr::HexEndec<128,24,8,24,8,16,48> name_format;
     auto time = std::time(0);
-    const uint8_t  mediaType = 0x00 | codec_type; //  8 - [0 - first bit = audio, 1 - 7bits = opus]
+    const uint8_t  mediaType = codec_type; //  4 bits codec, 4 bits stream number
     const uint16_t clientId  = client_id;     // 16
     const uint64_t uniqueId  = time;       // 48 - using time for now
 
@@ -169,7 +169,7 @@ MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type,
 {
     quicr::HexEndec<128,24,8,24,8,16,48> name_format;
     auto time = std::time(0);
-    const uint8_t  mediaType = 0x80 | codec_type; //  8 - [1 - first bit = video, 2 - 7bits = h264]
+    const uint8_t  mediaType = codec_type; // 4 bits codec, 4 bits stream number
     const uint16_t clientId  = client_id;     // 16
     const uint64_t uniqueId  = time;       // 48 - using time for now
 
