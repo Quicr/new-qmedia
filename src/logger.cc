@@ -7,33 +7,28 @@
 #include <algorithm>
 #include "qmedia/logger.hh"
 
-Logger::Logger(bool output_to_console) :
-    Logger("", "", nullptr, output_to_console)
+Logger::Logger(bool output_to_console) : Logger("", "", nullptr, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &process_name, bool output_to_console) :
+Logger::Logger(const std::string& process_name, bool output_to_console) :
     Logger(process_name, "", nullptr, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &process_name,
-               const std::string &component_name,
-               bool output_to_console) :
+Logger::Logger(const std::string& process_name, const std::string& component_name, bool output_to_console) :
     Logger(process_name, component_name, nullptr, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &component_name,
-               const LoggerPointer &parent_logger,
-               bool output_to_console) :
+Logger::Logger(const std::string& component_name, const LoggerPointer& parent_logger, bool output_to_console) :
     Logger("", component_name, parent_logger, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &process_name,
-               const std::string &component_name,
-               const LoggerPointer &parent_logger,
+Logger::Logger(const std::string& process_name,
+               const std::string& component_name,
+               const LoggerPointer& parent_logger,
                bool output_to_console) :
     process_name(process_name),
     component_name(component_name),
@@ -69,7 +64,7 @@ Logger::~Logger()
     }
 }
 
-void Logger::Log(LogLevel level, const std::string &message, bool console)
+void Logger::Log(LogLevel level, const std::string& message, bool console)
 {
     std::string formatted_message;        // Formatted message to log
 
@@ -118,8 +113,7 @@ void Logger::Log(LogLevel level, const std::string &message, bool console)
             try
             {
                 // Update the formatted message to include the log level
-                formatted_message = timestamp + " [" + LogLevelString(level) +
-                                    "] " + formatted_message;
+                formatted_message = timestamp + " [" + LogLevelString(level) + "] " + formatted_message;
 
                 // Output the log message to the appropriate facility
                 if (log_facility == LogFacility::FILE)
@@ -152,7 +146,7 @@ void Logger::Log(LogLevel level, const std::string &message, bool console)
     }
 }
 
-void Logger::Log(const std::string &message)
+void Logger::Log(const std::string& message)
 {
     Log(LogLevel::INFO, message);
 }
@@ -216,15 +210,14 @@ void Logger::SetLogLevel(const std::string level)
     std::string level_comparator = level;
 
     // Convert the level string to uppercase
-    std::transform(
-        level.begin(), level.end(), level_comparator.begin(), ::toupper);
+    std::transform(level.begin(), level.end(), level_comparator.begin(), ::toupper);
 
     try
     {
         // Map from the log level string to LogLevel value
         log_level = log_level_map.at(level_comparator);
     }
-    catch (const std::out_of_range &e)
+    catch (const std::out_of_range& e)
     {
         log_level = LogLevel::INFO;
         Log(LogLevel::ERROR, "Unknown log level: " + level, true);
@@ -289,7 +282,7 @@ std::string Logger::LogLevelString(LogLevel level) const
     std::string log_level_string = "INFO";
 
     // Determine log level string for logging
-    for (auto &item : log_level_map)
+    for (auto& item : log_level_map)
     {
         if (item.second == level)
         {
@@ -308,14 +301,15 @@ std::string Logger::GetTimestamp() const
     auto now = std::chrono::system_clock::now();
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
     std::time_t t = std::chrono::system_clock::to_time_t(now);
-    struct tm tm_result{};
+    struct tm tm_result
+    {
+    };
 #ifdef _WIN32
     localtime_s(&tm_result, &t);
 #else
     localtime_r(&t, &tm_result);
 #endif
-    oss << std::put_time(&tm_result, "%FT%T") << "."
-        << std::setfill('0') << std::setw(3)
+    oss << std::put_time(&tm_result, "%FT%T") << "." << std::setfill('0') << std::setw(3)
         << (now_ms.time_since_epoch().count()) % 1000;
 
     return oss.str();
