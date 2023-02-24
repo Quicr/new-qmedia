@@ -7,7 +7,7 @@
 typedef void (*SubscribeCallback)(uint64_t id,
                                   uint8_t media_id,
                                   uint16_t client_id,
-                                  uint8_t *data,
+                                  uint8_t* data,
                                   uint32_t length,
                                   uint64_t timestamp);
 
@@ -15,40 +15,40 @@ typedef void (*SubscribeCallback)(uint64_t id,
 extern "C"
 {
 #endif
-    void MediaClient_Create(const char *remote_address,
+    void MediaClient_Create(const char* remote_address,
                             uint16_t remote_port,
-                            void **media_client);
+                            void** media_client);
 
-    void MediaClient_Destroy(void *media_client);
+    void MediaClient_Destroy(void* media_client);
 
-    uint64_t MediaClient_AddAudioStreamPublishIntent(void *instance,
+    uint64_t MediaClient_AddAudioStreamPublishIntent(void* instance,
                                                      uint8_t codec_type,
                                                      uint16_t client_id);
 
-    uint64_t MediaClient_AddAudioStreamSubscribe(void *instance,
+    uint64_t MediaClient_AddAudioStreamSubscribe(void* instance,
                                                  uint8_t codec_type,
                                                  SubscribeCallback callback);
 
-    uint64_t MediaClient_AddVideoStreamPublishIntent(void *instance,
+    uint64_t MediaClient_AddVideoStreamPublishIntent(void* instance,
                                                      uint8_t codec_type,
                                                      uint16_t client_id);
 
-    uint64_t MediaClient_AddVideoStreamSubscribe(void *instance,
+    uint64_t MediaClient_AddVideoStreamSubscribe(void* instance,
                                                  uint8_t codec_type,
                                                  SubscribeCallback callback);
 
-    void MediaClient_RemoveMediaStream(void *instance,
+    void MediaClient_RemoveMediaStream(void* instance,
                                        uint64_t media_stream_id);
 
-    void MediaClient_sendAudio(void *instance,
+    void MediaClient_sendAudio(void* instance,
                                uint64_t media_stream_id,
-                               const char *buffer,
+                               const char* buffer,
                                uint32_t length,
                                uint64_t timestamp);
 
-    void MediaClient_sendVideoFrame(void *instance,
+    void MediaClient_sendVideoFrame(void* instance,
                                     uint64_t streamId,
-                                    const char *buffer,
+                                    const char* buffer,
                                     uint32_t length,
                                     uint64_t timestamp,
                                     bool flag);

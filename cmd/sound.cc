@@ -18,7 +18,7 @@ using namespace qmedia;
 
 static bool shutDown;
 
-static PaStream *audioStream;
+static PaStream* audioStream;
 static std::mutex audioReadMutex;
 static std::mutex audioWriteMutex;
 
@@ -40,10 +40,10 @@ static Resampler resampler;
 static std::ofstream outg_sound_file;
 static LoggerPointer logger = std::make_shared<Logger>("Sound", true);
 
-void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
+void recordThreadFunc(MediaClient* client, MediaStreamId stream_id)
 {
     int buff_size = frames_per_buffer * bytesPerSample * audio_channels;
-    char *zerobuff = (char *) malloc(buff_size);
+    char* zerobuff = (char*) malloc(buff_size);
     if (zerobuff == nullptr)
     {
         logger->error << "Couldn't allocate zero buffer" << std::flush;
@@ -55,7 +55,7 @@ void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
 
     while (!shutDown)
     {
-        char *audioBuff = (char *) malloc(buff_size);
+        char* audioBuff = (char*) malloc(buff_size);
         if (audioBuff == nullptr)
         {
             logger->error << "Failed to allocate audio buffer" << std::flush;
@@ -101,8 +101,8 @@ void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
                             .count();
 
                     client->send_audio(stream_id,
-                                       reinterpret_cast<uint8_t *>(
-                                           const_cast<char *>(audioBuff)),
+                                       reinterpret_cast<uint8_t*>(
+                                           const_cast<char*>(audioBuff)),
                                        buff_size,
                                        timestamp);
                     logger->debug << "-" << std::flush;
@@ -115,7 +115,7 @@ void recordThreadFunc(MediaClient *client, MediaStreamId stream_id)
     free(zerobuff);
 }
 
-void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
+void playThreadFunc(MediaClient* client, MediaStreamId stream_id)
 {
     std::chrono::steady_clock::time_point loop_time =
         std::chrono::steady_clock::now();
@@ -162,9 +162,9 @@ void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
         }
 
         int buff_size = frames_per_buffer * bytesPerSample * audio_channels;
-        unsigned char *raw_data = nullptr;
+        unsigned char* raw_data = nullptr;
         uint64_t timestamp;
-        Packet *freePacket = nullptr;
+        Packet* freePacket = nullptr;
 
         std::chrono::steady_clock::time_point get_audio =
             std::chrono::steady_clock::now();
@@ -206,10 +206,10 @@ void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
 
             if (resample_ratio != 1.0)
             {
-                float *src = (float *) raw_data;
+                float* src = (float*) raw_data;
                 long input_frames = recv_actual / (bytesPerSample);
                 long resampled_output_frames = input_frames * resample_ratio;
-                float *resampled = new float[resampled_output_frames];
+                float* resampled = new float[resampled_output_frames];
                 int ret = resampler.simple_resample(src,
                                                     input_frames,
                                                     resampled,
@@ -226,7 +226,7 @@ void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
                 {
                     err = Pa_WriteStream(
                         audioStream,
-                        (const void *) resampled,
+                        (const void*) resampled,
                         resampled_output_frames / audio_channels);
                 }
 
@@ -256,7 +256,7 @@ void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
             std::chrono::steady_clock::now();
         if (freePacket != nullptr)
         {
-            delete (Packet *) freePacket;
+            delete (Packet*) freePacket;
         }
         auto free_delta = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - free_time);
@@ -264,7 +264,7 @@ void playThreadFunc(MediaClient *client, MediaStreamId stream_id)
     }
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     const uint64_t conference_id = 123456;
 #if defined(_WIN32)

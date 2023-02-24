@@ -12,28 +12,28 @@ Logger::Logger(bool output_to_console) :
 {
 }
 
-Logger::Logger(const std::string &process_name, bool output_to_console) :
+Logger::Logger(const std::string& process_name, bool output_to_console) :
     Logger(process_name, "", nullptr, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &process_name,
-               const std::string &component_name,
+Logger::Logger(const std::string& process_name,
+               const std::string& component_name,
                bool output_to_console) :
     Logger(process_name, component_name, nullptr, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &component_name,
-               const LoggerPointer &parent_logger,
+Logger::Logger(const std::string& component_name,
+               const LoggerPointer& parent_logger,
                bool output_to_console) :
     Logger("", component_name, parent_logger, output_to_console)
 {
 }
 
-Logger::Logger(const std::string &process_name,
-               const std::string &component_name,
-               const LoggerPointer &parent_logger,
+Logger::Logger(const std::string& process_name,
+               const std::string& component_name,
+               const LoggerPointer& parent_logger,
                bool output_to_console) :
     process_name(process_name),
     component_name(component_name),
@@ -69,7 +69,7 @@ Logger::~Logger()
     }
 }
 
-void Logger::Log(LogLevel level, const std::string &message, bool console)
+void Logger::Log(LogLevel level, const std::string& message, bool console)
 {
     std::string formatted_message;        // Formatted message to log
 
@@ -152,7 +152,7 @@ void Logger::Log(LogLevel level, const std::string &message, bool console)
     }
 }
 
-void Logger::Log(const std::string &message)
+void Logger::Log(const std::string& message)
 {
     Log(LogLevel::INFO, message);
 }
@@ -224,7 +224,7 @@ void Logger::SetLogLevel(const std::string level)
         // Map from the log level string to LogLevel value
         log_level = log_level_map.at(level_comparator);
     }
-    catch (const std::out_of_range &e)
+    catch (const std::out_of_range& e)
     {
         log_level = LogLevel::INFO;
         Log(LogLevel::ERROR, "Unknown log level: " + level, true);
@@ -289,7 +289,7 @@ std::string Logger::LogLevelString(LogLevel level) const
     std::string log_level_string = "INFO";
 
     // Determine log level string for logging
-    for (auto &item : log_level_map)
+    for (auto& item : log_level_map)
     {
         if (item.second == level)
         {

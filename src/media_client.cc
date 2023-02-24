@@ -38,31 +38,31 @@ MediaTransportSubDelegate::MediaTransportSubDelegate(
 }
 
 void MediaTransportSubDelegate::onSubscribeResponse(
-    const quicr::Namespace & /* quicr_namespace */,
-    const quicr::SubscribeResult::SubscribeStatus & /* result */)
+    const quicr::Namespace& /* quicr_namespace */,
+    const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
     std::cerr << "sub::onSubscribeResponse" << std::endl;
 }
 
 void MediaTransportSubDelegate::onSubscriptionEnded(
-    const quicr::Namespace & /* quicr_namespace */,
-    const quicr::SubscribeResult & /* result */)
+    const quicr::Namespace& /* quicr_namespace */,
+    const quicr::SubscribeResult& /* result */)
 {
     std::cerr << "sub::onSubscriptionEnded" << std::endl;
 }
 
 void MediaTransportSubDelegate::onSubscribedObject(
-    const quicr::Name &quicr_name,
+    const quicr::Name& quicr_name,
     uint8_t /*priority*/,
     uint16_t /*expiry_age_ms*/,
     bool /*use_reliable_transport*/,
-    quicr::bytes &&data)
+    quicr::bytes&& data)
 {
     // get timestamp from end of data buffer
     std::uint64_t timestamp = 0;
     std::size_t offset = data.size() - sizeof(std::uint64_t);
-    const std::uint8_t *tsbytes = &data[offset];
-    timestamp = *reinterpret_cast<const std::uint64_t *>(tsbytes);
+    const std::uint8_t* tsbytes = &data[offset];
+    timestamp = *reinterpret_cast<const std::uint64_t*>(tsbytes);
 
     std::cerr << "onSubscribedObject " << quicr_name.to_hex() << std::endl;
 
@@ -82,16 +82,16 @@ MediaTransportPubDelegate::MediaTransportPubDelegate(MediaStreamId /*id*/)
 }
 
 void MediaTransportPubDelegate::onPublishIntentResponse(
-    const quicr::Namespace & /* quicr_namespace */,
-    const quicr::PublishIntentResult & /* result */)
+    const quicr::Namespace& /* quicr_namespace */,
+    const quicr::PublishIntentResult& /* result */)
 {
     std::cerr << "pub::onPublishIntentResponse" << std::endl;
 }
 
-MediaClient::MediaClient(const char *remote_address,
+MediaClient::MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
                          quicr::RelayInfo::Protocol protocol,
-                         const LoggerPointer &parent_logger) :
+                         const LoggerPointer& parent_logger) :
     log(std::make_shared<Logger>("qmedia", parent_logger)),
     _streamId(0),
     _orgId(0x00A11CEE),
@@ -238,7 +238,7 @@ void MediaClient::remove_audio_subscribe(MediaStreamId /*streamid*/)
 }
 
 void MediaClient::send_audio_media(MediaStreamId streamid,
-                                   uint8_t *data,
+                                   uint8_t* data,
                                    std::uint32_t length,
                                    std::uint64_t timestamp)
 {
@@ -252,14 +252,14 @@ void MediaClient::send_audio_media(MediaStreamId streamid,
 
     auto quicr_name = publish_names[streamid];
     quicr::bytes b(data, data + length);
-    std::uint8_t *tsbytes = reinterpret_cast<std::uint8_t *>(&timestamp);
+    std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(&timestamp);
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
     publish_names[streamid] = ++quicr_name;
 }
 
 void MediaClient::send_video_media(MediaStreamId streamid,
-                                   uint8_t *data,
+                                   uint8_t* data,
                                    std::uint32_t length,
                                    std::uint64_t timestamp,
                                    bool groupidflag)
@@ -290,7 +290,7 @@ void MediaClient::send_video_media(MediaStreamId streamid,
         orgId, appId, confId, mediaType, clientId, groupId, objectId);
     quicr_name = quicr::Name(nstring);
     quicr::bytes b(data, data + length);
-    std::uint8_t *tsbytes = reinterpret_cast<std::uint8_t *>(
+    std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(
         &timestamp);        // look into network byte order
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));

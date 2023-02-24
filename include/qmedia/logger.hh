@@ -41,7 +41,7 @@ enum class LogFacility
  */
 class Logger;
 typedef std::shared_ptr<Logger> LoggerPointer;
-typedef std::function<void(LogLevel level, const std::string &message)>
+typedef std::function<void(LogLevel level, const std::string& message)>
     LogCallback;
 
 // Logger object declaration
@@ -52,7 +52,7 @@ protected:
     class LoggingBuf : public std::stringbuf
     {
     public:
-        LoggingBuf(Logger *logger, LogLevel log_level, bool console = false) :
+        LoggingBuf(Logger* logger, LogLevel log_level, bool console = false) :
             std::stringbuf(),
             logger(logger),
             log_level(log_level),
@@ -62,7 +62,7 @@ protected:
         }
 
     protected:
-        Logger *logger;
+        Logger* logger;
         LogLevel log_level;
         bool console;
         std::atomic<bool> busy;
@@ -97,7 +97,7 @@ protected:
             }
         }
 
-        virtual std::streamsize xsputn(const char *c, std::streamsize n)
+        virtual std::streamsize xsputn(const char* c, std::streamsize n)
         {
             // Control thread access to the string buffer
             thread_sync();
@@ -135,30 +135,30 @@ public:
     Logger(bool output_to_console = false);
 
     // Constructor with process name
-    Logger(const std::string &process_name, bool output_to_console = false);
+    Logger(const std::string& process_name, bool output_to_console = false);
 
     // Constructor with process name and component name
-    Logger(const std::string &process_name,
-           const std::string &component_name,
+    Logger(const std::string& process_name,
+           const std::string& component_name,
            bool output_to_console = false);
 
     // Constructor for child Logger objects
-    Logger(const std::string &component_name,
-           const LoggerPointer &parent_logger,
+    Logger(const std::string& component_name,
+           const LoggerPointer& parent_logger,
            bool output_to_console = false);
 
     // Disallow the copy constructor, as this could be a problem for
     // creation of certain log types (e.g., logging to files)
-    Logger(const Logger &) = delete;
+    Logger(const Logger&) = delete;
 
     // Destructor
     virtual ~Logger();
 
     // Function to log messages
-    void Log(LogLevel level, const std::string &message, bool console = false);
+    void Log(LogLevel level, const std::string& message, bool console = false);
 
     // Function to log messages using LogLevel::INFO
-    void Log(const std::string &message);
+    void Log(const std::string& message);
 
     // Set the logging facility
     void SetLogFacility(LogFacility facility, std::string filename = {});
@@ -183,9 +183,9 @@ public:
 
 protected:
     // Constructor called by other constructors
-    Logger(const std::string &process_name,
-           const std::string &component_name,
-           const LoggerPointer &parent_logger,
+    Logger(const std::string& process_name,
+           const std::string& component_name,
+           const LoggerPointer& parent_logger,
            bool output_to_console = false);
 
     int MapLogLevel(LogLevel level) const;        // Map log level to syslog

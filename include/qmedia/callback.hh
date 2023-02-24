@@ -17,11 +17,11 @@ template <typename T> using CallbackType = std::add_pointer_t<T>;
 
 template <typename... Args> struct Callback
 {
-    using callback_type = CallbackType<void CALL(void *, Args...)>;
+    using callback_type = CallbackType<void CALL(void*, Args...)>;
 
     callback_type callback_{};
 
-    void *user_data_{};
+    void* user_data_{};
 
     /// Invoke the callback with the given arguments |args|.
     constexpr void operator()(Args... args) const noexcept

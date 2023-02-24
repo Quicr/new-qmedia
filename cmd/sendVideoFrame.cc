@@ -24,7 +24,7 @@ void source_callback(std::uint64_t cid,
               << " Type:" << source_type << std::endl;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     std::string mode;
     std::uint64_t client_id = 5;            // made it up
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     std::size_t image_y_size = image_width * image_height;
     std::size_t image_uv_size = image_y_size >> 2;        // YUV420
     std::size_t image_size = image_y_size + image_uv_size * 2;
-    char *image = static_cast<char *>(malloc(image_size));
+    char* image = static_cast<char*>(malloc(image_size));
     assert(image);
 
     if (argc < 2)
@@ -68,9 +68,9 @@ int main(int argc, char **argv)
                                                                        // 0-5
     }
 
-    auto logcb = [](const char *message) { std::cout << message << std::endl; };
+    auto logcb = [](const char* message) { std::cout << message << std::endl; };
 
-    void *client;
+    void* client;
     MediaClient_Create("127.0.0.1", 7777, &client);
 
     std::vector<std::thread> threads;
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(33));
                     // if (source_id == 0) continue;
-                    unsigned char *buffer = nullptr;
+                    unsigned char* buffer = nullptr;
                     std::uint64_t ts = 0;
                     std::uint32_t width = 0;
                     std::uint32_t height = 0;

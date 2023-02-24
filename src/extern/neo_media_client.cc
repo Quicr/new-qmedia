@@ -4,9 +4,9 @@
 
 extern "C"
 {
-    void MediaClient_Create(const char *remote_address,
+    void MediaClient_Create(const char* remote_address,
                             uint16_t remote_port,
-                            void **media_client)
+                            void** media_client)
     {
         if (!media_client || !remote_address)
         {
@@ -27,12 +27,12 @@ extern "C"
         *media_client = client.release();
     }
 
-    void MediaClient_Destroy(void *media_client)
+    void MediaClient_Destroy(void* media_client)
     {
-        delete (qmedia::MediaClient *) media_client;
+        delete (qmedia::MediaClient*) media_client;
     }
 
-    uint64_t MediaClient_AddAudioStreamPublish(void *instance,
+    uint64_t MediaClient_AddAudioStreamPublish(void* instance,
                                                uint8_t codec_type,
                                                uint16_t client_id)
     {
@@ -40,11 +40,11 @@ extern "C"
         {
             return 0;        // invalid
         }
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
         return media_client->add_audio_publish_intent(codec_type, client_id);
     }
 
-    uint64_t MediaClient_AddAudioStreamSubscribe(void *instance,
+    uint64_t MediaClient_AddAudioStreamSubscribe(void* instance,
                                                  uint8_t codec_type,
                                                  SubscribeCallback callback)
     {
@@ -53,11 +53,11 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
         return media_client->add_audio_stream_subscribe(codec_type, callback);
     }
 
-    uint64_t MediaClient_AddAudioStreamPublishIntent(void *instance,
+    uint64_t MediaClient_AddAudioStreamPublishIntent(void* instance,
                                                      uint8_t codec_type,
                                                      uint16_t client_id)
     {
@@ -66,11 +66,11 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
         return media_client->add_audio_publish_intent(codec_type, client_id);
     }
 
-    uint64_t MediaClient_AddVideoStreamPublishIntent(void *instance,
+    uint64_t MediaClient_AddVideoStreamPublishIntent(void* instance,
                                                      uint8_t codec_type,
                                                      uint16_t client_id)
     {
@@ -79,11 +79,11 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
         return media_client->add_video_publish_intent(codec_type, client_id);
     }
 
-    uint64_t MediaClient_AddVideoStreamSubscribe(void *instance,
+    uint64_t MediaClient_AddVideoStreamSubscribe(void* instance,
                                                  uint8_t codec_type,
                                                  SubscribeCallback callback)
     {
@@ -92,11 +92,11 @@ extern "C"
             return 0;        // invalid
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
         return media_client->add_video_stream_subscribe(codec_type, callback);
     }
 
-    void MediaClient_RemoveMediaStream(void *instance,
+    void MediaClient_RemoveMediaStream(void* instance,
                                        uint64_t /*media_stream_id*/)
     {
         if (!instance)
@@ -108,9 +108,9 @@ extern "C"
         // media_client->remove_object_stream(media_stream_id);
     }
 
-    void MediaClient_sendAudio(void *instance,
+    void MediaClient_sendAudio(void* instance,
                                uint64_t media_stream_id,
-                               const char *buffer,
+                               const char* buffer,
                                uint32_t length,
                                uint64_t timestamp)
     {
@@ -119,18 +119,18 @@ extern "C"
             return;
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
 
         media_client->send_audio_media(
             media_stream_id,
-            reinterpret_cast<uint8_t *>(const_cast<char *>(buffer)),
+            reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)),
             length,
             timestamp);
     }
 
-    void MediaClient_sendVideoFrame(void *instance,
+    void MediaClient_sendVideoFrame(void* instance,
                                     uint64_t media_stream_id,
-                                    const char *buffer,
+                                    const char* buffer,
                                     uint32_t length,
                                     uint64_t timestamp,
                                     bool /*flag*/)        // groupid flag
@@ -140,11 +140,11 @@ extern "C"
             return;
         }
 
-        auto media_client = static_cast<qmedia::MediaClient *>(instance);
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
 
         media_client->send_video_media(
             media_stream_id,
-            reinterpret_cast<uint8_t *>(const_cast<char *>(buffer)),
+            reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)),
             length,
             timestamp);
     }
