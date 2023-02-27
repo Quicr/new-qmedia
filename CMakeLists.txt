@@ -55,7 +55,7 @@ endif()
 ###
 ### Tests
 ###
-include(CTest)
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
-     add_subdirectory(test)
+    include(CTest)
+    add_subdirectory(test)
 endif()
