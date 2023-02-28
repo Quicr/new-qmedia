@@ -33,10 +33,10 @@ class MediaTransportSubDelegate : public quicr::SubscriberDelegate
 public:
     MediaTransportSubDelegate(MediaStreamId id, quicr::Namespace quicr_namespace, SubscribeCallback callback);
 
-    virtual void onSubscribeResponse(const quicr::Namespace& quicr_namespace,
-                                     const quicr::SubscribeResult::SubscribeStatus& result);
+    virtual void onSubscribeResponse(const quicr::Namespace& quicr_namespace, const quicr::SubscribeResult& result);
 
-    virtual void onSubscriptionEnded(const quicr::Namespace& quicr_namespace, const quicr::SubscribeResult& result);
+    virtual void onSubscriptionEnded(const quicr::Namespace& quicr_namespace,
+                                     const quicr::SubscribeResult::SubscribeStatus& result);
 
     virtual void onSubscribedObject(const quicr::Name& quicr_name,
                                     uint8_t priority,

@@ -37,13 +37,13 @@ MediaTransportSubDelegate::MediaTransportSubDelegate(MediaStreamId id,
 }
 
 void MediaTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
-                                                    const quicr::SubscribeResult::SubscribeStatus& /* result */)
+                                                    const quicr::SubscribeResult& /* result */)
 {
     std::cerr << "sub::onSubscribeResponse" << std::endl;
 }
 
 void MediaTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
-                                                    const quicr::SubscribeResult& /* result */)
+                                                    const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
     std::cerr << "sub::onSubscriptionEnded" << std::endl;
 }
