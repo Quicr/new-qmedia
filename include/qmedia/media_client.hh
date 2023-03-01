@@ -72,13 +72,13 @@ public:
                          quicr::RelayInfo::Protocol protocol,
                          const LoggerPointer& s = nullptr);
 
-    MediaStreamId add_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
 
-    MediaStreamId add_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
-    MediaStreamId add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
-    MediaStreamId add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
+    MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
 
     void remove_publish(MediaStreamId streamId);
     void remove_video_publish(MediaStreamId streamId);
