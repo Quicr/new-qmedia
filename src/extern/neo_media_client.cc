@@ -11,13 +11,9 @@ extern "C"
             return;
         }
 
-        // Bridge to external logging.
-        LoggerPointer logger = std::make_shared<Logger>("QMediaExtern");
-        logger->SetLogFacility(LogFacility::NOTIFY);
-
         // Create media library.
         auto client = std::make_unique<qmedia::MediaClient>(
-            remote_address, remote_port, quicr::RelayInfo::Protocol::UDP, logger);
+            remote_address, remote_port, quicr::RelayInfo::Protocol::UDP);
 
         *media_client = client.release();
     }

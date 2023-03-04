@@ -1,6 +1,8 @@
 #include <qmedia/media_client.hh>
 #include <quicr/hex_endec.h>
 
+#include <transport/logger.h>
+
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> client_name_format;
 
@@ -78,9 +80,7 @@ void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& 
 
 MediaClient::MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol,
-                         const LoggerPointer& parent_logger) :
-    log(std::make_shared<Logger>("qmedia", parent_logger)),
+                         quicr::RelayInfo::Protocol protocol):
     _streamId(0),
     _orgId(0x00A11CEE),
     _appId(0x00),
@@ -91,6 +91,7 @@ MediaClient::MediaClient(const char* remote_address,
     relayInfo.port = remote_port;
     relayInfo.proto = protocol;
 
+    // Bridge to external logging.
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
 }
 
