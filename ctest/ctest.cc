@@ -17,8 +17,8 @@ void subscribe_callback(uint64_t id,
 
 int main(int /*argc*/, char** /*arg*/)
 {
-    qmedia::MediaClient subClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP, nullptr);
-    qmedia::MediaClient pubClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP, nullptr);
+    qmedia::MediaClient subClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP);
+    qmedia::MediaClient pubClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP);
 
     subClient.add_stream_subscribe(1, subscribe_callback);
 

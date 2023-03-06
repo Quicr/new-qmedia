@@ -7,21 +7,19 @@
 #include <map>
 #include <assert.h>
 
-#include "callback.hh"
-#include "logger.hh"
-
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
+#include <transport/logger.h>
 
 namespace qmedia
 {
 
-typedef void(CALL* SubscribeCallback)(uint64_t id,
-                                      uint8_t media_id,
-                                      uint16_t client_id,
-                                      uint8_t* data,
-                                      uint32_t length,
-                                      uint64_t timestamp);
+typedef void(* SubscribeCallback)(uint64_t id,
+                                  uint8_t media_id,
+                                  uint16_t client_id,
+                                  uint8_t* data,
+                                  uint32_t length,
+                                  uint64_t timestamp);
 
 using MediaStreamId = uint64_t;
 
@@ -69,16 +67,15 @@ class MediaClient
 public:
     explicit MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol,
-                         const LoggerPointer& s = nullptr);
+                         quicr::RelayInfo::Protocol protocol);
 
-    MediaStreamId add_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
 
-    MediaStreamId add_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
-    MediaStreamId add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
-    MediaStreamId add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id);
+    MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
 
     void remove_publish(MediaStreamId streamId);
     void remove_video_publish(MediaStreamId streamId);
@@ -96,8 +93,6 @@ public:
                           bool groupidflag = false);
 
 private:
-    LoggerPointer log;
-
     std::uint32_t _streamId;
 
     std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;

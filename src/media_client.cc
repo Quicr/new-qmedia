@@ -1,6 +1,8 @@
 #include <qmedia/media_client.hh>
 #include <quicr/hex_endec.h>
 
+#include <transport/logger.h>
+
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> client_name_format;
 
@@ -78,9 +80,7 @@ void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& 
 
 MediaClient::MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol,
-                         const LoggerPointer& parent_logger) :
-    log(std::make_shared<Logger>("qmedia", parent_logger)),
+                         quicr::RelayInfo::Protocol protocol):
     _streamId(0),
     _orgId(0x00A11CEE),
     _appId(0x00),
@@ -91,12 +91,13 @@ MediaClient::MediaClient(const char* remote_address,
     relayInfo.port = remote_port;
     relayInfo.proto = protocol;
 
+    // Bridge to external logging.
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, logger);
 }
 
-MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
 {
-    const uint8_t mediaType = codec_type << 4;        // First 4 bits is codec
+    const uint8_t mediaType = media_type;             // defined by client
     const uint16_t clientId = 0;                      // 16
     const uint64_t filler = 0;                        // 48
 
@@ -114,21 +115,21 @@ MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t codec_type, Subscri
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
 {
-    return add_stream_subscribe(codec_type, callback);
+    return add_stream_subscribe(media_type, callback);
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t codec_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
 {
-    return add_stream_subscribe(codec_type, callback);
+    return add_stream_subscribe(media_type, callback);
 }
 
-MediaStreamId MediaClient::add_publish_intent(std::uint8_t codec_type, std::uint16_t client_id)
+MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
 {
     auto time = std::time(0);
-    const uint8_t mediaType = codec_type;        // 4 bits codec, 4 bits stream number
+    const uint8_t mediaType = media_type;        // defined by client
     const uint16_t clientId = client_id;         // 16
     const uint64_t uniqueId = time;              // 48 - using time for now
 
@@ -146,15 +147,15 @@ MediaStreamId MediaClient::add_publish_intent(std::uint8_t codec_type, std::uint
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t codec_type, std::uint16_t client_id)
+MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
 {
-    return add_publish_intent(codec_type, client_id);
+    return add_publish_intent(media_type, client_id);
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t codec_type, std::uint16_t client_id)
+MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
 {
-    return add_publish_intent(codec_type, client_id);
+    return add_publish_intent(media_type, client_id);
 }
 
 void MediaClient::remove_publish(MediaStreamId /*streamid*/)
@@ -238,6 +239,7 @@ void MediaClient::send_video_media(MediaStreamId streamid,
     quicr::bytes b(data, data + length);
     std::uint8_t* tsbytes = reinterpret_cast<std::uint8_t*>(&timestamp);        // look into network byte order
     b.insert(b.end(), tsbytes, tsbytes + sizeof(std::uint64_t));
+
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
     publish_names[streamid] = quicr_name;
 }

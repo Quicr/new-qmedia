@@ -1,34 +1,21 @@
-add_library(qmedia
-#    full_Fill.cc
-#    jitter.cc
-#    jitter_queues.cc
-#    jitter_silence.cc
-    logger.cc
+add_library(${PROJECT_NAME}
     media_client.cc
-#    metrics.cc
-#    playout_leakybucket.cc
-#    playout_sync.cc
-#    playout_tools.cc
-#    resampler.cc
-#    metrics_reporter.cc)
 )
 
-#target_link_directories(qmedia PUBLIC ${OpenH264_LIB_DIR})
-
-target_link_libraries(qmedia
+target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${LIBRARIES}
         quicr)
 
-target_include_directories(qmedia
+target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include)
 
-target_compile_options(qmedia
+target_compile_options(${PROJECT_NAME}
     PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
         $<$<CXX_COMPILER_ID:MSVC>: >)
-set_target_properties(qmedia
+set_target_properties(${PROJECT_NAME}
     PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES

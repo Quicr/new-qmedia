@@ -27,8 +27,8 @@ int main(int /*argc*/, char ** /*argv*/)
     void *pub_handle = 0;
     MediaClient_Create("127.0.0.1", 1234, &pub_handle);
 
-    std::uint64_t pub_audio_streamId = MediaClient_AddAudioStreamPublishIntent(pub_handle, 1, 0xABCD);
-    std::uint64_t pub_video_streamId = MediaClient_AddVideoStreamPublishIntent(pub_handle, 2, 0xABCD);
+    std::uint64_t pub_audio_streamId = MediaClient_AddAudioStreamPublishIntent(pub_handle, 0x01, 0xABCD);
+    std::uint64_t pub_video_streamId = MediaClient_AddVideoStreamPublishIntent(pub_handle, 0x02, 0xABCD);
 
     std::cerr << "pub audio - id " << pub_audio_streamId << std::endl;
     std::cerr << "pub video - id " << pub_video_streamId << std::endl;
@@ -50,6 +50,6 @@ int main(int /*argc*/, char ** /*argv*/)
                           vbuffer,
                           length,
                           timestamp, true);
-        //sleep(3);
+        sleep(1);
     }
 }
