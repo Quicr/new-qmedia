@@ -38,18 +38,31 @@ MediaTransportSubDelegate::MediaTransportSubDelegate(MediaStreamId id,
     std::cerr << "MediaTransportSubDelegate" << std::endl;
 }
 
+/*
+ * delegate: onSubscribeResponse
+ */
 void MediaTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult& /* result */)
 {
     std::cerr << "sub::onSubscribeResponse" << std::endl;
 }
 
+/*
+ * delegate: onSubscriptionEnded
+ */
 void MediaTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
     std::cerr << "sub::onSubscriptionEnded" << std::endl;
 }
 
+/*
+ * delegate: onSubscribedObject
+ *
+ * On receiving subscribed object notification fields are extracted
+ * from the quicr::name. These fields along with the notificaiton 
+ * data are passed to the client callback.
+ */
 void MediaTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name,
                                                    uint8_t /*priority*/,
                                                    uint16_t /*expiry_age_ms*/,
@@ -68,16 +81,33 @@ void MediaTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
     callback(id, mediaType, clientId, data.data(), data.size() - sizeof(std::uint64_t), timestamp);
 }
 
+/*
+ * MediaTransportPubDelegate::MediaTransportPubDelegate
+ *
+ * Delegate constructor.
+ */
 MediaTransportPubDelegate::MediaTransportPubDelegate(MediaStreamId /*id*/)
 {
 }
 
+/*
+ * delegate: onPublishIntentResponse
+ */
 void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                                         const quicr::PublishIntentResult& /* result */)
 {
     std::cerr << "pub::onPublishIntentResponse" << std::endl;
 }
 
+
+/*
+ * MediaClient
+ *
+ * Provides simple wrapper to QuicrClient. Provides a simplified audio/video stream interface with
+ * callbacks for data.
+ * 
+ * MediaClient::MediaClient - constructor
+ */
 MediaClient::MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
                          quicr::RelayInfo::Protocol protocol):
