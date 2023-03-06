@@ -2,7 +2,6 @@
 #include <cstring>
 #include <string>
 #include <iostream>
-#include "qmedia/logger.hh"
 #include "qmedia/media_client.hh"
 
 TEST_CASE("createAndVerify")
