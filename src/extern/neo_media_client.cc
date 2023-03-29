@@ -13,7 +13,7 @@ extern "C"
 
         // Create media library.
         auto client = std::make_unique<qmedia::MediaClient>(
-            remote_address, remote_port, quicr::RelayInfo::Protocol::UDP);
+            remote_address, remote_port, quicr::RelayInfo::Protocol::QUIC);
 
         *media_client = client.release();
     }
