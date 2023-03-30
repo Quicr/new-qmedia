@@ -38,7 +38,10 @@ int main(int /*argc*/, char ** /*argv*/)
     char abuffer[256];
     char vbuffer[256];
 
-    while(true) {
+    int iterations = 0;
+
+
+    while(iterations <= 5) {
         MediaClient_sendAudio(pub_handle,
                           pub_audio_streamId,
                           abuffer,
@@ -51,5 +54,41 @@ int main(int /*argc*/, char ** /*argv*/)
                           length,
                           timestamp, true);
         sleep(1);
+        ++iterations;
     }
+
+
+    MediaClient_RemoveMediaSubscribeStream(sub_handle, sub_audio_streamId);
+
+
+    MediaClient_sendAudio(pub_handle,
+                        pub_audio_streamId,
+                        abuffer,
+                        length,
+                        timestamp);
+
+    MediaClient_sendVideoFrame(pub_handle,
+                        pub_video_streamId,
+                        vbuffer,
+                        length,
+                        timestamp, true);    
+
+
+    MediaClient_sendAudio(pub_handle,
+                    pub_audio_streamId,
+                    abuffer,
+                    length,
+                    timestamp);
+
+    MediaClient_sendVideoFrame(pub_handle,
+                    pub_video_streamId,
+                    vbuffer,
+                    length,
+                    timestamp, true);
+
+    //MediaClient_RemoveMediaPublishStream(pub_handle, pub_video_streamId);                    
+
+    MediaClient_Destroy(sub_handle);
+    MediaClient_Destroy(pub_handle);
+
 }

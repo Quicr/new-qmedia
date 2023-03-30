@@ -27,7 +27,8 @@ extern "C"
 
     uint64_t MediaClient_AddVideoStreamSubscribe(void* instance, uint8_t media_type, SubscribeCallback callback);
 
-    void MediaClient_RemoveMediaStream(void* instance, uint64_t media_stream_id);
+    void MediaClient_RemoveMediaSubscribeStream(void* instance, uint64_t media_stream_id);
+    void MediaClient_RemoveMediaPublishStream(void *instance, uint64_t media_stream_id);
 
     void MediaClient_sendAudio(void* instance,
                                uint64_t media_stream_id,

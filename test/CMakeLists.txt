@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-
-add_executable(qmedia_test main.cc media_client_test.cc)
+message(${PROJECT_SOURCE_DIR}/src/extern)
+add_executable(qmedia_test main.cc media_client_test.cc neo_client_test.cc ${PROJECT_SOURCE_DIR}/src/extern/neo_media_client.cc)
 
 target_include_directories(qmedia_test PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(qmedia_test PRIVATE qmedia doctest::doctest)

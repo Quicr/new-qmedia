@@ -77,17 +77,6 @@ extern "C"
         return media_client->add_video_stream_subscribe(media_type, callback);
     }
 
-    void MediaClient_RemoveMediaStream(void* instance, uint64_t /*media_stream_id*/)
-    {
-        if (!instance)
-        {
-            return;
-        }
-
-        // auto media_client = static_cast<qmedia::MediaClient *>(instance);
-        // media_client->remove_object_stream(media_stream_id);
-    }
-
     void MediaClient_sendAudio(void* instance,
                                uint64_t media_stream_id,
                                const char* buffer,
@@ -110,7 +99,7 @@ extern "C"
                                     const char* buffer,
                                     uint32_t length,
                                     uint64_t timestamp,
-                                    bool /*flag*/)        // groupid flag
+                                    bool groupidflag)
     {
         if (!instance)
         {
@@ -120,6 +109,28 @@ extern "C"
         auto media_client = static_cast<qmedia::MediaClient*>(instance);
 
         media_client->send_video_media(
-            media_stream_id, reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)), length, timestamp);
+            media_stream_id, reinterpret_cast<uint8_t*>(const_cast<char*>(buffer)), length, timestamp, groupidflag);
+    }
+    
+    void MediaClient_RemoveMediaSubscribeStream(void* instance, uint64_t media_stream_id)
+    {
+        if (!instance)
+        {
+            return;
+        }
+
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
+        media_client->remove_subscribe(media_stream_id);
+    }
+
+    void MediaClient_RemoveMediaPublishStream(void *instance, uint64_t media_stream_id)
+    {
+        if (!instance)
+        {
+            return;
+        }
+
+        auto media_client = static_cast<qmedia::MediaClient*>(instance);
+        media_client->remove_publish(media_stream_id);    
     }
 }
