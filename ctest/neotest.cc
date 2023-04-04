@@ -5,17 +5,20 @@
 
 #include <qmedia/neo_media_client.hh>
 
-void sub_cb(std::uint64_t id, std::uint8_t media_id, std::uint16_t client_id, std::uint8_t * /*data*/, std::uint32_t length, uint64_t /*timestamp*/)
+void sub_cb(std::uint64_t id,
+            std::uint8_t media_id,
+            std::uint16_t client_id,
+            std::uint8_t* /*data*/,
+            std::uint32_t length,
+            uint64_t /*timestamp*/)
 {
-    std::cerr << "callback id " << id << 
-        "\n\tlength " << length << 
-        "\n\tclient id " << std::hex << client_id <<
-        "\n\tmedia id " << (int)media_id << std::endl;
+    std::cerr << "callback id " << id << "\n\tlength " << length << "\n\tclient id " << std::hex << client_id
+              << "\n\tmedia id " << (int) media_id << std::endl;
 }
 
-int main(int /*argc*/, char ** /*argv*/)
+int main(int /*argc*/, char** /*argv*/)
 {
-    void *sub_handle = 0;
+    void* sub_handle = 0;
     MediaClient_Create("127.0.0.1", 1234, &sub_handle);
 
     std::uint64_t sub_audio_streamId = MediaClient_AddAudioStreamSubscribe(sub_handle, 1, sub_cb);
@@ -24,7 +27,7 @@ int main(int /*argc*/, char ** /*argv*/)
     std::cerr << "sub audio - id " << sub_audio_streamId << std::endl;
     std::cerr << "sub video - id " << sub_video_streamId << std::endl;
 
-    void *pub_handle = 0;
+    void* pub_handle = 0;
     MediaClient_Create("127.0.0.1", 1234, &pub_handle);
 
     std::uint64_t pub_audio_streamId = MediaClient_AddAudioStreamPublishIntent(pub_handle, 0x01, 0xABCD);
@@ -40,55 +43,27 @@ int main(int /*argc*/, char ** /*argv*/)
 
     int iterations = 0;
 
+    while (iterations <= 5)
+    {
+        MediaClient_sendAudio(pub_handle, pub_audio_streamId, abuffer, length, timestamp);
 
-    while(iterations <= 5) {
-        MediaClient_sendAudio(pub_handle,
-                          pub_audio_streamId,
-                          abuffer,
-                          length,
-                          timestamp);
-
-        MediaClient_sendVideoFrame(pub_handle,
-                          pub_video_streamId,
-                          vbuffer,
-                          length,
-                          timestamp, true);
+        MediaClient_sendVideoFrame(pub_handle, pub_video_streamId, vbuffer, length, timestamp, true);
         sleep(1);
         ++iterations;
     }
 
-
     MediaClient_RemoveMediaSubscribeStream(sub_handle, sub_audio_streamId);
 
+    MediaClient_sendAudio(pub_handle, pub_audio_streamId, abuffer, length, timestamp);
 
-    MediaClient_sendAudio(pub_handle,
-                        pub_audio_streamId,
-                        abuffer,
-                        length,
-                        timestamp);
+    MediaClient_sendVideoFrame(pub_handle, pub_video_streamId, vbuffer, length, timestamp, true);
 
-    MediaClient_sendVideoFrame(pub_handle,
-                        pub_video_streamId,
-                        vbuffer,
-                        length,
-                        timestamp, true);    
+    MediaClient_sendAudio(pub_handle, pub_audio_streamId, abuffer, length, timestamp);
 
+    MediaClient_sendVideoFrame(pub_handle, pub_video_streamId, vbuffer, length, timestamp, true);
 
-    MediaClient_sendAudio(pub_handle,
-                    pub_audio_streamId,
-                    abuffer,
-                    length,
-                    timestamp);
-
-    MediaClient_sendVideoFrame(pub_handle,
-                    pub_video_streamId,
-                    vbuffer,
-                    length,
-                    timestamp, true);
-
-    //MediaClient_RemoveMediaPublishStream(pub_handle, pub_video_streamId);                    
+    MediaClient_RemoveMediaPublishStream(pub_handle, pub_video_streamId);
 
     MediaClient_Destroy(sub_handle);
     MediaClient_Destroy(pub_handle);
-
 }

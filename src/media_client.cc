@@ -60,7 +60,7 @@ void MediaTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* q
  * delegate: onSubscribedObject
  *
  * On receiving subscribed object notification fields are extracted
- * from the quicr::name. These fields along with the notificaiton 
+ * from the quicr::name. These fields along with the notificaiton
  * data are passed to the client callback.
  */
 void MediaTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name,
@@ -99,22 +99,16 @@ void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& 
     std::cerr << "pub::onPublishIntentResponse" << std::endl;
 }
 
-
 /*
  * MediaClient
  *
  * Provides simple wrapper to QuicrClient. Provides a simplified audio/video stream interface with
  * callbacks for data.
- * 
+ *
  * MediaClient::MediaClient - constructor
  */
-MediaClient::MediaClient(const char* remote_address,
-                         std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol):
-    _streamId(0),
-    _orgId(0x00A11CEE),
-    _appId(0x00),
-    _confId(0x00F00001)
+MediaClient::MediaClient(const char* remote_address, std::uint16_t remote_port, quicr::RelayInfo::Protocol protocol) :
+    _streamId(0), _orgId(0x00A11CEE), _appId(0x00), _confId(0x00F00001)
 {
     quicr::RelayInfo relayInfo;
     relayInfo.hostname = remote_address;
@@ -129,7 +123,7 @@ MediaClient::MediaClient(const char* remote_address,
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
 
     // check to see if there is a timer thread...
-    keepalive_thread = std::thread(&MediaClient::periodic_resubscribe, this, 5); 
+    keepalive_thread = std::thread(&MediaClient::periodic_resubscribe, this, 5);
 }
 
 MediaClient::~MediaClient()
@@ -140,7 +134,7 @@ MediaClient::~MediaClient()
 void MediaClient::close()
 {
     stop = true;
-    keepalive_thread.join(); // waif for thread to go away...
+    keepalive_thread.join();        // waif for thread to go away...
 
     {
         const std::lock_guard<std::mutex> lock(pubsub_mutex);
@@ -148,7 +142,7 @@ void MediaClient::close()
         active_subscription_delegates.clear();
         active_publish_delegates.clear();
         subscriptions.clear();
-        publish_names.clear();        
+        publish_names.clear();
     }
 }
 
@@ -181,24 +175,18 @@ void MediaClient::periodic_resubscribe(const unsigned int seconds)
     }
 }
 
-void MediaClient::add_raw_subscribe(const quicr::Namespace&quicr_namespace, const std::shared_ptr<quicr::SubscriberDelegate>& delegate)
+void MediaClient::add_raw_subscribe(const quicr::Namespace& quicr_namespace,
+                                    const std::shared_ptr<quicr::SubscriberDelegate>& delegate)
 {
     quicr::bytes e2e;
-    quicRClient->subscribe(delegate, 
-                           quicr_namespace, 
-                           quicr::SubscribeIntent::immediate, 
-                           "", 
-                           false, 
-                           "", 
-                           std::move(e2e));
-
+    quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
 }
 
 MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
 {
-    const uint8_t mediaType = media_type;             // defined by client
-    const uint16_t clientId = 0;                      // 16
-    const uint64_t filler = 0;                        // 48
+    const uint8_t mediaType = media_type;        // defined by client
+    const uint16_t clientId = 0;                 // 16
+    const uint64_t filler = 0;                   // 48
 
     MediaStreamId streamid = ++_streamId;
 
@@ -209,13 +197,13 @@ MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, Subscri
 
     auto delegate = std::make_shared<MediaTransportSubDelegate>(streamid, quicr_namespace, callback);
     auto subscription = std::make_shared<MediaSubscription>(
-    MediaSubscription{delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", quicr::bytes()});  
+        MediaSubscription{delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", quicr::bytes()});
     add_raw_subscribe(quicr_namespace, delegate);
 
     {
-        const std::lock_guard<std::mutex> lock(pubsub_mutex);   
+        const std::lock_guard<std::mutex> lock(pubsub_mutex);
         active_subscription_delegates.insert({streamid, delegate});
-        subscriptions.insert({streamid, subscription});    
+        subscriptions.insert({streamid, subscription});
     }
     return streamid;
 }
@@ -246,16 +234,15 @@ MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint
     auto delegate = std::make_shared<MediaTransportPubDelegate>(streamid);
     auto publishIntent = std::make_shared<PublishIntent>(PublishIntent{ns, ""});
 
-   {
-        const std::lock_guard<std::mutex> lock(pubsub_mutex);      
+    {
+        const std::lock_guard<std::mutex> lock(pubsub_mutex);
         active_publish_delegates.insert({streamid, delegate});
-        publish_intents.insert({streamid, publishIntent});        
+        publish_intents.insert({streamid, publishIntent});
         publish_names.insert({streamid, quicr_name});
-   }
+    }
 
-    // quicr::bytes e2e;
-    // quicr::Namespace quicr_namespace{{nstring},60}; // build namespace
-    // quicRClient->publishIntent(delegate, ns, "", "", std::move(e2e));
+    quicr::bytes e2e;
+    quicRClient->publishIntent(delegate, ns, "", "", std::move(e2e));
 
     return streamid;
 }
@@ -306,11 +293,9 @@ void MediaClient::remove_subscribe(MediaStreamId streamid)
         auto subscription = sub_itr->second;
         if (quicRClient)
         {
-            quicRClient->unsubscribe(subscription->quicr_namespace,
-                subscription->origin_url,
-                subscription->auth_token);
+            quicRClient->unsubscribe(subscription->quicr_namespace, subscription->origin_url, subscription->auth_token);
         }
-          
+
         // remove sub delegate
         active_subscription_delegates.erase(streamid);
         subscriptions.erase(streamid);
@@ -320,13 +305,13 @@ void MediaClient::remove_subscribe(MediaStreamId streamid)
 
 void MediaClient::send_raw(const quicr::Name& quicr_name, uint8_t* data, std::uint32_t length)
 {
-    quicr::bytes b(data, data+length);
+    quicr::bytes b(data, data + length);
     quicRClient->publishNamedObject(quicr_name, 0, 0, false, std::move(b));
 }
 
 void MediaClient::send_audio_media(MediaStreamId streamid, uint8_t* data, std::uint32_t length, std::uint64_t timestamp)
 {
-    const std::lock_guard<std::mutex> lock(pubsub_mutex);     
+    const std::lock_guard<std::mutex> lock(pubsub_mutex);
     if (publish_names.find(streamid) == publish_names.end())
     {
         std::cerr << "ERROR: send_audio_media - could not find publish name "
@@ -353,7 +338,7 @@ void MediaClient::send_video_media(MediaStreamId streamid,
                                    std::uint64_t timestamp,
                                    bool groupidflag)
 {
-    const std::lock_guard<std::mutex> lock(pubsub_mutex);     
+    const std::lock_guard<std::mutex> lock(pubsub_mutex);
     if (publish_names.find(streamid) == publish_names.end())
     {
         std::cerr << "ERROR: send_video_media - could not find publish name "
@@ -382,6 +367,5 @@ void MediaClient::send_video_media(MediaStreamId streamid,
 
     publish_names[streamid] = quicr_name;
 }
-
 
 }        // namespace qmedia
