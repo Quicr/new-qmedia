@@ -11,6 +11,9 @@
 #include <quicr/quicr_client.h>
 #include <transport/logger.h>
 
+#include <thread>
+#include <mutex>
+
 namespace qmedia
 {
 
@@ -22,9 +25,6 @@ typedef void(* SubscribeCallback)(uint64_t id,
                                   uint64_t timestamp);
 
 using MediaStreamId = uint64_t;
-
-// typedef void(CALL *SubscribeCallback)(uint64_t id, uint8_t *data, uint32_t
-// length);
 
 class MediaTransportSubDelegate : public quicr::SubscriberDelegate
 {
@@ -64,11 +64,34 @@ private:
 
 class MediaClient
 {
+private:
+    struct MediaSubscription {
+        const std::shared_ptr<MediaTransportSubDelegate> sub_delegate;
+        const quicr::Namespace quicr_namespace;
+        const quicr::SubscribeIntent intent;
+        const std::string origin_url;
+        const bool use_reliable_transport;
+        const std::string auth_token;
+        quicr::bytes e2e_token;
+    };
+
+    struct PublishIntent {
+        const quicr::Namespace quicr_namespace;        
+        const std::string auth_token;
+    };
+
 public:
     explicit MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
                          quicr::RelayInfo::Protocol protocol);
 
+    ~MediaClient();
+
+    void close();
+
+    void periodic_resubscribe(const unsigned int seconds);                         
+
+    void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
     MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
     MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
     MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
@@ -82,9 +105,8 @@ public:
     void remove_audio_publish(MediaStreamId streamId);
 
     void remove_subscribe(MediaStreamId streamId);
-    void remove_video_subscribe(MediaStreamId streamId);
-    void remove_audio_subscribe(MediaStreamId streamId);
 
+    void send_raw(const quicr::Name &quicr_name, uint8_t* data, std::uint32_t length);
     void send_audio_media(MediaStreamId streamid, uint8_t* data, std::uint32_t length, std::uint64_t timestamp);
     void send_video_media(MediaStreamId streamid,
                           uint8_t* data,
@@ -93,19 +115,30 @@ public:
                           bool groupidflag = false);
 
 private:
-    std::uint32_t _streamId;
 
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
 
-    std::map<MediaStreamId, quicr::Name> publish_names;
-
+private:
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 
+    MediaStreamId _streamId;
+
+    std::mutex pubsub_mutex;
+    std::thread keepalive_thread;    
+    bool stop;    
+
+    std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
+    std::map<MediaStreamId, std::shared_ptr<MediaSubscription>> subscriptions;
+
+    std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
+    std::map<MediaStreamId, std::shared_ptr<PublishIntent>> publish_intents;
+    std::map<MediaStreamId, quicr::Name> publish_names;
+
+    // SAH - these are temporary until `Manifests`
     const uint32_t _orgId;
     const uint8_t _appId;
     const uint32_t _confId;
 
+    // SAH - don't like having to use `transport` logger
     qtransport::LogHandler logger;
 };
 
