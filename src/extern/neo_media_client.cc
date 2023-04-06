@@ -4,7 +4,7 @@
 
 extern "C"
 {
-    void MediaClient_Create(const char* remote_address, uint16_t remote_port, void** media_client)
+    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, void** media_client)
     {
         if (!media_client || !remote_address)
         {
@@ -13,7 +13,7 @@ extern "C"
 
         // Create media library.
         auto client = std::make_unique<qmedia::MediaClient>(
-            remote_address, remote_port, quicr::RelayInfo::Protocol::QUIC);
+            remote_address, remote_port, static_cast<quicr::RelayInfo::Protocol>(protocol));
 
         *media_client = client.release();
     }

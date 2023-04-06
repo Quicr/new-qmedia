@@ -15,7 +15,7 @@ typedef void (*SubscribeCallback)(uint64_t id,
 extern "C"
 {
 #endif
-    void MediaClient_Create(const char* remote_address, uint16_t remote_port, void** media_client);
+    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, void** media_client);
 
     void MediaClient_Destroy(void* media_client);
 
