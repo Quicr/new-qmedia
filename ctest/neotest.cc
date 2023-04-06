@@ -18,8 +18,10 @@ void sub_cb(std::uint64_t id,
 
 int main(int /*argc*/, char** /*argv*/)
 {
+    uint8_t protocol = 1;
+
     void* sub_handle = 0;
-    MediaClient_Create("127.0.0.1", 1234, &sub_handle);
+    MediaClient_Create("127.0.0.1", 1234, protocol /*QUIC*/, &sub_handle);
 
     std::uint64_t sub_audio_streamId = MediaClient_AddAudioStreamSubscribe(sub_handle, 1, sub_cb);
     std::uint64_t sub_video_streamId = MediaClient_AddVideoStreamSubscribe(sub_handle, 2, sub_cb);
@@ -28,7 +30,7 @@ int main(int /*argc*/, char** /*argv*/)
     std::cerr << "sub video - id " << sub_video_streamId << std::endl;
 
     void* pub_handle = 0;
-    MediaClient_Create("127.0.0.1", 1234, &pub_handle);
+    MediaClient_Create("127.0.0.1", 1234, protocol /*QUIC*/, &pub_handle);
 
     std::uint64_t pub_audio_streamId = MediaClient_AddAudioStreamPublishIntent(pub_handle, 0x01, 0xABCD);
     std::uint64_t pub_video_streamId = MediaClient_AddVideoStreamPublishIntent(pub_handle, 0x02, 0xABCD);

@@ -11,19 +11,19 @@ void sub_cb(std::uint64_t id, std::uint8_t media_id, std::uint16_t client_id, st
         "\n\tmedia id " << (int)media_id << std::endl;
 }
 
-TEST_CASE("neo create and destroy")
+TEST_CASE("neo create and destroy (UDP)")
 {
     void *media_client;
-    MediaClient_Create("127.0.0.1", 1234, &media_client);
+    MediaClient_Create("127.0.0.1", 1234, 0, &media_client);
     CHECK_NE(media_client, nullptr);
 
     MediaClient_Destroy(media_client);
 }
 
-TEST_CASE("neo subscribe")
+TEST_CASE("neo subscribe  (UDP)")
 {
     void *media_client;
-    MediaClient_Create("127.0.0.1", 1234, &media_client);
+    MediaClient_Create("127.0.0.1", 1234, 0, &media_client);
     CHECK_NE(media_client, nullptr);    
 
     uint64_t audioStreamSubId = MediaClient_AddAudioStreamSubscribe(media_client, 0x80, sub_cb);
