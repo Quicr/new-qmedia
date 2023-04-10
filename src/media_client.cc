@@ -75,7 +75,7 @@ void MediaTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
     const std::uint8_t* tsbytes = &data[offset];
     timestamp = *reinterpret_cast<const std::uint64_t*>(tsbytes);
 
-    std::cerr << "onSubscribedObject " << quicr_name << std::endl;
+    //std::cerr << "onSubscribedObject " << quicr_name << std::endl;
 
     auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicr_name);
     callback(id, mediaType, clientId, data.data(), data.size() - sizeof(std::uint64_t), timestamp);
