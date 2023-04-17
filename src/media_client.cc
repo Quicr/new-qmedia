@@ -117,7 +117,9 @@ MediaClient::MediaClient(const char* remote_address, std::uint16_t remote_port, 
 
 
 
-    qtransport::TransportConfig tcfg { .tls_cert_filename = NULL, .tls_key_filename = NULL };
+    qtransport::TransportConfig tcfg { .tls_cert_filename = NULL,
+                                     .tls_key_filename = NULL,
+                                     .data_queue_size = 100 };
 
     // Bridge to external logging.
     quicRClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
