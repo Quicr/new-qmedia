@@ -14,7 +14,7 @@ target_compile_options( neotest
 
 set_target_properties( neotest
         PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
@@ -30,7 +30,7 @@ target_compile_options(ctest
 
 set_target_properties(ctest
     PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
