@@ -197,7 +197,7 @@ MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, Subscri
 
     MediaStreamId streamid = ++_streamId;
 
-    const quicr::Name name = client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler);
+    const quicr::Name name(client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler));
 
     std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 4;        // orgId + appId  + confId +  mediaType
     quicr::Namespace quicr_namespace{name, namespace_mask_bits};
@@ -235,7 +235,7 @@ MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint
     const uint64_t uniqueId = time;              // 48 - using time for now
     MediaStreamId streamid = ++_streamId;
 
-    const quicr::Name quicr_name = client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, uniqueId);
+    const quicr::Name quicr_name(client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, uniqueId));
     quicr::Namespace ns({quicr_name}, 60);
 
     auto delegate = std::make_shared<MediaTransportPubDelegate>(streamid);
