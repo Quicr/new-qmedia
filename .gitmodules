@@ -1,6 +1,6 @@
 [submodule "dependencies/libquicr"]
 	path = dependencies/libquicr
-	url = git@github.com:Quicr/new-libquicr.git
+	url = git@github.com:Quicr/libquicr.git
 	branch = main
 [submodule "dependencies/doctest"]
 	path = dependencies/doctest
