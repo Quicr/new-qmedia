@@ -94,9 +94,9 @@ public:
     void periodic_resubscribe(const unsigned int seconds);
 
     void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
-    MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
+    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
+    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
 
     MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
     MediaStreamId add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id);

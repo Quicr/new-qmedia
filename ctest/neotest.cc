@@ -23,8 +23,8 @@ int main(int /*argc*/, char** /*argv*/)
     void* sub_handle = 0;
     MediaClient_Create("127.0.0.1", 1234, protocol /*QUIC*/, &sub_handle);
 
-    std::uint64_t sub_audio_streamId = MediaClient_AddAudioStreamSubscribe(sub_handle, 1, sub_cb);
-    std::uint64_t sub_video_streamId = MediaClient_AddVideoStreamSubscribe(sub_handle, 2, sub_cb);
+    std::uint64_t sub_audio_streamId = MediaClient_AddAudioStreamSubscribe(sub_handle, 1, 8, sub_cb);
+    std::uint64_t sub_video_streamId = MediaClient_AddVideoStreamSubscribe(sub_handle, 2, 9, sub_cb);
 
     std::cerr << "sub audio - id " << sub_audio_streamId << std::endl;
     std::cerr << "sub video - id " << sub_video_streamId << std::endl;

@@ -183,10 +183,10 @@ void MediaClient::add_raw_subscribe(const quicr::Namespace& quicr_namespace,
     quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
 }
 
-MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
 {
     const uint8_t mediaType = media_type;        // defined by client
-    const uint16_t clientId = 0;                 // 16
+    const uint16_t clientId = client_id;                 // 16
     const uint64_t filler = 0;                   // 48
 
     MediaStreamId streamid = ++_streamId;
@@ -214,15 +214,15 @@ MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, Subscri
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
 {
-    return add_stream_subscribe(media_type, callback);
+    return add_stream_subscribe(media_type, client_id, callback);
 }
 
 // TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback)
+MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
 {
-    return add_stream_subscribe(media_type, callback);
+    return add_stream_subscribe(media_type, client_id, callback);
 }
 
 MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
