@@ -13,6 +13,7 @@
 
 #include <thread>
 #include <mutex>
+#include "../../src/basicLogger.h"
 
 namespace qmedia
 {
@@ -139,7 +140,7 @@ private:
     const uint32_t _confId;
 
     // SAH - don't like having to use `transport` logger
-    qtransport::LogHandler logger;
+    basicLogger logger;
 };
 
 }        // namespace qmedia

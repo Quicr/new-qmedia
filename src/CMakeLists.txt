@@ -1,4 +1,5 @@
 add_library(${PROJECT_NAME}
+    basicLogger.cpp
     media_client.cc
 )
 
