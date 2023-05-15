@@ -146,10 +146,10 @@ void MediaClient::close()
     stop = true;
     keepalive_thread.join();        // waif for thread to go away...
 
-    quicRClient.reset();
-
     {
         const std::lock_guard<std::mutex> lock(pubsub_mutex);
+        quicRClient.reset();
+
         // remove items from containers
         active_subscription_delegates.clear();
         active_publish_delegates.clear();
