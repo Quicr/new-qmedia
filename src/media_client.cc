@@ -145,7 +145,6 @@ void MediaClient::close()
 
     stop = true;
     keepalive_thread.join();
-    quicRClient.reset();
 }
 
 void MediaClient::periodic_resubscribe(const unsigned int seconds)
