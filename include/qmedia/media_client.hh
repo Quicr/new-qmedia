@@ -117,12 +117,12 @@ public:
                           bool groupidflag = false);
 
 private:
-    std::shared_ptr<quicr::QuicRClient> quicRClient;
-
     std::map<MediaStreamId, std::shared_ptr<MediaSubscription>> subscriptions;
 
     std::map<MediaStreamId, std::shared_ptr<MediaPublishIntent>> publish_intents;
     std::map<MediaStreamId, quicr::Name> publications;
+
+    std::shared_ptr<quicr::QuicRClient> quicRClient;
 
     MediaStreamId _streamId;
 
