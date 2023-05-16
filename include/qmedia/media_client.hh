@@ -122,6 +122,7 @@ private:
     std::map<MediaStreamId, std::shared_ptr<MediaPublishIntent>> publish_intents;
     std::map<MediaStreamId, quicr::Name> publications;
 
+    basicLogger logger;
     std::shared_ptr<quicr::QuicRClient> quicRClient;
 
     MediaStreamId _streamId;
@@ -136,7 +137,6 @@ private:
     const uint32_t _confId;
 
     // SAH - don't like having to use `transport` logger
-    basicLogger logger;
 };
 
 }        // namespace qmedia
