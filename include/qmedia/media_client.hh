@@ -47,7 +47,7 @@ public:
 private:
     bool canReceiveSubs;
     MediaStreamId id;
-    quicr::Namespace quicr_namespace;
+    [[maybe_unused]] quicr::Namespace quicr_namespace;
     SubscribeCallback callback;
 };
 
@@ -66,7 +66,7 @@ class MediaClient
 {
 private:
     struct MediaSubscription {
-        const std::shared_ptr<MediaTransportSubDelegate> sub_delegate;
+        const std::shared_ptr<MediaTransportSubDelegate> delegate;
         const quicr::Namespace quicr_namespace;
         const quicr::SubscribeIntent intent;
         const std::string origin_url;
@@ -75,8 +75,9 @@ private:
         quicr::bytes e2e_token;
     };
 
-    struct PublishIntent {
-        const quicr::Namespace quicr_namespace;        
+    struct MediaPublishIntent {
+        const std::shared_ptr<MediaTransportPubDelegate> delegate;
+        const quicr::Namespace quicr_namespace;
         const std::string auth_token;
     };
 
@@ -89,7 +90,7 @@ public:
 
     void close();
 
-    void periodic_resubscribe(const unsigned int seconds);                         
+    void periodic_resubscribe(const unsigned int seconds);
 
     void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
     MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
@@ -115,23 +116,18 @@ public:
                           bool groupidflag = false);
 
 private:
-
-
-private:
     std::shared_ptr<quicr::QuicRClient> quicRClient;
+
+    std::map<MediaStreamId, std::shared_ptr<MediaSubscription>> subscriptions;
+
+    std::map<MediaStreamId, std::shared_ptr<MediaPublishIntent>> publish_intents;
+    std::map<MediaStreamId, quicr::Name> publications;
 
     MediaStreamId _streamId;
 
     std::mutex pubsub_mutex;
-    std::thread keepalive_thread;    
-    bool stop;    
-
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportSubDelegate>> active_subscription_delegates;
-    std::map<MediaStreamId, std::shared_ptr<MediaSubscription>> subscriptions;
-
-    std::map<MediaStreamId, std::shared_ptr<MediaTransportPubDelegate>> active_publish_delegates;
-    std::map<MediaStreamId, std::shared_ptr<PublishIntent>> publish_intents;
-    std::map<MediaStreamId, quicr::Name> publish_names;
+    std::thread keepalive_thread;
+    bool stop;
 
     // SAH - these are temporary until `Manifests`
     const uint32_t _orgId;
