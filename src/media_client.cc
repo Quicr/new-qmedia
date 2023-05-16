@@ -2,6 +2,7 @@
 #include <quicr/hex_endec.h>
 #include <transport/logger.h>
 #include <chrono>
+#include "basicLogger.h"
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> client_name_format;
@@ -140,6 +141,8 @@ MediaClient::~MediaClient()
 
 void MediaClient::close()
 {
+    std::cerr << "Closing media client" << std::endl;
+
     stop = true;
     keepalive_thread.join();
 }
