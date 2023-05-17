@@ -94,13 +94,9 @@ public:
     void periodic_resubscribe(const unsigned int seconds);
 
     void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
-    MediaStreamId add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
 
-    MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
-    MediaStreamId add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
-    MediaStreamId add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_publish_intent(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id);
 
     void remove_publish(MediaStreamId streamId);
     void remove_video_publish(MediaStreamId streamId);
@@ -134,9 +130,6 @@ private:
     // SAH - these are temporary until `Manifests`
     const uint32_t _orgId;
     const uint8_t _appId;
-    const uint32_t _confId;
-
-    // SAH - don't like having to use `transport` logger
 };
 
 }        // namespace qmedia

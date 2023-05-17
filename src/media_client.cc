@@ -109,7 +109,7 @@ void MediaTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& 
  * MediaClient::MediaClient - constructor
  */
 MediaClient::MediaClient(const char* remote_address, std::uint16_t remote_port, quicr::RelayInfo::Protocol protocol) :
-    _streamId(0), _orgId(0x00A11CEE), _appId(0x00), _confId(0x00F00001)
+    _streamId(0), _orgId(0x00A11CEE), _appId(0x00)
 {
     quicr::RelayInfo relayInfo;
     relayInfo.hostname = remote_address;
@@ -183,15 +183,12 @@ void MediaClient::add_raw_subscribe(const quicr::Namespace& quicr_namespace,
     quicRClient->subscribe(delegate, quicr_namespace, quicr::SubscribeIntent::immediate, "", false, "", std::move(e2e));
 }
 
-MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
+MediaStreamId MediaClient::add_stream_subscribe(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
 {
-    const uint8_t mediaType = media_type;        // defined by client
-    const uint16_t clientId = client_id;                 // 16
-    const uint64_t filler = 0;                   // 48
-
     MediaStreamId streamid = ++_streamId;
 
-    const quicr::Name name(client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, filler));
+    const uint64_t filler = 0; // 48 bits
+    const quicr::Name name(client_name_format.Encode(_orgId, _appId, conf_id, media_type, client_id, filler));
 
     std::uint8_t namespace_mask_bits = 24 + 8 + 24 + 8 + 16;        // orgId + appId  + confId +  mediaType
     quicr::Namespace quicr_namespace{name, namespace_mask_bits};
@@ -213,27 +210,12 @@ MediaStreamId MediaClient::add_stream_subscribe(std::uint8_t media_type, std::ui
     return streamid;
 }
 
-// TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_audio_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
+MediaStreamId MediaClient::add_publish_intent(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id)
 {
-    return add_stream_subscribe(media_type, client_id, callback);
-}
-
-// TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_video_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback)
-{
-    return add_stream_subscribe(media_type, client_id, callback);
-}
-
-MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
-{
-    auto time = std::time(0);
-    const uint8_t mediaType = media_type;        // defined by client
-    const uint16_t clientId = client_id;         // 16
-    const uint64_t uniqueId = time;              // 48 - using time for now
+    const uint64_t uniqueId = std::time(0); // 48 bits - using time for now
     MediaStreamId streamid = ++_streamId;
 
-    const quicr::Name quicr_name(client_name_format.Encode(_orgId, _appId, _confId, mediaType, clientId, uniqueId));
+    const quicr::Name quicr_name(client_name_format.Encode(_orgId, _appId, conf_id, media_type, client_id, uniqueId));
     quicr::Namespace ns({quicr_name}, 80);
 
     auto delegate = std::make_shared<MediaTransportPubDelegate>(streamid);
@@ -249,18 +231,6 @@ MediaStreamId MediaClient::add_publish_intent(std::uint8_t media_type, std::uint
     quicRClient->publishIntent(delegate, ns, "", "", std::move(e2e));
 
     return streamid;
-}
-
-// TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
-{
-    return add_publish_intent(media_type, client_id);
-}
-
-// TODO: Figure out if this needs specialisation
-MediaStreamId MediaClient::add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id)
-{
-    return add_publish_intent(media_type, client_id);
 }
 
 void MediaClient::remove_publish(MediaStreamId streamid)
