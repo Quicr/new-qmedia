@@ -43,6 +43,14 @@ public:
                                     bool use_reliable_transport,
                                     quicr::bytes&& data);
 
+    virtual void onSubscribedObjectFragment(const quicr::Name&,
+                                          uint8_t,
+                                          uint16_t,
+                                          bool,
+                                          const uint64_t&,
+                                          bool,
+                                          quicr::bytes&&) {}
+
     bool isActive() { return canReceiveSubs; }
 
 private:
