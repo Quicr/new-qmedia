@@ -43,6 +43,14 @@ public:
                                     bool use_reliable_transport,
                                     quicr::bytes&& data);
 
+    virtual void onSubscribedObjectFragment(const quicr::Name&,
+                                          uint8_t,
+                                          uint16_t,
+                                          bool,
+                                          const uint64_t&,
+                                          bool,
+                                          quicr::bytes&&) {}
+
     bool isActive() { return canReceiveSubs; }
 
 private:
@@ -85,7 +93,8 @@ private:
 public:
     explicit MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol);
+                         quicr::RelayInfo::Protocol protocol,
+                         std::uint32_t conf_id);
 
     ~MediaClient();
 
@@ -94,13 +103,9 @@ public:
     void periodic_resubscribe(const unsigned int seconds);
 
     void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
-    MediaStreamId add_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
-    MediaStreamId add_audio_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
-    MediaStreamId add_video_stream_subscribe(std::uint8_t media_type, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
 
     MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
-    MediaStreamId add_audio_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
-    MediaStreamId add_video_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
 
     void remove_publish(MediaStreamId streamId);
     void remove_video_publish(MediaStreamId streamId);
@@ -135,8 +140,6 @@ private:
     const uint32_t _orgId;
     const uint8_t _appId;
     const uint32_t _confId;
-
-    // SAH - don't like having to use `transport` logger
 };
 
 }        // namespace qmedia

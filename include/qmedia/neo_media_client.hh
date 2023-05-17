@@ -15,17 +15,12 @@ typedef void (*SubscribeCallback)(uint64_t id,
 extern "C"
 {
 #endif
-    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, void** media_client);
+    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, uint32_t conf_id, void** media_client);
 
     void MediaClient_Destroy(void* media_client);
 
-    uint64_t MediaClient_AddAudioStreamPublishIntent(void* instance, uint8_t media_type, uint16_t client_id);
-
-    uint64_t MediaClient_AddAudioStreamSubscribe(void* instance, uint8_t media_type, SubscribeCallback callback);
-
-    uint64_t MediaClient_AddVideoStreamPublishIntent(void* instance, uint8_t media_type, uint16_t client_id);
-
-    uint64_t MediaClient_AddVideoStreamSubscribe(void* instance, uint8_t media_type, SubscribeCallback callback);
+    uint64_t MediaClient_AddStreamPublishIntent(void* instance, uint8_t media_type, uint16_t client_id);
+    uint64_t MediaClient_AddStreamSubscribe(void* instance, uint8_t media_type, uint16_t client_id, SubscribeCallback callback);
 
     void MediaClient_RemoveMediaSubscribeStream(void* instance, uint64_t media_stream_id);
     void MediaClient_RemoveMediaPublishStream(void *instance, uint64_t media_stream_id);

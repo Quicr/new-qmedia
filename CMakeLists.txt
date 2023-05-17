@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(qmedia VERSION 0.1.1 LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(QMEDIA_BUILD_TESTS "Build tests for quicr" ON)
@@ -44,15 +45,13 @@ add_subdirectory(src)
 
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
   add_subdirectory(cmd)
-endif()
-
-if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
   add_subdirectory(ctest)
 endif()
 
 ###
 ### Tests
 ###
+
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
     include(CTest)
     add_subdirectory(test)

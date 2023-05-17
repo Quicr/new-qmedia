@@ -17,10 +17,10 @@ void subscribe_callback(uint64_t id,
 
 int main(int /*argc*/, char** /*arg*/)
 {
-    qmedia::MediaClient subClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP);
-    qmedia::MediaClient pubClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP);
+    qmedia::MediaClient subClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP, 1);
+    qmedia::MediaClient pubClient("127.0.0.1", 1234, quicr::RelayInfo::Protocol::UDP, 1);
 
-    subClient.add_stream_subscribe(1, subscribe_callback);
+    subClient.add_stream_subscribe(1, 4, subscribe_callback);
 
     uint8_t buffer[256];
     pubClient.send_audio_media(1, buffer, 256, 0);
