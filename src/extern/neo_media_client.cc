@@ -4,14 +4,14 @@
 
 extern "C"
 {
-    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, void** media_client)
+    void MediaClient_Create(const char* remote_address, uint16_t remote_port, uint8_t protocol, uint32_t conf_id, void** media_client)
     {
         if (!media_client || !remote_address)
         {
             return;
         }
 
-        *media_client = new qmedia::MediaClient(remote_address, remote_port, static_cast<quicr::RelayInfo::Protocol>(protocol));
+        *media_client = new qmedia::MediaClient(remote_address, remote_port, static_cast<quicr::RelayInfo::Protocol>(protocol), conf_id);
     }
 
     void MediaClient_Destroy(void* media_client)
@@ -19,17 +19,17 @@ extern "C"
         delete (qmedia::MediaClient*) media_client;
     }
 
-    uint64_t MediaClient_AddStreamPublishIntent(void* instance, uint32_t conf_id, uint8_t media_type, uint16_t client_id)
+    uint64_t MediaClient_AddStreamPublishIntent(void* instance, uint8_t media_type, uint16_t client_id)
     {
         if (!instance)
         {
             return 0;        // invalid
         }
         auto media_client = static_cast<qmedia::MediaClient*>(instance);
-        return media_client->add_publish_intent(conf_id, media_type, client_id);
+        return media_client->add_publish_intent(media_type, client_id);
     }
 
-    uint64_t MediaClient_AddStreamSubscribe(void* instance, uint32_t conf_id, uint8_t media_type, uint16_t client_id, SubscribeCallback callback)
+    uint64_t MediaClient_AddStreamSubscribe(void* instance, uint8_t media_type, uint16_t client_id, SubscribeCallback callback)
     {
         if (!instance)
         {
@@ -37,7 +37,7 @@ extern "C"
         }
 
         auto media_client = static_cast<qmedia::MediaClient*>(instance);
-        return media_client->add_stream_subscribe(conf_id, media_type, client_id, callback);
+        return media_client->add_stream_subscribe(media_type, client_id, callback);
     }
 
     void MediaClient_sendAudio(void* instance,

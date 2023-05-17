@@ -85,7 +85,8 @@ private:
 public:
     explicit MediaClient(const char* remote_address,
                          std::uint16_t remote_port,
-                         quicr::RelayInfo::Protocol protocol);
+                         quicr::RelayInfo::Protocol protocol,
+                         std::uint32_t conf_id);
 
     ~MediaClient();
 
@@ -94,9 +95,9 @@ public:
     void periodic_resubscribe(const unsigned int seconds);
 
     void add_raw_subscribe(const quicr::Namespace&, const std::shared_ptr<quicr::SubscriberDelegate>& delegate);
-    MediaStreamId add_stream_subscribe(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
+    MediaStreamId add_stream_subscribe(std::uint8_t media_type, std::uint16_t client_id, SubscribeCallback callback);
 
-    MediaStreamId add_publish_intent(std::uint32_t conf_id, std::uint8_t media_type, std::uint16_t client_id);
+    MediaStreamId add_publish_intent(std::uint8_t media_type, std::uint16_t client_id);
 
     void remove_publish(MediaStreamId streamId);
     void remove_video_publish(MediaStreamId streamId);
@@ -130,6 +131,7 @@ private:
     // SAH - these are temporary until `Manifests`
     const uint32_t _orgId;
     const uint8_t _appId;
+    const uint32_t _confId;
 };
 
 }        // namespace qmedia
