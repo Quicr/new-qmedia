@@ -44,7 +44,6 @@ add_subdirectory(src)
 ###
 
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
-  add_subdirectory(cmd)
   add_subdirectory(ctest)
 endif()
 

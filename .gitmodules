@@ -5,3 +5,10 @@
 [submodule "dependencies/doctest"]
 	path = dependencies/doctest
 	url = https://github.com/doctest/doctest.git
+[submodule "dependencies/numero-uri"]
+	path = dependencies/numero-uri
+	url = git@github.com:Quicr/numero-uri.git
+        branch = manifest
+[submodule "dependencies/json"]
+	path = dependencies/json
+	url = https://github.com/nlohmann/json
