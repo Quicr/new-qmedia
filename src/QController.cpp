@@ -47,11 +47,11 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
                                      .data_queue_size = 200 };
 
     // Bridge to external logging.
-    quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger); 
+    quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
     if (quicrClient == nullptr)
     {
         return -1;
-    }                        
+    }
     return 0;
 }
 
@@ -64,8 +64,10 @@ quicr::Namespace QController::quicrNamespaceUrlParse(const std::string& quicrNam
         bits += bitCount;
     }
     quicr::Name encoded = encoder.EncodeUrl(quicrNamespaceUrl);
-    quicr::Namespace quicrNamespace{encoded,bits};
-    return quicrNamespace;                                  
+    quicr::Name DELETE_ME = ((encoded << 32) >> 32) | 0xA11CEE00000000000000000000000000_name;
+
+    quicr::Namespace quicrNamespace{DELETE_ME, bits};
+    return quicrNamespace;
 }
 
 /////////////
@@ -199,7 +201,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                   quicr::bytes&& /*payload*/)
 {
     auto quicrPubDelegate = createQuicrPublicationDelegate(sourceId, quicrNamespace, qDelegate);
-    if (quicrPubDelegate != nullptr) 
+    if (quicrPubDelegate != nullptr)
     {
         quicr::bytes e2e;
         // add more intent parameters - max queue size (in time), default ttl, priority
@@ -215,7 +217,7 @@ int QController::processSubscriptions(json& subscriptions)
     for (auto& subscription : subscriptions)
     {
         for (auto& profile : subscription["profileSet"]["profiles"])
-        {          
+        {
             // get namespace from manitfest
             quicr::Namespace quicrNamespace = quicrNamespaceUrlParse(profile["quicrNamespaceUrl"]);
 
@@ -310,7 +312,7 @@ int QController::processPublications(json& publications)
 }
 
 int QController::updateManifest(const std::string manifest)
-{   
+{
     std::cerr << "Manifest: " << manifest << std::endl;
     // parse manifest
     auto manifest_object = json::parse(manifest);

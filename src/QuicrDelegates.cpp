@@ -16,10 +16,10 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
 /*
  * delegate: onSubscribeResponse
  */
-void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
+void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& quicr_namespace,
                                                     const quicr::SubscribeResult& /* result */)
 {
-    std::cerr << "onSubscibeResponse" << std::endl;
+    std::cerr << "onSubscibeResponse for " << quicr_namespace << std::endl;
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeResponse");
 }
 
@@ -51,6 +51,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
     //const std::uint8_t* tsbytes = &data[offset];
     //timestamp = *reinterpret_cast<const std::uint64_t*>(tsbytes);
 
+    std::cerr << "onSubscibedObject" << std::endl;
     qDelegate->subscribedObject(std::move(data));
 }
 
