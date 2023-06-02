@@ -51,6 +51,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
     //const std::uint8_t* tsbytes = &data[offset];
     //timestamp = *reinterpret_cast<const std::uint64_t*>(tsbytes);
 
+    logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
     qDelegate->subscribedObject(std::move(data));
 }
 
