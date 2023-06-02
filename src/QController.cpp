@@ -4,10 +4,9 @@
 
 
 #include <iostream>
-/*
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 48> client_name_format;
-*/
+
 namespace qmedia
 {
 
@@ -55,6 +54,51 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
     return 0;
 }
 
+int QController::disconnect() 
+{
+    if (quicrClient)
+    {
+        // close...
+    }
+}
+
+/*
+void QController::publishNamedObject(const quicr::Name& quicrName, void *data, int len)
+{
+    // lock
+    if (quicrClient)
+    {
+        
+        quicrClient->publishNamedObject(const quicr::Name& quicr_name,
+                        uint8_t priority,
+                        uint16_t expiry_age_ms,
+                        bool use_reliable_transport,
+                        bytes&& data);
+    }
+}*/
+
+void QController::publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t *data, std::size_t len)
+{
+    if (qPublicationsMap.count(quicrNamespace))
+    {
+        auto publicationDelegate = qPublicationsMap.at(quicrNamespace);
+        if (publicationDelegate)
+        {
+            publicationDelegate->publishNamedObject(this->quicrClient, data, len);
+        }
+    }
+}
+void QController::publishNamedObjectTest(std::uint8_t *data, std::size_t len)
+{
+    if (qPublicationsMap.size() > 0)
+    {
+        auto quicrNamespace = qPublicationsMap.begin()->first;
+        auto publicationDelegate = qPublicationsMap.begin()->second;
+        publicationDelegate->publishNamedObject(this->quicrClient, data, len);
+    }
+}
+
+
 quicr::Namespace QController::quicrNamespaceUrlParse(const std::string& quicrNamespaceUrl)
 {
     auto encodedTemplate = encoder.GetTemplate(1).at(1);
@@ -89,7 +133,7 @@ QController::createQuicrSubsciptionDelegate(const std::string sourceId,
                                             std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate)
 {
     std::lock_guard<std::mutex> _(subsMutex);
-    if (quicrSubscriptionsMap.contains(quicrNamespace))
+    if (quicrSubscriptionsMap.count(quicrNamespace))
     {
         std::cerr << "Error: creating quicr::SubscriberDelegate for sourceId " << sourceId << " that already exists!"
                   << std::endl;
@@ -103,7 +147,7 @@ QController::createQuicrSubsciptionDelegate(const std::string sourceId,
 std::shared_ptr<quicr::PublisherDelegate> QController::findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace)
 {
     std::lock_guard<std::mutex> _(subsMutex);
-    if (quicrPublicationsMap.contains(quicrNamespace))
+    if (quicrPublicationsMap.count(quicrNamespace))
     {
         return quicrPublicationsMap[quicrNamespace];
     }
@@ -116,7 +160,7 @@ QController::createQuicrPublicationDelegate(const std::string sourceId,
                                             std::shared_ptr<qmedia::QPublicationDelegate> qDelegate)
 {
     std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.contains(quicrNamespace))
+    if (quicrPublicationsMap.count(quicrNamespace))
     {
         std::cerr << "Error: creating quicr::PublisherDelegate for sourceId " << sourceId << ", " << quicrNamespace << " that already exists!"
                   << std::endl;
@@ -137,7 +181,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
         // look up
         std::lock_guard<std::mutex> _(subsMutex);
         // found - return
-        if (!qSubscriptionsMap.contains(quicrNamespace))
+        if (!qSubscriptionsMap.count(quicrNamespace))
         {
             qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace);
         }
@@ -154,7 +198,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
         // look up
         std::lock_guard<std::mutex> _(pubsMutex);
         // found - return
-        if (!qPublicationsMap.contains(quicrNamespace))
+        if (!qPublicationsMap.count(quicrNamespace))
         {
             qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(quicrNamespace);
         }

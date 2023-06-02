@@ -20,13 +20,14 @@ public:
                 std::shared_ptr<QPublisherDelegate> QPublisherDelegate);
 
     ~QController();
-
     void closeAll();
-
     int connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol);
     int disconnect();
 
     int updateManifest(const std::string manifest);
+
+    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t *data, std::size_t len);
+    void publishNamedObjectTest(std::uint8_t *data, std::size_t len);
 
 private:
     quicr::Namespace quicrNamespaceUrlParse(const std::string& quicrNamespaceUrl);

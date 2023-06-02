@@ -39,6 +39,7 @@ public:
     }*/
 
     int subscribedObject(quicr::bytes&& data) override {
+        std::cerr << "subscribedObject " << std::endl;
         return 0;
     }
 
@@ -75,7 +76,8 @@ private:
 class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 {
 public:
-    QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) : quicrNamespace(quicrNamespace)
+    QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) : qmedia::QPublicationDelegate(quicrNamespace)
+    //quicrNamespace(quicrNamespace)
     {
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate constructed");
     }
@@ -137,22 +139,24 @@ int main(int /*argc*/, char** /*arg*/)
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
-    qController->connect("192.168.1.211", 33434, quicr::RelayInfo::Protocol::UDP);
+    //qController->connect("192.168.1.211", 33434, quicr::RelayInfo::Protocol::UDP);
+    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
 
-    std::ifstream f("/Users/shenning/M10x/manifest-ly/dependencies/new-qmedia/build/manifest.json");
+    std::ifstream f("/Users/shenning/M10x/WxQ.mani2/dependencies/new-qmedia/build/manifest.json");
 
     // load file into string
     std::stringstream strStream;
     strStream << f.rdbuf();
     auto manifest = strStream.str();
     
-    //json manifest_object = json::parse(f);    
     qController->updateManifest(manifest);
 
-    //logger.log(qtransport::LogLevel::info, "Manifest updated!");
+    std::uint8_t *data = new std::uint8_t[256];
 
     while(true)
     {
+
+       // qController->publishNamedObjectTest(data, 256);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
