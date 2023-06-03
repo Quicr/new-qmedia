@@ -4,7 +4,7 @@
 #include <quicr/quicr_client.h>
 #include <transport/logger.h>
 #include <qmedia/QDelegates.hpp>
-
+#include <string>
 
 namespace qmedia
 {
@@ -14,6 +14,11 @@ class QuicrTransportSubDelegate : public quicr::SubscriberDelegate
 public:
     QuicrTransportSubDelegate(const std::string sourceId,
                               const quicr::Namespace& quicrNamespace,
+                              const quicr::SubscribeIntent intent,
+                              const std::string originUrl,
+                              const bool useReliableTransport,
+                              const std::string authToken,
+                              quicr::bytes e2eToken,
                               std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                               qtransport::LogHandler& logger);
 
@@ -35,10 +40,17 @@ public:
 
     bool isActive() { return canReceiveSubs; }
 
+    void subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+
 private:
     bool canReceiveSubs;
     std::string sourceId;
     quicr::Namespace quicrNamespace;
+    quicr::SubscribeIntent intent;
+    std::string originUrl;
+    bool useReliableTransport;
+    std::string authToken;
+    quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
     qtransport::LogHandler logger;
 };
@@ -55,7 +67,7 @@ public:
 
 private:
     bool canPublish;
-    std::string sourceId;    
+    std::string sourceId;
     quicr::Namespace quicrNamespace;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     qtransport::LogHandler logger;

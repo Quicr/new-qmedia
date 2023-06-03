@@ -6,11 +6,25 @@ namespace qmedia
 {
 QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
                                                      const quicr::Namespace& quicrNamespace,
+                                                     const quicr::SubscribeIntent intent,
+                                                     const std::string originUrl,
+                                                     const bool useReliableTransport,
+                                                     const std::string authToken,
+                                                     quicr::bytes e2eToken,
                                                      std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                                                      qtransport::LogHandler& logger) :
-    canReceiveSubs(false), sourceId(sourceId), quicrNamespace(quicrNamespace), qDelegate(qDelegate), logger(logger)
+    canReceiveSubs(true),
+    sourceId(sourceId),
+    quicrNamespace(quicrNamespace),
+    intent(intent),
+    originUrl(originUrl),
+    useReliableTransport(useReliableTransport),
+    authToken(authToken),
+    e2eToken(e2eToken),
+    qDelegate(qDelegate),
+    logger(logger)
 {
-      logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
+    logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
 }
 
 /*
@@ -45,14 +59,26 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
                                                    bool /*use_reliable_transport*/,
                                                    quicr::bytes&& data)
 {
-    // get timestamp from end of data buffer
-    //std::uint64_t timestamp = 0;
-    //std::size_t offset = data.size() - sizeof(std::uint64_t);
-    //const std::uint8_t* tsbytes = &data[offset];
-    //timestamp = *reinterpret_cast<const std::uint64_t*>(tsbytes);
-
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
     qDelegate->subscribedObject(std::move(data));
+}
+
+/*
+ * subscribe
+ *
+ * Use quicrClient to send out a subscription request.
+ */
+
+void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient)
+{
+    if (quicrClient)
+    {
+        quicrClient->subscribe(self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
+    }
+    else
+    {
+        logger.log(qtransport::LogLevel::error, "quicrCliet doesn't exist");
+    }
 }
 
 /*

@@ -34,7 +34,7 @@ void basicLogger::log(LogLevel level, const std::string &string) {
                      1000000;
 
   std::lock_guard lock(mutex);
-  std::cout << std::put_time(std::localtime(&nowAsTimeT), "%m-%d-%Y %H:%M:%S")
+  std::cerr << std::put_time(std::localtime(&nowAsTimeT), "%m-%d-%Y %H:%M:%S")
             << "." << std::setfill('0') << std::setw(6) << nowUs.count()
             << std::setfill(' ') << " " << std::setw(6) << std::right << lvl
             << std::setw(0) << " | " << string << std::endl;
