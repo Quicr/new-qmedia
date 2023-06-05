@@ -29,6 +29,7 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
 QController::~QController()
 {
     // shutdown everything...
+    close();
 }
 
 int QController::connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol)
