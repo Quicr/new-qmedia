@@ -68,7 +68,6 @@ public:
 
     ~QuicrTransportPubDelegate()
     {
-        std::cerr << "~QuicrTransportPubDelegate" << std::endl;
     }                        
 
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,

@@ -77,15 +77,15 @@ void QController::periodicResubscribe(const unsigned int seconds)
     {
         std::chrono::duration<int, std::milli> timespan(100);        // sleep duration in mills
         std::this_thread::sleep_for(timespan);
-
         std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
         if (now >= timeout && !stop)
         {
+             logger.log(qtransport::LogLevel::info, "re-subscribe");
             const std::lock_guard<std::mutex> _(subsMutex);
             for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
             {
-                logger.log(qtransport::LogLevel::info, "re-subscribe");
+
                 quicrSubDelegate->subscribe(quicrSubDelegate, quicrClient);
             }
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
@@ -280,12 +280,10 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                   const std::string& authToken,
                                   quicr::bytes&& payload /**/)
 {
-    std::cerr << "startPub" << std::endl;
     auto quicrPubDelegate = createQuicrPublicationDelegate(sourceId, quicrNamespace, originUrl, authToken, std::move(payload),  qDelegate);
     if (quicrPubDelegate != nullptr)
     {
         if (quicrClient)
-            std::cerr << "xxx publishIntent" << std::endl;
             // add more intent parameters - max queue size (in time), default ttl, priority
             quicrPubDelegate->publishIntent(quicrPubDelegate, quicrClient);
         return 0;

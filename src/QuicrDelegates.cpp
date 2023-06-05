@@ -112,7 +112,6 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
 void QuicrTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                                         const quicr::PublishIntentResult& /* result */)
 {
-    std::cerr << "onPublishIntentResponse" << std::endl;
     logger.log(qtransport::LogLevel::info, "pub::onPublishIntentResponse");
 }
 
@@ -120,7 +119,6 @@ void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubD
 {
     if (quicrClient) 
     {
-        std::cerr << "publishIntent" << std::endl;
         quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken, std::move(payload));
     }
 }
