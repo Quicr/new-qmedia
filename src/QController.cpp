@@ -8,7 +8,7 @@ namespace qmedia
 
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate) :
-    qSubscriberDelegate(qSubscriberDelegate), qPublisherDelegate(qPublisherDelegate)
+    qSubscriberDelegate(qSubscriberDelegate), qPublisherDelegate(qPublisherDelegate), stop(false), closed(false)
 {
     logger.log(qtransport::LogLevel::info, "QController started...");
 
@@ -28,7 +28,6 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
 
 QController::~QController()
 {
-    // shutdown everything...
     close();
 }
 
@@ -56,19 +55,53 @@ int QController::disconnect()
 
 void QController::close()
 {
+
+    if (closed)
+    {
+        return;
+    }
+
+   // shutdown everything...
     stop = true;
-    keepaliveThread.join();        // waif for thread to go away...
+    if (keepaliveThread.joinable())
+    {
+        keepaliveThread.join(); 
+    }
+
+    // remove the pub and sub delegates
+    qSubscriberDelegate = nullptr;
+    qPublisherDelegate = nullptr;
+
     {
         const std::lock_guard<std::mutex> _(subsMutex);
+
+        for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
+        {
+            quicrSubDelegate->unsubscribe(quicrSubDelegate, quicrClient);
+        }
+
         quicrSubscriptionsMap.clear();
         qSubscriptionsMap.clear();
     }
 
     {
         const std::lock_guard<std::mutex> _(pubsMutex);
+
+        for (auto const& [key, quicrPubDelegate] : quicrPublicationsMap)
+        {
+            quicrPubDelegate->publishIntentEnd(quicrPubDelegate, quicrClient);
+        }
+
         quicrPublicationsMap.clear();
         qPublicationsMap.clear();
     }
+    
+    if (quicrClient) 
+    {
+        quicrClient.reset();
+        quicrClient = nullptr;
+    }
+    
 }
 
 void QController::periodicResubscribe(const unsigned int seconds)
@@ -113,7 +146,6 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len)
 {
     if (qPublicationsMap.size() > 0)
     {
-        // auto quicrNamespace = qPublicationsMap.begin()->first;
         auto publicationDelegate = qPublicationsMap.begin()->second;
         publicationDelegate->publishNamedObject(this->quicrClient, data, len);
     }

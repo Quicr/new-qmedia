@@ -88,12 +88,8 @@ private:
 private:
     std::mutex subsMutex;
     std::mutex pubsMutex;
-
     qmedia::basicLogger logger;
-
     UrlEncoder encoder;
-
-    std::shared_ptr<quicr::QuicRClient> quicrClient;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
@@ -104,8 +100,11 @@ private:
     std::map<quicr::Namespace, std::shared_ptr<QuicrTransportSubDelegate>> quicrSubscriptionsMap;
     std::map<quicr::Namespace, std::shared_ptr<QuicrTransportPubDelegate>> quicrPublicationsMap;
 
+    std::shared_ptr<quicr::QuicRClient> quicrClient;
+
     std::thread keepaliveThread;
     bool stop;
+    bool closed;
 };
 
 }        // namespace qmedia

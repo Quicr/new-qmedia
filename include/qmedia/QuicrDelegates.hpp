@@ -41,6 +41,7 @@ public:
     bool isActive() { return canReceiveSubs; }
 
     void subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
 
 private:
     bool canReceiveSubs;
@@ -74,6 +75,8 @@ public:
                                          const quicr::PublishIntentResult& result);
 
     void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+
+     void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
 
 
 private:

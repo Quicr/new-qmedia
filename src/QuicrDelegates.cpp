@@ -82,6 +82,19 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
     }
 }
 
+void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
+                                          std::shared_ptr<quicr::QuicRClient> quicrClient)
+{
+    if (quicrClient)
+    {
+        quicrClient->unsubscribe(quicrNamespace, originUrl, authToken);
+    }
+    else
+    {
+        logger.log(qtransport::LogLevel::error, "Unsubscibe - quicrCliet doesn't exist");
+    }
+}
+
 /*
  * QuicrTransportPubDelegate::QuicrTransportPubDelegate
  *
@@ -120,6 +133,14 @@ void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubD
     if (quicrClient) 
     {
         quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken, std::move(payload));
+    }
+}
+
+void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient)
+{
+    if (quicrClient) 
+    {
+        quicrClient->publishIntentEnd(quicrNamespace, authToken);
     }
 }
 
