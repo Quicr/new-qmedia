@@ -33,7 +33,6 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
 void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& quicr_namespace,
                                                     const quicr::SubscribeResult& /* result */)
 {
-    std::cerr << "onSubscibeResponse for " << quicr_namespace << std::endl;
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeResponse");
 }
 
@@ -69,15 +68,17 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicr_name
  * Use quicrClient to send out a subscription request.
  */
 
-void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient)
+void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
+                                          std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
     if (quicrClient)
     {
-        quicrClient->subscribe(self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
+        quicrClient->subscribe(
+            self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
     }
     else
     {
-        logger.log(qtransport::LogLevel::error, "quicrCliet doesn't exist");
+        logger.log(qtransport::LogLevel::error, "Subscribe - quicrCliet doesn't exist");
     }
 }
 
@@ -88,9 +89,19 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
  */
 QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                                      quicr::Namespace quicrNamespace,
+                                                     const std::string& originUrl,
+                                                     const std::string& authToken,
+                                                     quicr::bytes&& payload,
                                                      std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                      qtransport::LogHandler& logger) :
-    canPublish(true), sourceId(sourceId), quicrNamespace(quicrNamespace), qDelegate(qDelegate), logger(logger)
+    canPublish(true),
+    sourceId(sourceId),
+    quicrNamespace(quicrNamespace),
+    originUrl(originUrl),
+    authToken(authToken),
+    payload(std::move(payload)),
+    qDelegate(qDelegate),
+    logger(logger)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
 }
@@ -101,6 +112,17 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
 void QuicrTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                                         const quicr::PublishIntentResult& /* result */)
 {
+    std::cerr << "onPublishIntentResponse" << std::endl;
     logger.log(qtransport::LogLevel::info, "pub::onPublishIntentResponse");
 }
+
+void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient)
+{
+    if (quicrClient) 
+    {
+        std::cerr << "publishIntent" << std::endl;
+        quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken, std::move(payload));
+    }
+}
+
 }        // namespace qmedia

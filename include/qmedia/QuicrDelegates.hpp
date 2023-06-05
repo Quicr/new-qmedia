@@ -60,15 +60,30 @@ class QuicrTransportPubDelegate : public quicr::PublisherDelegate
 public:
     QuicrTransportPubDelegate(std::string sourceId,
                               quicr::Namespace quicrNamespace,
+                              const std::string& originUrl,
+                              const std::string& authToken,
+                              quicr::bytes&& payload,
                               std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                               qtransport::LogHandler& logger);
+
+    ~QuicrTransportPubDelegate()
+    {
+        std::cerr << "~QuicrTransportPubDelegate" << std::endl;
+    }                        
+
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                          const quicr::PublishIntentResult& result);
+
+    void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+
 
 private:
     bool canPublish;
     std::string sourceId;
     quicr::Namespace quicrNamespace;
+    const std::string& originUrl;
+    const std::string& authToken;
+    quicr::bytes&& payload;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     qtransport::LogHandler logger;
 };

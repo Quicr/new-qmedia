@@ -2,7 +2,7 @@
 
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-///#include <qmedia/QDelegates.hpp>
+/// #include <qmedia/QDelegates.hpp>
 #include <transport/logger.h>
 #include "UrlEncoder.h"
 #include <nlohmann/json.hpp>
@@ -54,6 +54,9 @@ private:
     std::shared_ptr<QuicrTransportPubDelegate>
     createQuicrPublicationDelegate(const std::string,
                                    const quicr::Namespace&,
+                                   const std::string& originUrl,
+                                   const std::string& authToken,
+                                   quicr::bytes&& payload,
                                    std::shared_ptr<qmedia::QPublicationDelegate>);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace);

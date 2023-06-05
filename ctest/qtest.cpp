@@ -84,6 +84,7 @@ public:
 public:
     int prepare(const std::string& sourceId,  const std::string& qualityProfile)  {
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::prepare");
+        std::cerr << "pub prepare " << std::endl; 
         return 0;
     }
     int update(const std::string& sourceId, const std::string& qualityProfile) {
@@ -116,6 +117,7 @@ public:
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
        logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");        
+       std::cerr << quicrNamespace << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
@@ -139,8 +141,8 @@ int main(int /*argc*/, char** /*arg*/)
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
-    qController->connect("192.168.1.211", 33434, quicr::RelayInfo::Protocol::UDP);
-    //qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
+    //qController->connect("192.168.1.211", 33434, quicr::RelayInfo::Protocol::UDP);
+    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
 
     std::ifstream f("/Users/shenning/M10x/WxQ.mani2/dependencies/new-qmedia/build/manifest.json");
 

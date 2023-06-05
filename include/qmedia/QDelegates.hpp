@@ -45,7 +45,6 @@ public:
             quicr::Name quicrName(quicrNamespace.name());
             quicrName = (0x0_name | ++groupId) << 16 | (quicrName & ~group_id_mask);
             quicrName = (0x0_name | ++objectId) | (quicrName & ~object_id_mask);
-            std::cerr << "publishing " << quicrName.to_hex() << " len = " << len << std::endl;
             quicr::bytes b(data, data + len);
             quicrClient->publishNamedObject(quicrName, priority, expiry, reliableTransport, std::move(b));
         }
