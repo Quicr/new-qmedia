@@ -67,41 +67,6 @@ void QController::close()
     {
         keepaliveThread.join(); 
     }
-
-    // remove the pub and sub delegates
-    qSubscriberDelegate = nullptr;
-    qPublisherDelegate = nullptr;
-
-    {
-        const std::lock_guard<std::mutex> _(subsMutex);
-
-        for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
-        {
-            quicrSubDelegate->unsubscribe(quicrSubDelegate, quicrClient);
-        }
-
-        quicrSubscriptionsMap.clear();
-        qSubscriptionsMap.clear();
-    }
-
-    {
-        const std::lock_guard<std::mutex> _(pubsMutex);
-
-        for (auto const& [key, quicrPubDelegate] : quicrPublicationsMap)
-        {
-            quicrPubDelegate->publishIntentEnd(quicrPubDelegate, quicrClient);
-        }
-
-        quicrPublicationsMap.clear();
-        qPublicationsMap.clear();
-    }
-    
-    if (quicrClient) 
-    {
-        quicrClient.reset();
-        quicrClient = nullptr;
-    }
-    
 }
 
 void QController::periodicResubscribe(const unsigned int seconds)
