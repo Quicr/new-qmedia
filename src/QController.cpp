@@ -18,12 +18,8 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     // 000001  01   000001     c0      0002  / 00000000,  0000
     // pen - private enterprise number (24 bits)
     // sub_pen - sub-privete enterprise number (8 bits)
-
     // SAH - fixme - rename "mediaType" -> "mediatype"
     // SAH - fixme - rename "conference" -> "conferences"
-    encoder.AddTemplate(std::string("quicr://webex.cisco.com"
-                                    "<pen=1><sub_pen=1>/conference/<int24>/mediaType/"
-                                    "<int8>/endpoint/<int16>"));
 }
 
 QController::~QController()
@@ -51,21 +47,21 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
 
 int QController::disconnect()
 {
+    return 0;
 }
 
 void QController::close()
 {
-
     if (closed)
     {
         return;
     }
 
-   // shutdown everything...
+    // shutdown everything...
     stop = true;
     if (keepaliveThread.joinable())
     {
-        keepaliveThread.join(); 
+        keepaliveThread.join();
     }
 }
 
@@ -80,11 +76,10 @@ void QController::periodicResubscribe(const unsigned int seconds)
 
         if (now >= timeout && !stop)
         {
-             logger.log(qtransport::LogLevel::info, "re-subscribe");
+            logger.log(qtransport::LogLevel::info, "re-subscribe");
             const std::lock_guard<std::mutex> _(subsMutex);
             for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
             {
-
                 quicrSubDelegate->subscribe(quicrSubDelegate, quicrClient);
             }
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
@@ -92,14 +87,17 @@ void QController::periodicResubscribe(const unsigned int seconds)
     }
 }
 
-void QController::publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len)
+void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
+                                     std::uint8_t* data,
+                                     std::size_t len,
+                                     bool groupFlag)
 {
-    if (qPublicationsMap.count(quicrNamespace))
+    if (quicrPublicationsMap.count(quicrNamespace))
     {
-        auto publicationDelegate = qPublicationsMap.at(quicrNamespace);
+        auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace);
         if (publicationDelegate)
         {
-            publicationDelegate->publishNamedObject(this->quicrClient, data, len);
+            publicationDelegate->publishNamedObject(this->quicrClient, data, len, groupFlag);
         }
     }
 }
@@ -107,12 +105,12 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace, std
 /*
  * For Test Only
  */
-void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len)
+void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag)
 {
-    if (qPublicationsMap.size() > 0)
+    if (quicrPublicationsMap.size() > 0)
     {
-        auto publicationDelegate = qPublicationsMap.begin()->second;
-        publicationDelegate->publishNamedObject(this->quicrClient, data, len);
+        auto publicationDelegate = quicrPublicationsMap.begin()->second;
+        publicationDelegate->publishNamedObject(this->quicrClient, data, len, groupFlag);
     }
 }
 
@@ -125,9 +123,7 @@ quicr::Namespace QController::quicrNamespaceUrlParse(const std::string& quicrNam
         bits += bitCount;
     }
     quicr::Name encoded = encoder.EncodeUrl(quicrNamespaceUrl);
-    quicr::Name DELETE_ME = ((encoded << 32) >> 32) | 0xA11CEE00000000000000000000000000_name;
-
-    quicr::Namespace quicrNamespace{DELETE_ME, bits};
+    quicr::Namespace quicrNamespace{encoded, bits};
     return quicrNamespace;
 }
 
@@ -162,7 +158,7 @@ QController::createQuicrSubsciptionDelegate(const std::string sourceId,
                    "Error: creating QuicrTransportSubDelegatefor namespace already exists!");
         return nullptr;
     }
-    
+
     quicrSubscriptionsMap[quicrNamespace] = std::make_shared<qmedia::QuicrTransportSubDelegate>(
         sourceId, quicrNamespace, intent, originUrl, useReliableTransport, authToken, e2eToken, qDelegate, logger);
     return quicrSubscriptionsMap[quicrNamespace];
@@ -185,6 +181,9 @@ QController::createQuicrPublicationDelegate(const std::string sourceId,
                                             const std::string& originUrl,
                                             const std::string& authToken,
                                             quicr::bytes&& payload,
+                                            const std::vector<std::uint8_t>& priority,
+                                            std::uint16_t expiry,
+                                            bool reliableTransport,
                                             std::shared_ptr<qmedia::QPublicationDelegate> qDelegate)
 {
     std::lock_guard<std::mutex> _(pubsMutex);
@@ -194,9 +193,18 @@ QController::createQuicrPublicationDelegate(const std::string sourceId,
                    "Error: creating QuicrTransportSubDelegate for namespace - already exists!");
         return nullptr;
     }
-    
-    quicrPublicationsMap[quicrNamespace] = std::make_shared<qmedia::QuicrTransportPubDelegate>(
-        sourceId, quicrNamespace, originUrl, authToken, std::move(payload), qDelegate, logger);
+
+    quicrPublicationsMap[quicrNamespace] = std::make_shared<qmedia::QuicrTransportPubDelegate>(sourceId,
+                                                                                               quicrNamespace,
+                                                                                               originUrl,
+                                                                                               authToken,
+                                                                                               std::move(payload),
+                                                                                               priority,
+                                                                                               expiry,
+                                                                                               reliableTransport,
+                                                                                               qDelegate,
+                                                                                               logger);
+
     return quicrPublicationsMap[quicrNamespace];
 }
 
@@ -276,9 +284,21 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                   const quicr::Namespace& quicrNamespace,
                                   const std::string& originUrl,
                                   const std::string& authToken,
-                                  quicr::bytes&& payload /**/)
+                                  quicr::bytes&& payload,
+                                  const std::vector<std::uint8_t>& priority,
+                                  std::uint16_t expiry,
+                                  bool reliableTransport)
+
 {
-    auto quicrPubDelegate = createQuicrPublicationDelegate(sourceId, quicrNamespace, originUrl, authToken, std::move(payload),  qDelegate);
+    auto quicrPubDelegate = createQuicrPublicationDelegate(sourceId,
+                                                           quicrNamespace,
+                                                           originUrl,
+                                                           authToken,
+                                                           std::move(payload),
+                                                           priority,
+                                                           expiry,
+                                                           reliableTransport,
+                                                           qDelegate);
     if (quicrPubDelegate != nullptr)
     {
         if (quicrClient)
@@ -288,6 +308,16 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     }
     logger.log(qtransport::LogLevel::error, "Error: starting pulibcation.");
     return -1;
+}
+
+int QController::processURLTemplates(json& urlTemplates)
+{
+    for (auto& urlTemplate : urlTemplates)
+    {
+        std::string temp = urlTemplate;
+        encoder.AddTemplate(temp, true);
+    }
+    return 0;
 }
 
 int QController::processSubscriptions(json& subscriptions)
@@ -370,8 +400,18 @@ int QController::processPublications(json& publications)
                 if (qPublicationDelegate->prepare(publication["sourceId"], profile["qualityProfile"]) == 0)
                 {
                     quicr::bytes payload;
-                    startPublication(
-                        qPublicationDelegate, publication["sourceId"], quicrNamespace, "", "", std::move(payload));
+                    std::vector<std::uint8_t> priorities = profile["priorities"];
+                    std::uint16_t expiry = profile["expiry"];
+                    bool reliableTransport = false;
+                    startPublication(qPublicationDelegate,
+                                     publication["sourceId"],
+                                     quicrNamespace,
+                                     "",
+                                     "",
+                                     std::move(payload),
+                                     priorities,
+                                     expiry,
+                                     reliableTransport);
                 }
                 else
                 {
@@ -397,8 +437,9 @@ int QController::updateManifest(const std::string manifest)
 
     logger.log(qtransport::LogLevel::info, "updateManifest");
 
-    processSubscriptions(manifest_object["Subscriptions"]);
-    processPublications(manifest_object["Publications"]);
+    processURLTemplates(manifest_object["urlTemplates"]);
+    processSubscriptions(manifest_object["subscriptions"]);
+    processPublications(manifest_object["publications"]);
 
     return 0;
 }

@@ -29,8 +29,8 @@ public:
 
     int updateManifest(const std::string manifest);
 
-    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len);
-    void publishNamedObjectTest(std::uint8_t* data, std::size_t len);
+    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
+    void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
 
 private:
     void periodicResubscribe(const unsigned int seconds);
@@ -57,6 +57,9 @@ private:
                                    const std::string& originUrl,
                                    const std::string& authToken,
                                    quicr::bytes&& payload,
+                                   const std::vector<std::uint8_t> &priority,
+                                   std::uint16_t expiry,
+                                   bool reliableTransport,
                                    std::shared_ptr<qmedia::QPublicationDelegate>);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace);
@@ -78,10 +81,14 @@ private:
                          const quicr::Namespace& quicrNamespace,
                          const std::string& origin_url,
                          const std::string& auth_token,
-                         quicr::bytes&& payload);
+                         quicr::bytes&& payload,
+                         const std::vector<std::uint8_t> &priority,
+                         std::uint16_t expiry,
+                         bool reliableTransport);
 
     void stopPublication(const quicr::Namespace& quicrNamespace);
 
+    int processURLTemplates(json&);
     int processSubscriptions(json&);
     int processPublications(json&);
 

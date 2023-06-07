@@ -141,10 +141,10 @@ int main(int /*argc*/, char** /*arg*/)
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
-    qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
-    //qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
+    //qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
+    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33435, quicr::RelayInfo::Protocol::QUIC);
 
-    std::ifstream f("/Users/shenning/M10x/WxQ.mani2/dependencies/new-qmedia/build/manifest.json");
+    std::ifstream f("/tmp/manifest.json");
 
     // load file into string
     std::stringstream strStream;
@@ -160,7 +160,7 @@ int main(int /*argc*/, char** /*arg*/)
     while(true)
     {
         ++i;
-        qController->publishNamedObjectTest(data, 256);
+        qController->publishNamedObjectTest(data, 256, i % 2);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         if (i == 10) { break; }
     }

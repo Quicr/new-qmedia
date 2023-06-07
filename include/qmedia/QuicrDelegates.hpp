@@ -64,28 +64,38 @@ public:
                               const std::string& originUrl,
                               const std::string& authToken,
                               quicr::bytes&& payload,
+                              const std::vector<std::uint8_t> &priority,
+                              std::uint16_t expiry,
+                              bool reliableTransport,
                               std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                               qtransport::LogHandler& logger);
 
-    ~QuicrTransportPubDelegate()
-    {
-    }                        
+    ~QuicrTransportPubDelegate() {}
 
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                          const quicr::PublishIntentResult& result);
 
-    void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
+                       std::shared_ptr<quicr::QuicRClient> quicrClient);
 
-     void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
+                          std::shared_ptr<quicr::QuicRClient> quicrClient);
+
+    void publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient, std::uint8_t* data, std::size_t len, bool groupFlag);
 
 
 private:
-    bool canPublish;
+    //bool canPublish;
     std::string sourceId;
     quicr::Namespace quicrNamespace;
     const std::string& originUrl;
     const std::string& authToken;
     quicr::bytes&& payload;
+    std::uint32_t groupId;
+    std::uint16_t objectId;
+    std::vector<std::uint8_t> priority;
+    std::uint16_t expiry;
+    bool reliableTransport;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     qtransport::LogHandler logger;
 };
