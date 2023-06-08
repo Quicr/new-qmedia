@@ -182,7 +182,6 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
             quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
             ++objectId;
         }
-        std::cerr << "publish named object " << quicrName.to_hex() << std::endl;
         quicr::bytes b(data, data + len);
 
         quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, std::move(b));

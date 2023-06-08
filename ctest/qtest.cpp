@@ -117,7 +117,7 @@ public:
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
        logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");        
-       std::cerr << quicrNamespace << std::endl;
+       std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
