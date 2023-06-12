@@ -2,7 +2,6 @@
 
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-/// #include <qmedia/QDelegates.hpp>
 #include <transport/logger.h>
 #include "UrlEncoder.h"
 #include <nlohmann/json.hpp>
@@ -34,6 +33,7 @@ public:
 
 private:
     void periodicResubscribe(const unsigned int seconds);
+    void removeSubscriptions();
 
     quicr::Namespace quicrNamespaceUrlParse(const std::string& quicrNamespaceUrl);
 

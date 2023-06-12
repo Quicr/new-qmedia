@@ -21,6 +21,8 @@ public:
                               quicr::bytes e2eToken,
                               std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                               qtransport::LogHandler& logger);
+                            
+    ~QuicrTransportSubDelegate();
 
     virtual void onSubscribeResponse(const quicr::Namespace& quicrNamespace, const quicr::SubscribeResult& result);
 
@@ -54,6 +56,14 @@ private:
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
     qtransport::LogHandler logger;
+
+    std::uint64_t groupCount;
+    std::uint64_t objectCount;
+    std::uint64_t groupOOCount;
+    std::uint64_t objecOOCount;
+
+    std::uint32_t currentGroupId;
+    std::uint16_t currentObjectId;
 };
 
 class QuicrTransportPubDelegate : public quicr::PublisherDelegate
@@ -70,7 +80,7 @@ public:
                               std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                               qtransport::LogHandler& logger);
 
-    ~QuicrTransportPubDelegate() {}
+    ~QuicrTransportPubDelegate();
 
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                          const quicr::PublishIntentResult& result);
@@ -98,5 +108,8 @@ private:
     bool reliableTransport;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     qtransport::LogHandler logger;
+
+    std::uint64_t groupCount;
+    std::uint64_t objectCount;
 };
 }        // namespace qmedia

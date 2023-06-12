@@ -1,6 +1,9 @@
 #include <qmedia/QuicrDelegates.hpp>
 #include <quicr/hex_endec.h>
 #include <iostream>
+#include <sstream>
+
+const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 
 namespace qmedia
 {
@@ -25,6 +28,21 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     logger(logger)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
+}
+
+QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
+{
+    std::cerr << "~QuicrTransportSubDelegate" << std::endl;
+    std::stringstream s;
+    s << "~QuicrTransportSubDelegate::";
+    s << "group: " << groupCount << " ";
+    s << "object: " << objectCount << " ";
+    s << "group oo:" << groupOOCount << " ";
+    s << "object oo " << objecOOCount;
+
+    std::cerr << s.str() << std::endl;
+
+    logger.log(qtransport::LogLevel::info, s.str());
 }
 
 /*
@@ -52,13 +70,40 @@ void QuicrTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* q
  * from the quicr::name. These fields along with the notificaiton
  * data are passed to the client callback.
  */
-void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& /* quicrName */,
+void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    uint8_t /*priority*/,
                                                    uint16_t /*expiry_age_ms*/,
                                                    bool /*use_reliable_transport*/,
                                                    quicr::bytes&& data)
 {
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
+    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicrName);
+
+
+    // group=5, object=0
+    // group=5, object=1
+    // group=6, object=2
+    // group=7, object=3
+
+    if (groupId > currentGroupId) 
+    {
+        if (groupId > currentGroupId+1)
+        {
+            ++groupOOCount;
+            currentObjectId = 0;
+        }
+        ++groupCount;
+    }
+
+
+    if (objectId > currentObjectId)
+    {
+        ++objecOOCount;
+    }
+
+    currentGroupId = groupId;
+    currentObjectId = objectId;
+
     qDelegate->subscribedObject(std::move(data));
 }
 
@@ -126,6 +171,10 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     logger(logger)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
+}
+
+QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
+{
 }
 
 /*

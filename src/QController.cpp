@@ -63,6 +63,10 @@ void QController::close()
     {
         keepaliveThread.join();
     }
+
+    removeSubscriptions();
+
+    std::cerr << "QController::close()" << std::endl;
 }
 
 void QController::periodicResubscribe(const unsigned int seconds)
@@ -85,6 +89,17 @@ void QController::periodicResubscribe(const unsigned int seconds)
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
         }
     }
+    std::cerr << "QController::periodicResubscribe - ended" << std::endl;
+}
+
+void QController::removeSubscriptions()
+{
+    logger.log(qtransport::LogLevel::info, "QController - remove subscriptions");
+    const std::lock_guard<std::mutex> _(subsMutex);
+    for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
+    {
+        quicrSubDelegate->unsubscribe(quicrSubDelegate, quicrClient);
+    }  
 }
 
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
