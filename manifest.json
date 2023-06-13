@@ -1,0 +1,572 @@
+{
+   "relay" : {
+      "url" : "quicr://relay.cisco.com",
+      "token": "?"
+   },
+   "quicrNamespaceTemplates" : [
+      "quicr://webex.cisco.com/<pen=1><sub_pen=1>/conference/<int24>/mediaType/h264_1080p<int8=1>/endpoint/<int16>",
+      "quicr://webex.cisco.com/<pen=1><sub_pen=1>/conference/<int24>/mediaType/h264_720p<int8=2>/endpoint/<int16>",
+      "quicr://webex.cisco.com/<pen=1><sub_pen=1>/conference/<int24>/mediaType/h264_480p<int8=3>/endpoint/<int16>",
+      "quicr://webex.cisco.com/<pen=1><sub_pen=1>/conference/<int24>/mediaType/opus<int8=4>/endpoint/<int16>"
+   ],
+   "Publications" : [
+      {
+         "label" : "Scott H.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/1"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/168/endpoint/1"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/34/endpoint/1"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/21/endpoint/1"
+               }
+            ],
+            "type" : "simulcast"
+         },
+         "sourceId" : "cfbbfbfa-6f3f-4891-a461-baf02f52424d",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Scott H.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/5/endpoint/1"
+               }
+            ],
+            "type" : "simulcast"
+         },
+         "sourceId" : "de8ad9db-dbb5-4605-997d-d7ba96e65906",
+         "sourceName" : "Macbook mic"
+      }
+   ],
+   "Subscriptions" : [
+      {
+         "label" : "Tim E.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/2"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/2"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00002/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/2"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "f4ba1186-6cc8-4b14-afd7-b1b3931808af",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Tim E.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010002/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/2"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "a603c049-ec7d-4c68-abdc-e4a81d40f422",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Rich L.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00003/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/3"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10003/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/3"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20003/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/3"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00003/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/3"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "4ed51401-db2d-406c-aca7-f5ee6bc03f83",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Rich L.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010003/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/3"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "c0f171d4-7a2e-4103-a75d-e2d6fb34f983",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Tomas R.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00004/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/4"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10004/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/4"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20004/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/4"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/4"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "42ab554d-590d-42e8-b3c6-550216b7de3a",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Tomas R.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010004/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/4"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "0135cfef-31ab-4728-920e-c0393c65ed92",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Cullen J.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00005/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/5"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "quicr://00000101000001c10005/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/5"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20005/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/5"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00005/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/5"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "e7cf4193-1263-4092-a1c4-ba9d56669391",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Cullen J.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010005/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/5"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "da9e3201-c8fc-4772-9b0d-de1da3d7697f",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Suhas N.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00006/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/6"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10006/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/6"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20006/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/6"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00006/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/6"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "e06b62ed-8eaa-4914-a663-b5d40a41cd8f",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Suhas N.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010006/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/6"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "6215ce79-d09c-4fd4-bdc1-e4a9b3f1420f",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Greg H.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00007/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/7"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10007/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/7"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20007/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/7"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00007/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/7"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "e4bfe636-01f8-4125-baa2-db45a77e593f",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Greg H.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010007/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/7"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "c2d7afdf-7b3d-4308-8904-deebad3f9da3",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Shamim P.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00008/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/8"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10008/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/8"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20008/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/8"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00008/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/8"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "cb8f801c-73cc-4db5-9d0c-736aafe04541",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Shamim P.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010008/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/8"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "4a34143b-e688-40c0-bd4f-557ef940d26a",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Brett R.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c00009/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/9"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c10009/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/9"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c20009/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/9"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a00009/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/9"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "37a04595-248e-41a3-95e9-ed436f13ea2b",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Brett R.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x00000101000001010009/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/9"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "7a4fca98-71f5-4a89-8468-98d3c700b778",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Mo Z.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c0000a/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/10"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c1000a/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/10"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c2000a/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/10"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a0000a/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/10"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "1bd47270-1999-474a-9632-d72739576f58",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Mo Z.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x0000010100000101000a/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/10"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "cb6f982a-f7b8-4478-abe5-bc06baa66230",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Pal M.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c0000b/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/11"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c1000b/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/11"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c2000b/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/11"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a0000b/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/11"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "7f22f8d7-59d0-4caf-baeb-f2a2ddf77d06",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Pal M.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x0000010100000101000b/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/11"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "84e0b73c-5387-4a0a-a629-0994a0676f7b",
+         "sourceName" : "Macbook mic"
+      },
+      {
+         "label" : "Paul J.",
+         "mediaType" : "video",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "h264,width=1920,height=1080,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c0000c/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/12"
+               },
+               {
+                  "qualityProfile" : "h264,width=1280,height=720,fps=60,br=1200",
+                  "quicrNamespace" : "0x00000101000001c1000c/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/193/endpoint/12"
+               },
+               {
+                  "qualityProfile" : "h264,width=640,height=480,fps=60,br=800",
+                  "quicrNamespace" : "0x00000101000001c2000c/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/194/endpoint/12"
+               },
+               {
+                  "qualityProfile" : "av1,width=1920,height=1080,fps=60,br=4000",
+                  "quicrNamespace" : "0x00000101000001a0000c/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/160/endpoint/12"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "d9803248-c403-4c19-acf9-370d1585d27d",
+         "sourceName" : "Macbook camera"
+      },
+      {
+         "label" : "Paul J.",
+         "mediaType" : "audio",
+         "profileSet" : {
+            "profiles" : [
+               {
+                  "qualityProfile" : "opus,br=6",
+                  "quicrNamespace" : "0x0000010100000101000c/80",
+                  "quicrNamespaceUrl" : "quicr://webex.cisco.com/conference/1/mediaType/1/endpoint/12"
+               }
+            ],
+            "type" : "singleordered"
+         },
+         "sourceId" : "15b1cb63-5775-4aa6-aea7-65eac89afe17",
+         "sourceName" : "Macbook mic"
+      }
+   ],
+   "clientId" : "91a1382f-3e9c-4c7e-bad0-c53f7361e95e"
+}

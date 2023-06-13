@@ -5,6 +5,8 @@ project(qmedia VERSION 0.1.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(QMEDIA_BUILD_TESTS "Build tests for quicr" ON)
     option(BUILD_SEND_VIDEO_FRAME "build sendVideoFrame cmd" ON) 
@@ -44,7 +46,6 @@ add_subdirectory(src)
 ###
 
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS)
-  add_subdirectory(cmd)
   add_subdirectory(ctest)
 endif()
 

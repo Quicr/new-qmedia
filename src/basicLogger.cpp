@@ -33,7 +33,7 @@ void basicLogger::log(LogLevel level, const std::string &string) {
                          now.time_since_epoch()) %
                      1000000;
 
-  std::lock_guard lock(mutex);
+  std::lock_guard _(mutex);
   std::cout << std::put_time(std::localtime(&nowAsTimeT), "%m-%d-%Y %H:%M:%S")
             << "." << std::setfill('0') << std::setw(6) << nowUs.count()
             << std::setfill(' ') << " " << std::setw(6) << std::right << lvl
