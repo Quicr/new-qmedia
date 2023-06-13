@@ -117,7 +117,7 @@ public:
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
        logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");        
-       std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
+       std::cerr << "allocatePubByNamespace " << quicrNamespace.to_hex() << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
@@ -131,9 +131,9 @@ private:
     qmedia::basicLogger logger;
 };
 
-int main(int /*argc*/, char** /*arg*/)
+int test()
 {
-    //qmedia::basicLogger logger;    
+   //qmedia::basicLogger logger;    
     quicr::Namespace quicrNamespace;
 
     auto qSubscriber = std::make_shared<QSubsciberTestDelegate>();
@@ -142,7 +142,7 @@ int main(int /*argc*/, char** /*arg*/)
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
     //qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
-    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33435, quicr::RelayInfo::Protocol::QUIC);
+    qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
 
     std::ifstream f("/tmp/manifest.json");
 
@@ -161,11 +161,21 @@ int main(int /*argc*/, char** /*arg*/)
     {
         ++i;
         qController->publishNamedObjectTest(data, 256, i % 2);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
         if (i == 10) { break; }
     }
-
     delete[] data;
 
-    qController->close();
+
+    qController = nullptr;
+
+    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+}
+
+int main(int /*argc*/, char** /*arg*/)
+{
+   for (int i=0; i<100; ++i)
+   {
+    test();
+   }
 }

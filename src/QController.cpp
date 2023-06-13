@@ -132,14 +132,9 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
 quicr::Namespace QController::quicrNamespaceUrlParse(const std::string& quicrNamespaceUrl)
 {
     auto encodedTemplate = encoder.GetTemplate(1).at(1);
-    uint8_t bits = 24 + 8;
-    for (auto bitCount : encodedTemplate.bits)
-    {
-        bits += bitCount;
-    }
-    quicr::Name encoded = encoder.EncodeUrl(quicrNamespaceUrl);
-    quicr::Namespace quicrNamespace{encoded, bits};
-    return quicrNamespace;
+
+    quicr::Namespace quicrNamespace = encoder.EncodeUrl(quicrNamespaceUrl);
+   return quicrNamespace;
 }
 
 /////////////
