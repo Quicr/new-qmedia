@@ -62,7 +62,7 @@ private:
                                    bool reliableTransport,
                                    std::shared_ptr<qmedia::QPublicationDelegate>);
 
-    std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace, const std::string& profile);
+    std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile);
     std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace);
 
     int startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
