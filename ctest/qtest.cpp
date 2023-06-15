@@ -55,7 +55,7 @@ public:
     {
     }
 
-    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace)
+    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& profile)
     {
        logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::allocateSubByNamespace");        
        return std::make_shared<QSubscriptionTestDelegate>(quicrNamespace);

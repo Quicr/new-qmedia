@@ -221,7 +221,7 @@ QController::createQuicrPublicationDelegate(const std::string sourceId,
 /////////////
 // QController Delegates
 ////////////
-std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(const quicr::Namespace& quicrNamespace)
+std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(const quicr::Namespace& quicrNamespace, const std::string& profile)
 {
     if (qSubscriberDelegate)
     {
@@ -230,7 +230,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
         // found - return
         if (!qSubscriptionsMap.count(quicrNamespace))
         {
-            qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace);
+            qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace, profile);
         }
 
         return qSubscriptionsMap[quicrNamespace];
@@ -341,7 +341,7 @@ int QController::processSubscriptions(json& subscriptions)
             quicr::Namespace quicrNamespace = quicrNamespaceUrlParse(profile["quicrNamespaceUrl"]);
 
             // look up subscription delegate or allocate new one
-            auto qSubscriptionDelegate = getSubscriptionDelegate(quicrNamespace);
+            auto qSubscriptionDelegate = getSubscriptionDelegate(quicrNamespace, profile["qualityProfile"]);
 
             if (qSubscriptionDelegate)
             {
