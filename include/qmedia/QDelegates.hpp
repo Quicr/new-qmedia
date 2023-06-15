@@ -42,7 +42,7 @@ private:
 class QSubscriberDelegate
 {
 public:
-    virtual std::shared_ptr<QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
+    virtual std::shared_ptr<QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile) = 0;
     virtual int removeSubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
 };
 class QPublisherDelegate
