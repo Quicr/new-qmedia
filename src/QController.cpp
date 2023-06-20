@@ -31,7 +31,11 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
 {
     quicr::RelayInfo relayInfo = {.hostname = remoteAddress.c_str(), .port = remotePort, .proto = protocol};
 
-    qtransport::TransportConfig tcfg{.tls_cert_filename = NULL, .tls_key_filename = NULL, .data_queue_size = 200};
+    qtransport::TransportConfig tcfg{
+        .tls_cert_filename = NULL,
+        .tls_key_filename = NULL,
+        .time_queue_init_queue_size = 200,
+        };
 
     // Bridge to external logging.
     quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
@@ -99,7 +103,7 @@ void QController::removeSubscriptions()
     for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
     {
         quicrSubDelegate->unsubscribe(quicrSubDelegate, quicrClient);
-    }  
+    }
 }
 
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
