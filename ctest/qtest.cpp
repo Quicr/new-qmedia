@@ -15,6 +15,14 @@
 #include <chrono>
 #include <thread>
 
+std::vector<std::uint64_t> timeBuckets;
+
+uint64_t timeSinceEpochMillisec() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+static uint64_t then = 0;
 
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
@@ -32,14 +40,18 @@ public:
         logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate::update");
         return 1; //1 = needs prepare
     }
-    /*
-    quicr::Namespace getNamespace() override {
-        logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate::getNamespace");
-        return quicrNamespace;
-    }*/
 
-    int subscribedObject(quicr::bytes&& data) override {
-        std::cerr << "subscribedObject " << std::endl;
+    int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
+        uint64_t now = timeSinceEpochMillisec();
+
+        uint64_t then =  timeBuckets[groupId-1];
+
+        uint64_t duration = now - then;
+
+        std::cerr << "duration = " << duration << std::endl;
+        std::cerr << "subscribedObject: data size " << data.size() << std::endl;
+        std::cerr << "\tgroupId: " << groupId << std::endl;
+        std::cerr << "\tobjectId: " << objectId << std::endl;
         return 0;
     }
 
@@ -64,7 +76,7 @@ public:
     int removeSubByNamespace(const quicr::Namespace& quicrNamespace) 
     {
        logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::removeByNamespace"); 
-       return 0;
+     0;  return 0;
     }
 
 private:
@@ -94,12 +106,6 @@ public:
     void publish(bool pubFlag) {
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::publish");
     }
-    /*
-    quicr::Namespace getNamespace()  {
-        logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::getNamespace");
-        return quicrNamespace;
-    }*/
-
 
 private:
     quicr::Namespace quicrNamespace;
@@ -142,7 +148,10 @@ int test()
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
     //qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
-    qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
+    then = timeSinceEpochMillisec();
+    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
+    std::uint64_t now = timeSinceEpochMillisec();
+    std::cerr << "connect duration " << now - then << std::endl;
 
     std::ifstream f("/tmp/manifest.json");
 
@@ -151,25 +160,32 @@ int test()
     strStream << f.rdbuf();
     auto manifest = strStream.str();
     
+    then = timeSinceEpochMillisec();
     qController->updateManifest(manifest);
-
+    now = timeSinceEpochMillisec();
+    std::cerr << "update manifest  duration " << now - then << std::endl;
     std::uint8_t *data = new std::uint8_t[256];
 
-    int i = 0;
+    int num_buckets = 100;
 
-    while(true)
+    timeBuckets.resize(num_buckets);
+
+    std::cerr << "PUBLISH DATE ------------------------------- " << std::endl;
+    for (int i=0; i<100; i++)
     {
         ++i;
-        qController->publishNamedObjectTest(data, 256, i % 2);
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        if (i == 10) { break; }
+        then = timeSinceEpochMillisec();
+        timeBuckets[i] = then;
+        qController->publishNamedObjectTest(data, 256, true);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    std::cerr << "PUBLISH DATE -------------------------------  END " << std::endl;
+    std::uint64_t tear_then  = timeSinceEpochMillisec();
     delete[] data;
-
-
     qController = nullptr;
-
-    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    std::uint64_t tear_now  = timeSinceEpochMillisec();
+    std::cerr << "TEST() ---- finished......" << tear_now - tear_then << std::endl;
 }
 
 int main(int /*argc*/, char** /*arg*/)
@@ -178,4 +194,5 @@ int main(int /*argc*/, char** /*arg*/)
    {
     test();
    }
+   std::this_thread::sleep_for(std::chrono::milliseconds(120));
 }
