@@ -439,6 +439,8 @@ int QController::processPublications(json& publications)
                 // LOG - unable to allocate a subscrpition delegate
                 logger.log(qtransport::LogLevel::error, "Couldn't get publication delegate!");
             }
+
+            if (publication["profileSet"]["type"] == "singleordered") break;
         }
     }
     return 0;
