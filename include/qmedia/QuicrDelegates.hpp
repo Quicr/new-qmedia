@@ -59,8 +59,8 @@ private:
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
-    std::uint64_t groupOOCount;
-    std::uint64_t objecOOCount;
+    std::uint64_t groupGapCount;
+    std::uint64_t objectGapCount;
 
     std::uint32_t currentGroupId;
     std::uint16_t currentObjectId;

@@ -27,6 +27,8 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     qDelegate(qDelegate),
     logger(logger)
 {
+    currentGroupId = 0;
+    currentObjectId = -1;
     logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
 }
 
@@ -35,13 +37,12 @@ QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
     std::cerr << "~QuicrTransportSubDelegate" << std::endl;
     std::stringstream s;
     s << "~QuicrTransportSubDelegate::";
-    s << "group: " << groupCount << " ";
-    s << "object: " << objectCount << " ";
-    s << "group oo:" << groupOOCount << " ";
-    s << "object oo " << objecOOCount;
-
+    s << "namespace " << quicrNamespace << ":";
+    s << "\tgroup: " << groupCount << " ";
+    s << "\tobject: " << objectCount << " ";
+    s << "\tgroup gap:" << groupGapCount << " ";
+    s << "\tobject gap " << objectGapCount;
     std::cerr << s.str() << std::endl;
-
     logger.log(qtransport::LogLevel::info, s.str());
 }
 
@@ -79,32 +80,36 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
     auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicrName);
 
-
     // group=5, object=0
     // group=5, object=1
     // group=6, object=2
-    // group=7, object=3
+    // group=7, object=0 <---- group gap
+    // group=7, object=4 <---- object gap
+    // group=8, object=1 <---- object gap
 
     if (groupId > currentGroupId) 
     {
         if (groupId > currentGroupId+1)
         {
-            ++groupOOCount;
+            ++groupGapCount;
             currentObjectId = 0;
         }
         ++groupCount;
     }
 
-
     if (objectId > currentObjectId)
     {
-        ++objecOOCount;
+        if (objectId > currentObjectId+1)
+        {
+            ++objectGapCount;
+        }
+        ++objectCount;
     }
 
     currentGroupId = groupId;
     currentObjectId = objectId;
 
-    qDelegate->subscribedObject(std::move(data));
+    qDelegate->subscribedObject(std::move(data), groupId, objectId);
 }
 
 /*
@@ -162,7 +167,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(0),
+    groupId(1),
     objectId(0),
     priority(priority),
     expiry(expiry),
