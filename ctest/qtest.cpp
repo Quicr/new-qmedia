@@ -43,11 +43,11 @@ public:
 
     int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
         uint64_t now = timeSinceEpochMillisec();
-
+        std::cerr << "groupId = " << groupId << std::endl;
         uint64_t then =  timeBuckets[groupId-1];
-
+        std::cerr << "now = " << now << std::endl;
+        std::cerr << "then = " << then << std::endl;
         uint64_t duration = now - then;
-
         std::cerr << "duration = " << duration << std::endl;
         std::cerr << "subscribedObject: data size " << data.size() << std::endl;
         std::cerr << "\tgroupId: " << groupId << std::endl;
@@ -76,7 +76,7 @@ public:
     int removeSubByNamespace(const quicr::Namespace& quicrNamespace) 
     {
        logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::removeByNamespace"); 
-     0;  return 0;
+       return 0;
     }
 
 private:
@@ -147,9 +147,9 @@ int test()
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
 
     //logger.log(qtransport::LogLevel::info, "connecting to qController");
-    //qController->connect("192.168.1.211", 33435, quicr::RelayInfo::Protocol::QUIC);
     then = timeSinceEpochMillisec();
-    qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
+    qController->connect("127.0.0.1", 33435, quicr::RelayInfo::Protocol::QUIC);
+    //qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
     std::uint64_t now = timeSinceEpochMillisec();
     std::cerr << "connect duration " << now - then << std::endl;
 
@@ -170,11 +170,16 @@ int test()
 
     timeBuckets.resize(num_buckets);
 
-    std::cerr << "PUBLISH DATE ------------------------------- " << std::endl;
-    for (int i=0; i<100; i++)
+    for (int i=0; i<num_buckets; i++)
     {
-        ++i;
+        timeBuckets[i] = 0;
+    }
+
+    std::cerr << "PUBLISH DATE ------------------------------- " << std::endl;
+    for (int i=0; i<num_buckets; i++)
+    {
         then = timeSinceEpochMillisec();
+        std::cerr << "pub index = i " << i << " time : " << then << std::endl;
         timeBuckets[i] = then;
         qController->publishNamedObjectTest(data, 256, true);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -185,7 +190,8 @@ int test()
     delete[] data;
     qController = nullptr;
     std::uint64_t tear_now  = timeSinceEpochMillisec();
-    std::cerr << "TEST() ---- finished......" << tear_now - tear_then << std::endl;
+    std::cerr << "TEST() ---- finished......tear duration: " << tear_now - tear_then << std::endl;
+    return 0;
 }
 
 int main(int /*argc*/, char** /*arg*/)

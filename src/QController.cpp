@@ -126,6 +126,7 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
  */
 void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag)
 {
+    const std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.size() > 0)
     {
         auto publicationDelegate = quicrPublicationsMap.begin()->second;
@@ -381,6 +382,7 @@ int QController::processSubscriptions(json& subscriptions)
                 }
 
                 // If singleorderd and we have a subscription prepared
+                const std::lock_guard<std::mutex> _(pubsMutex);
                 if (qSubscriptionsMap.size() > 0 && subscription["profileSet"]["type"] == "singleordered")
                 {
                     break;
