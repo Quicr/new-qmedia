@@ -132,7 +132,7 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
     }
 }
 
-void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
+void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> /*self*/,
                                             std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
     if (quicrClient)
@@ -200,7 +200,7 @@ void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubD
     }
 }
 
-void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
+void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> /*self*/,
                                                  std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
     if (quicrClient)
