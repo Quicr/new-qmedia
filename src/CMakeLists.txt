@@ -4,6 +4,7 @@ add_library(${PROJECT_NAME}
     QController.cpp
     QuicrDelegates.cpp
     quic_varint.cpp
+    QSFrameContext.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

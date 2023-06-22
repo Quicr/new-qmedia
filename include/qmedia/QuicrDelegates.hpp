@@ -5,7 +5,7 @@
 #include <transport/logger.h>
 #include <qmedia/QDelegates.hpp>
 #include <string>
-#include "sframe/sframe.h"
+#include "QSFrameContext.hpp"
 
 namespace qmedia
 {
@@ -66,7 +66,7 @@ private:
     std::uint32_t currentGroupId;
     std::uint16_t currentObjectId;
 
-    sframe::ContextBase sframe;
+    QSFrameContext sframe_context;
 };
 
 class QuicrTransportPubDelegate : public quicr::PublisherDelegate
@@ -115,7 +115,6 @@ private:
     std::uint64_t groupCount;
     std::uint64_t objectCount;
 
-    sframe::ContextBase sframe;
-    sframe::KeyID sframe_key_id;
+    QSFrameContext sframe_context;
 };
 }        // namespace qmedia

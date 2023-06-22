@@ -6,6 +6,9 @@
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 
+constexpr uint64_t Fake_Key_ID = 0xdeadbeefcafebabe;
+constexpr uint8_t Quicr_SFrame_Sig_Bits = 96;
+
 namespace qmedia
 {
 QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
@@ -27,14 +30,18 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     e2eToken(e2eToken),
     qDelegate(qDelegate),
     logger(logger),
-    sframe(sframe::CipherSuite::AES_GCM_128_SHA256)
+    sframe_context(sframe::CipherSuite::AES_GCM_128_SHA256)
 {
     currentGroupId = 0;
     currentObjectId = -1;
     logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
-    sframe.add_key(0xdeadbeefcafebabe,
-                   std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+
+    // TODO: This needs to be replaced with valid keying material
+    sframe_context.addEpoch(
+        0xdeadbeefcafebabe,
+        std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
@@ -123,16 +130,27 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     try
     {
         auto key_id_length = QUICVarIntSize(data.data());
-        if (data.size() <= key_id_length) return;
+        if (data.size() <= key_id_length)
+        {
+            logger.log(qtransport::LogLevel::error,
+                       "Received an object with a corrupt key ID");
+            return;
+        }
         auto sframe_key_id = QUICVarIntDecode(data.data());
-        if (sframe_key_id == std::numeric_limits<std::uint64_t>::max()) return;
+        if (sframe_key_id == std::numeric_limits<std::uint64_t>::max())
+        {
+            logger.log(qtransport::LogLevel::error,
+                       "Received an object with an invalid key ID");
+            return;
+        }
         quicr::bytes output_buffer(data.size() - key_id_length);
-        sframe::Header header(sframe_key_id, (groupId << 16) | objectId);
-        auto cleartext =
-            sframe.unprotect(header,
-                             output_buffer,
-                             gsl::span{data.data() + key_id_length,
-                                       data.size() - key_id_length});
+        auto cleartext = sframe_context.unprotect(
+            sframe_key_id,
+            quicr::Namespace(quicrNamespace.name(), Quicr_SFrame_Sig_Bits),
+            uint64_t(groupId << 16) | objectId,
+            output_buffer,
+            gsl::span{data.data() + key_id_length,
+                      data.size() - key_id_length});
         output_buffer.resize(cleartext.size());
 
         qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
@@ -140,13 +158,14 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     catch (const std::exception &e)
     {
         logger.log(qtransport::LogLevel::error,
-                   std::string("Exception trying to decrypt with sframe: ") +
+                   std::string("Exception trying to decrypt with sframe and "
+                               "forward object: ") +
                        e.what());
     }
     catch (...)
     {
         logger.log(qtransport::LogLevel::error,
-                    "Exception trying to encrypt sframe");
+                    "Exception trying to encrypt sframe and forward object");
     }
 }
 
@@ -212,14 +231,16 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     reliableTransport(reliableTransport),
     qDelegate(qDelegate),
     logger(logger),
-    sframe(sframe::CipherSuite::AES_GCM_128_SHA256),
-    sframe_key_id(0xdeadbeefcafebabe)
+    sframe_context(sframe::CipherSuite::AES_GCM_128_SHA256)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
 
-    sframe.add_key(sframe_key_id,
-                   std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    // TODO: This needs to be replaced with valid keying material
+    sframe_context.addEpoch(
+        0xdeadbeefcafebabe,
+        std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -291,14 +312,14 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         // Encrypt using sframe
         try
         {
-            auto key_id_length = QUICVarIntSize(sframe_key_id);
+            auto key_id_length = QUICVarIntSize(Fake_Key_ID);
             quicr::bytes b(key_id_length + len + 16);
-            QUICVarIntEncode(sframe_key_id, b.data());
-            sframe::Header header(sframe_key_id, (groupId << 16) | objectId);
-            auto ciphertext =
-                sframe.protect(header,
-                               gsl::span(b.data() + key_id_length, len + 16),
-                               gsl::span(data, len));
+            QUICVarIntEncode(Fake_Key_ID, b.data());
+            auto ciphertext = sframe_context.protect(
+                quicr::Namespace(quicrNamespace.name(), Quicr_SFrame_Sig_Bits),
+                uint64_t(groupId << 16) | objectId,
+                gsl::span(b.data() + key_id_length, len + 16),
+                gsl::span(data, len));
             b.resize(key_id_length + ciphertext.size());
 
             quicrClient->publishNamedObject(quicrName,
@@ -310,12 +331,16 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         catch (const std::exception &e)
         {
             logger.log(qtransport::LogLevel::error,
-                       std::string("Exception trying to encrypt sframe: ") + e.what());
+                       std::string("Exception trying to encrypt sframe and "
+                                   "pubblish: ") +
+                           e.what());
+            return;
         }
         catch (...)
         {
             logger.log(qtransport::LogLevel::error,
-                       "Exception trying to encrypt sframe");
+                       "Exception trying to encrypt sframe and publish");
+            return;
         }
     }
 }
