@@ -11,3 +11,6 @@
 [submodule "dependencies/json"]
 	path = dependencies/json
 	url = https://github.com/nlohmann/json
+[submodule "dependencies/sframe"]
+	path = dependencies/sframe
+	url = git@github.com:Quicr/sframe.git

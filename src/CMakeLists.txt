@@ -3,13 +3,15 @@ add_library(${PROJECT_NAME}
     basicLogger.cpp
     QController.cpp
     QuicrDelegates.cpp
+    quic_varint.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${LIBRARIES}
         quicr
-        numero_uri_lib)
+        numero_uri_lib
+        sframe)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC

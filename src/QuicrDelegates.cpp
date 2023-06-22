@@ -2,6 +2,7 @@
 #include <quicr/hex_endec.h>
 #include <iostream>
 #include <sstream>
+#include "quic_varint.h"
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 
@@ -25,11 +26,15 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     authToken(authToken),
     e2eToken(e2eToken),
     qDelegate(qDelegate),
-    logger(logger)
+    logger(logger),
+    sframe(sframe::CipherSuite::AES_GCM_128_SHA256)
 {
     currentGroupId = 0;
     currentObjectId = -1;
     logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
+    sframe.add_key(0xdeadbeefcafebabe,
+                   std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
@@ -78,6 +83,11 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    quicr::bytes&& data)
 {
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
+    if (data.empty())
+    {
+        logger.log(qtransport::LogLevel::warn, "Object is empty");
+        return;
+    }
     auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicrName);
 
     // group=5, object=0
@@ -109,7 +119,35 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     currentGroupId = groupId;
     currentObjectId = objectId;
 
-    qDelegate->subscribedObject(std::move(data), groupId, objectId);
+    // Decrypt the received data using sframe
+    try
+    {
+        auto key_id_length = QUICVarIntSize(data.data());
+        if (data.size() <= key_id_length) return;
+        auto sframe_key_id = QUICVarIntDecode(data.data());
+        if (sframe_key_id == std::numeric_limits<std::uint64_t>::max()) return;
+        quicr::bytes output_buffer(data.size() - key_id_length);
+        sframe::Header header(sframe_key_id, (groupId << 16) | objectId);
+        auto cleartext =
+            sframe.unprotect(header,
+                             output_buffer,
+                             gsl::span{data.data() + key_id_length,
+                                       data.size() - key_id_length});
+        output_buffer.resize(cleartext.size());
+
+        qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
+    }
+    catch (const std::exception &e)
+    {
+        logger.log(qtransport::LogLevel::error,
+                   std::string("Exception trying to decrypt with sframe: ") +
+                       e.what());
+    }
+    catch (...)
+    {
+        logger.log(qtransport::LogLevel::error,
+                    "Exception trying to encrypt sframe");
+    }
 }
 
 /*
@@ -173,9 +211,15 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     expiry(expiry),
     reliableTransport(reliableTransport),
     qDelegate(qDelegate),
-    logger(logger)
+    logger(logger),
+    sframe(sframe::CipherSuite::AES_GCM_128_SHA256),
+    sframe_key_id(0xdeadbeefcafebabe)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
+
+    sframe.add_key(sframe_key_id,
+                   std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -216,6 +260,13 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
                                                    std::size_t len,
                                                    bool groupFlag)
 {
+    // If the object data isn't present, return
+    if (len == 0)
+    {
+        logger.log(qtransport::LogLevel::warn, "Object is empty");
+        return;
+    }
+
     if (quicrClient)
     {
         std::uint8_t pri = priority[0];
@@ -236,9 +287,36 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
             quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
             ++objectId;
         }
-        quicr::bytes b(data, data + len);
 
-        quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, std::move(b));
+        // Encrypt using sframe
+        try
+        {
+            auto key_id_length = QUICVarIntSize(sframe_key_id);
+            quicr::bytes b(key_id_length + len + 16);
+            QUICVarIntEncode(sframe_key_id, b.data());
+            sframe::Header header(sframe_key_id, (groupId << 16) | objectId);
+            auto ciphertext =
+                sframe.protect(header,
+                               gsl::span(b.data() + key_id_length, len + 16),
+                               gsl::span(data, len));
+            b.resize(key_id_length + ciphertext.size());
+
+            quicrClient->publishNamedObject(quicrName,
+                                            pri,
+                                            expiry,
+                                            reliableTransport,
+                                            std::move(b));
+        }
+        catch (const std::exception &e)
+        {
+            logger.log(qtransport::LogLevel::error,
+                       std::string("Exception trying to encrypt sframe: ") + e.what());
+        }
+        catch (...)
+        {
+            logger.log(qtransport::LogLevel::error,
+                       "Exception trying to encrypt sframe");
+        }
     }
 }
 
