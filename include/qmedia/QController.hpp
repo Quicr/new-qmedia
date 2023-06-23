@@ -63,7 +63,7 @@ private:
                                    std::shared_ptr<qmedia::QPublicationDelegate>);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile);
-    std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace);
+    std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile);
 
     int startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                           const std::string sourceId,
