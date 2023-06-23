@@ -137,7 +137,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     try
     {
         auto buf = quicr::messages::MessageBuffer(data);
-        auto epoch = quicr::uintVar_t(0);
+        quicr::uintVar_t epoch;
         buf >> epoch;
         const auto ciphertext = buf.get();
         quicr::bytes output_buffer(ciphertext.size());
@@ -146,7 +146,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
             quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
             (uint64_t(groupId) << 16) | objectId,
             output_buffer,
-            gsl::span{ciphertext.data(), ciphertext.size()});
+            ciphertext);
         output_buffer.resize(cleartext.size());
 
         qDelegate->subscribedObject(std::move(output_buffer),
@@ -314,16 +314,16 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         // Encrypt using sframe
         try
         {
-            quicr::bytes b(len + 16);
+            quicr::bytes output_buffer(len + 16);
             auto ciphertext = sframe_context.protect(
                 quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
                 (uint64_t(groupId) << 16) | objectId,
-                gsl::span(b.data(), b.capacity()),
-                gsl::span(data, len));
-            b.resize(ciphertext.size());
-            auto buf = quicr::messages::MessageBuffer(b.size() + 8);
+                output_buffer,
+                {data, len});
+            output_buffer.resize(ciphertext.size());
+            auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
             buf << quicr::uintVar_t(Fixed_Epoch);
-            buf.push(b);
+            buf.push(std::move(output_buffer));
 
             quicrClient->publishNamedObject(quicrName,
                                             pri,
