@@ -1,4 +1,6 @@
+#include <bit>
 #include "qmedia/QSFrameContext.hpp"
+#include "sframe/crypto.h"
 
 namespace qmedia
 {
@@ -66,9 +68,19 @@ void QSFrameContext::ensure_key(uint64_t epoch_id,
     }
 
     const auto &epoch_secret = epoch_secrets.at(epoch_id);
-    //!const auto base_key = derive_base_key(epoch_secret, quicr_namespace);
-    quicr::bytes base_key;
+    const auto base_key = derive_base_key(epoch_id, quicr_namespace);
     ns_contexts.at(quicr_namespace).add_key(epoch_id, base_key);
+}
+
+sframe::bytes QSFrameContext::derive_base_key(
+    uint64_t epoch_id,
+    const quicr::Namespace &quicr_namespace)
+{
+    // NOTE: caller must lock the mutex
+    std::string salt_string =
+        "Quicr epoch base key " + quicr_namespace.to_hex();
+    sframe::bytes salt(salt_string.begin(), salt_string.end());
+    return sframe::hkdf_extract(cipher_suite, salt, epoch_secrets[epoch_id]);
 }
 
 } // namespace qmedia

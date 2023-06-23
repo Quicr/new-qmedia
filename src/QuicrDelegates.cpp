@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include "quic_varint.h"
+#include "sframe/crypto.h"
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 
@@ -37,10 +38,14 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
 
     // TODO: This needs to be replaced with valid keying material
-    sframe_context.addEpoch(
-        0xdeadbeefcafebabe,
+    std::string salt_string =
+        "Quicr epoch master key " + std::to_string(Fake_Key_ID);
+    sframe::bytes salt(salt_string.begin(), salt_string.end());
+    auto epoch_key = hkdf_extract(sframe::CipherSuite::AES_GCM_128_SHA256, salt,
         std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    sframe_context.addEpoch(Fake_Key_ID, epoch_key);
+
     sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
 
@@ -236,10 +241,14 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
 
     // TODO: This needs to be replaced with valid keying material
-    sframe_context.addEpoch(
-        0xdeadbeefcafebabe,
+    std::string salt_string =
+        "Quicr epoch master key " + std::to_string(Fake_Key_ID);
+    sframe::bytes salt(salt_string.begin(), salt_string.end());
+    auto epoch_key = hkdf_extract(sframe::CipherSuite::AES_GCM_128_SHA256, salt,
         std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    sframe_context.addEpoch(Fake_Key_ID, epoch_key);
+
     sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
 

@@ -32,6 +32,8 @@ public:
 
 protected:
     void ensure_key(uint64_t epoch_id, const quicr::Namespace &quicr_namespace);
+    sframe::bytes derive_base_key(uint64_t epoch_id,
+                                 const quicr::Namespace &quicr_namespace);
 
     sframe::CipherSuite cipher_suite;
     std::optional<uint64_t> current_epoch;
