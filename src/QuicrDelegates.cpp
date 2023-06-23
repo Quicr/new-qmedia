@@ -7,8 +7,10 @@
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 
-constexpr uint64_t Fake_Key_ID = 0xdeadbeefcafebabe;
+constexpr uint64_t Fixed_Epoch = 0xdeadbeefcafebabe;
 constexpr uint8_t Quicr_SFrame_Sig_Bits = 96;
+constexpr sframe::CipherSuite Default_Cipher_Suite =
+    sframe::CipherSuite::AES_GCM_128_SHA256;
 
 namespace qmedia
 {
@@ -31,7 +33,7 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     e2eToken(e2eToken),
     qDelegate(qDelegate),
     logger(logger),
-    sframe_context(sframe::CipherSuite::AES_GCM_128_SHA256)
+    sframe_context(Default_Cipher_Suite)
 {
     currentGroupId = 0;
     currentObjectId = -1;
@@ -39,12 +41,12 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
 
     // TODO: This needs to be replaced with valid keying material
     std::string salt_string =
-        "Quicr epoch master key " + std::to_string(Fake_Key_ID);
+        "Quicr epoch master key " + std::to_string(Fixed_Epoch);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(sframe::CipherSuite::AES_GCM_128_SHA256, salt,
+    auto epoch_key = hkdf_extract(Default_Cipher_Suite, salt,
         std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fake_Key_ID, epoch_key);
+    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
     sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
@@ -151,7 +153,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         quicr::bytes output_buffer(data.size() - key_id_length);
         auto cleartext = sframe_context.unprotect(
             sframe_key_id,
-            quicr::Namespace(quicrNamespace.name(), Quicr_SFrame_Sig_Bits),
+            quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
             uint64_t(groupId << 16) | objectId,
             output_buffer,
             gsl::span{data.data() + key_id_length,
@@ -236,18 +238,18 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     reliableTransport(reliableTransport),
     qDelegate(qDelegate),
     logger(logger),
-    sframe_context(sframe::CipherSuite::AES_GCM_128_SHA256)
+    sframe_context(Default_Cipher_Suite)
 {
     logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
 
     // TODO: This needs to be replaced with valid keying material
     std::string salt_string =
-        "Quicr epoch master key " + std::to_string(Fake_Key_ID);
+        "Quicr epoch master key " + std::to_string(Fixed_Epoch);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(sframe::CipherSuite::AES_GCM_128_SHA256, salt,
+    auto epoch_key = hkdf_extract(Default_Cipher_Suite, salt,
         std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fake_Key_ID, epoch_key);
+    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
     sframe_context.enableEpoch(0xdeadbeefcafebabe);
 }
@@ -321,11 +323,11 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         // Encrypt using sframe
         try
         {
-            auto key_id_length = QUICVarIntSize(Fake_Key_ID);
+            auto key_id_length = QUICVarIntSize(Fixed_Epoch);
             quicr::bytes b(key_id_length + len + 16);
-            QUICVarIntEncode(Fake_Key_ID, b.data());
+            QUICVarIntEncode(Fixed_Epoch, b.data());
             auto ciphertext = sframe_context.protect(
-                quicr::Namespace(quicrNamespace.name(), Quicr_SFrame_Sig_Bits),
+                quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
                 uint64_t(groupId << 16) | objectId,
                 gsl::span(b.data() + key_id_length, len + 16),
                 gsl::span(data, len));

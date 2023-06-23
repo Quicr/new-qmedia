@@ -56,13 +56,13 @@ void QSFrameContext::ensure_key(uint64_t epoch_id,
 {
     // NOTE: caller must lock the mutex
 
-    if (ns_contexts.count(quicr_namespace) &&
+    if ((ns_contexts.count(quicr_namespace) > 0) &&
         !ns_contexts.at(quicr_namespace).has_key(epoch_id))
     {
         return;
     }
 
-    if (!ns_contexts.count(quicr_namespace))
+    if (ns_contexts.count(quicr_namespace) == 0)
     {
         ns_contexts.emplace(quicr_namespace, sframe::ContextBase(cipher_suite));
     }
