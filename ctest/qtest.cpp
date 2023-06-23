@@ -120,7 +120,7 @@ public:
         logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate constructed");
     }
 
-    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace)
+    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
     {
        logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");        
        std::cerr << "allocatePubByNamespace " << quicrNamespace.to_hex() << std::endl;
