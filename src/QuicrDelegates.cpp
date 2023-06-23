@@ -92,10 +92,6 @@ void QuicrTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* q
  * from the quicr::name. These fields along with the notificaiton
  * data are passed to the client callback.
  */
-
-const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
-const quicr::Name object_id_mask = ~(~0x0_name << 16);
-
 void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    uint8_t /*priority*/,
                                                    uint16_t /*expiry_age_ms*/,
