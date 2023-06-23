@@ -4,6 +4,8 @@
 #include <sstream>
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
+const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
+const quicr::Name object_id_mask = ~(~0x0_name << 16);
 
 namespace qmedia
 {
@@ -78,7 +80,9 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    quicr::bytes&& data)
 {
     logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
-    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicrName);
+
+    auto groupId = quicr::hex_to_uint<std::uint32_t>(((quicrName & group_id_mask) >> 16).to_hex());
+    auto objectId = quicr::hex_to_uint<std::uint16_t>((quicrName & object_id_mask).to_hex());
 
     // group=5, object=0
     // group=5, object=1
@@ -87,9 +91,9 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     // group=7, object=4 <---- object gap
     // group=8, object=1 <---- object gap
 
-    if (groupId > currentGroupId) 
+    if (groupId > currentGroupId)
     {
-        if (groupId > currentGroupId+1)
+        if (groupId > currentGroupId + 1)
         {
             ++groupGapCount;
             currentObjectId = 0;
@@ -99,7 +103,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
 
     if (objectId > currentObjectId)
     {
-        if (objectId > currentObjectId+1)
+        if (objectId > currentObjectId + 1)
         {
             ++objectGapCount;
         }
@@ -121,28 +125,25 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
 void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
                                           std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
-    {
-        quicrClient->subscribe(
-            self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
-    }
-    else
+    if (!quicrClient)
     {
         logger.log(qtransport::LogLevel::error, "Subscribe - quicrCliet doesn't exist");
+        return;
     }
+    quicrClient->subscribe(
+        self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
 }
 
 void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> /*self*/,
                                             std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
-    {
-        quicrClient->unsubscribe(quicrNamespace, originUrl, authToken);
-    }
-    else
+    if (!quicrClient)
     {
         logger.log(qtransport::LogLevel::error, "Unsubscibe - quicrCliet doesn't exist");
+        return;
     }
+
+    quicrClient->unsubscribe(quicrNamespace, originUrl, authToken);
 }
 
 /*
@@ -156,18 +157,18 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                                      const std::string& originUrl,
                                                      const std::string& authToken,
                                                      quicr::bytes&& payload,
-                                                     const std::vector<std::uint8_t> &priority,
+                                                     const std::vector<std::uint8_t>& priority,
                                                      std::uint16_t expiry,
                                                      bool reliableTransport,
                                                      std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                      qtransport::LogHandler& logger) :
-    //canPublish(true),
+    // canPublish(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(1),
+    groupId(0),
     objectId(0),
     priority(priority),
     expiry(expiry),
@@ -216,30 +217,26 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
                                                    std::size_t len,
                                                    bool groupFlag)
 {
-    if (quicrClient)
+    if (!quicrClient) return;
+
+    std::uint8_t pri = priority[0];
+    quicr::Name quicrName(quicrNamespace.name());
+    if (groupFlag)
     {
-        std::uint8_t pri = priority[0];
-        quicr::Name quicrName(quicrNamespace.name());
-        if (groupFlag)
-        {
-            quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
-            quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
-            ++groupId;
-            objectId = 0;
-        }
-        else
-        {
-            if (priority.size() > 1) {
-                pri = priority[1];
-            }
-            quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
-            quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
-            ++objectId;
-        }
-        quicr::bytes b(data, data + len);
-
-        quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, std::move(b));
+        quicrName = (0x0_name | ++groupId) << 16 | (quicrName & ~group_id_mask);
+        quicrName &= ~object_id_mask;
+        objectId = 0;
     }
-}
+    else
+    {
+        if (priority.size() > 1)
+        {
+            pri = priority[1];
+        }
+        quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
+        quicrName = (0x0_name | ++objectId) | (quicrName & ~object_id_mask);
+    }
 
+    quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, {data, data + len});
+}
 }        // namespace qmedia
