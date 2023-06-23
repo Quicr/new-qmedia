@@ -9,8 +9,8 @@ const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
 const quicr::Name object_id_mask = ~(~0x0_name << 16);
 
-constexpr uint64_t Fixed_Epoch = 0xdeadbeefcafebabe;
-constexpr uint8_t Quicr_SFrame_Sig_Bits = 96;
+constexpr uint64_t Fixed_Epoch = 1;
+constexpr uint8_t Quicr_SFrame_Sig_Bits = 80;
 constexpr sframe::CipherSuite Default_Cipher_Suite =
     sframe::CipherSuite::AES_GCM_128_SHA256;
 
@@ -50,7 +50,7 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
-    sframe_context.enableEpoch(0xdeadbeefcafebabe);
+    sframe_context.enableEpoch(Fixed_Epoch);
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
@@ -92,6 +92,10 @@ void QuicrTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* q
  * from the quicr::name. These fields along with the notificaiton
  * data are passed to the client callback.
  */
+
+const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
+const quicr::Name object_id_mask = ~(~0x0_name << 16);
+
 void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    uint8_t /*priority*/,
                                                    uint16_t /*expiry_age_ms*/,
@@ -105,8 +109,8 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         return;
     }
 
-    auto groupId = quicr::hex_to_uint<std::uint32_t>(((quicrName & group_id_mask) >> 16).to_hex());
-    auto objectId = quicr::hex_to_uint<std::uint16_t>((quicrName & object_id_mask).to_hex());
+    const auto groupId = quicr::hex_to_uint<uint32_t>(((quicrName & group_id_mask) >> 16).to_hex());
+    const auto objectId = quicr::hex_to_uint<uint16_t>((quicrName & object_id_mask).to_hex());
 
     // group=5, object=0
     // group=5, object=1
@@ -243,7 +247,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
-    sframe_context.enableEpoch(0xdeadbeefcafebabe);
+    sframe_context.enableEpoch(Fixed_Epoch);
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -277,8 +281,6 @@ void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportP
     }
 }
 
-const quicr::Name object_id_mask = ~(~quicr::Name() << 16);
-const quicr::Name group_id_mask = ~(~quicr::Name() << 32) << 16;
 void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
                                                    std::uint8_t* data,
                                                    std::size_t len,
@@ -295,6 +297,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
 
     std::uint8_t pri = priority[0];
     quicr::Name quicrName(quicrNamespace.name());
+
     if (groupFlag)
     {
         quicrName = (0x0_name | ++groupId) << 16 | (quicrName & ~group_id_mask);
@@ -303,14 +306,46 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     }
     else
     {
-        if (priority.size() > 1)
-        {
+        if (priority.size() > 1) {
             pri = priority[1];
         }
         quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
         quicrName = (0x0_name | ++objectId) | (quicrName & ~object_id_mask);
     }
 
-    quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, {data, data + len});
+    // Encrypt using sframe
+    try
+    {
+        quicr::bytes output_buffer(len + 16);
+        auto ciphertext = sframe_context.protect(
+            quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+            (uint64_t(groupId) << 16) | objectId,
+            output_buffer,
+            {data, len});
+        output_buffer.resize(ciphertext.size());
+        auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
+        buf << quicr::uintVar_t(Fixed_Epoch);
+        buf.push(std::move(output_buffer));
+
+        quicrClient->publishNamedObject(quicrName,
+                                        pri,
+                                        expiry,
+                                        reliableTransport,
+                                        buf.get());
+    }
+    catch (const std::exception &e)
+    {
+        logger.log(qtransport::LogLevel::error,
+                    std::string("Exception trying to encrypt sframe and "
+                                "pubblish: ") +
+                        e.what());
+        return;
+    }
+    catch (...)
+    {
+        logger.log(qtransport::LogLevel::error,
+                    "Exception trying to encrypt sframe and publish");
+        return;
+    }
 }
 }        // namespace qmedia
