@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include "sframe/crypto.h"
+#include <ctime>
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
@@ -223,7 +224,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(0),
+    groupId(time(nullptr)), // TODO: Multiply by packet count.
     objectId(0),
     priority(priority),
     expiry(expiry),
