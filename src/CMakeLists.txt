@@ -3,7 +3,6 @@ add_library(${PROJECT_NAME}
     basicLogger.cpp
     QController.cpp
     QuicrDelegates.cpp
-    quic_varint.cpp
     QSFrameContext.cpp
 )
 

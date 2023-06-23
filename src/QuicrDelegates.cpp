@@ -1,8 +1,8 @@
 #include <qmedia/QuicrDelegates.hpp>
 #include <quicr/hex_endec.h>
+#include <quicr/message_buffer.h>
 #include <iostream>
 #include <sstream>
-#include "quic_varint.h"
 #include "sframe/crypto.h"
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
@@ -136,28 +136,17 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     // Decrypt the received data using sframe
     try
     {
-        auto key_id_length = QUICVarIntSize(data.data());
-        if (data.size() <= key_id_length)
-        {
-            logger.log(qtransport::LogLevel::error,
-                       "Received an object with a corrupt key ID");
-            return;
-        }
-        auto sframe_key_id = QUICVarIntDecode(data.data());
-        if (sframe_key_id == std::numeric_limits<std::uint64_t>::max())
-        {
-            logger.log(qtransport::LogLevel::error,
-                       "Received an object with an invalid key ID");
-            return;
-        }
-        quicr::bytes output_buffer(data.size() - key_id_length);
+        auto buf = quicr::messages::MessageBuffer(data);
+        auto epoch = quicr::uintVar_t(0);
+        buf >> epoch;
+        const auto ciphertext = buf.get();
+        quicr::bytes output_buffer(ciphertext.size());
         auto cleartext = sframe_context.unprotect(
-            sframe_key_id,
+            epoch,
             quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
             uint64_t(groupId << 16) | objectId,
             output_buffer,
-            gsl::span{data.data() + key_id_length,
-                      data.size() - key_id_length});
+            gsl::span{data.data(), data.size()});
         output_buffer.resize(cleartext.size());
 
         qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
@@ -323,15 +312,16 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         // Encrypt using sframe
         try
         {
-            auto key_id_length = QUICVarIntSize(Fixed_Epoch);
-            quicr::bytes b(key_id_length + len + 16);
-            QUICVarIntEncode(Fixed_Epoch, b.data());
+            quicr::bytes b(len + 16);
             auto ciphertext = sframe_context.protect(
                 quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
                 uint64_t(groupId << 16) | objectId,
-                gsl::span(b.data() + key_id_length, len + 16),
+                gsl::span(b.data(), len + 16),
                 gsl::span(data, len));
-            b.resize(key_id_length + ciphertext.size());
+            b.resize(ciphertext.size());
+            auto buf = quicr::messages::MessageBuffer(b.size() + 8);
+            buf << quicr::uintVar_t(Fixed_Epoch);
+            buf.push(b);
 
             quicrClient->publishNamedObject(quicrName,
                                             pri,
