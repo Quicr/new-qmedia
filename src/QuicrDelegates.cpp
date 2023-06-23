@@ -6,9 +6,11 @@
 #include "sframe/crypto.h"
 
 const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
+const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
+const quicr::Name object_id_mask = ~(~0x0_name << 16);
 
-constexpr uint64_t Fixed_Epoch = 0xdeadbeefcafebabe;
-constexpr uint8_t Quicr_SFrame_Sig_Bits = 96;
+constexpr uint64_t Fixed_Epoch = 1;
+constexpr uint8_t Quicr_SFrame_Sig_Bits = 80;
 constexpr sframe::CipherSuite Default_Cipher_Suite =
     sframe::CipherSuite::AES_GCM_128_SHA256;
 
@@ -48,7 +50,7 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
-    sframe_context.enableEpoch(0xdeadbeefcafebabe);
+    sframe_context.enableEpoch(Fixed_Epoch);
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
@@ -102,7 +104,9 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         logger.log(qtransport::LogLevel::warn, "Object is empty");
         return;
     }
-    auto [orgId, appId, confId, mediaType, clientId, groupId, objectId] = delegate_name_format.Decode(quicrName);
+
+    const auto groupId = quicr::hex_to_uint<uint32_t>(((quicrName & group_id_mask) >> 16).to_hex());
+    const auto objectId = quicr::hex_to_uint<uint16_t>((quicrName & object_id_mask).to_hex());
 
     // group=5, object=0
     // group=5, object=1
@@ -111,9 +115,9 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     // group=7, object=4 <---- object gap
     // group=8, object=1 <---- object gap
 
-    if (groupId > currentGroupId) 
+    if (groupId > currentGroupId)
     {
-        if (groupId > currentGroupId+1)
+        if (groupId > currentGroupId + 1)
         {
             ++groupGapCount;
             currentObjectId = 0;
@@ -123,7 +127,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
 
     if (objectId > currentObjectId)
     {
-        if (objectId > currentObjectId+1)
+        if (objectId > currentObjectId + 1)
         {
             ++objectGapCount;
         }
@@ -176,28 +180,25 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
 void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
                                           std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
-    {
-        quicrClient->subscribe(
-            self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
-    }
-    else
+    if (!quicrClient)
     {
         logger.log(qtransport::LogLevel::error, "Subscribe - quicrCliet doesn't exist");
+        return;
     }
+    quicrClient->subscribe(
+        self, quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
 }
 
 void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> /*self*/,
                                             std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
-    {
-        quicrClient->unsubscribe(quicrNamespace, originUrl, authToken);
-    }
-    else
+    if (!quicrClient)
     {
         logger.log(qtransport::LogLevel::error, "Unsubscibe - quicrCliet doesn't exist");
+        return;
     }
+
+    quicrClient->unsubscribe(quicrNamespace, originUrl, authToken);
 }
 
 /*
@@ -211,18 +212,18 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                                      const std::string& originUrl,
                                                      const std::string& authToken,
                                                      quicr::bytes&& payload,
-                                                     const std::vector<std::uint8_t> &priority,
+                                                     const std::vector<std::uint8_t>& priority,
                                                      std::uint16_t expiry,
                                                      bool reliableTransport,
                                                      std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                      qtransport::LogHandler& logger) :
-    //canPublish(true),
+    // canPublish(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(1),
+    groupId(0),
     objectId(0),
     priority(priority),
     expiry(expiry),
@@ -242,7 +243,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
-    sframe_context.enableEpoch(0xdeadbeefcafebabe);
+    sframe_context.enableEpoch(Fixed_Epoch);
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -276,8 +277,6 @@ void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportP
     }
 }
 
-const quicr::Name object_id_mask = ~(~quicr::Name() << 16);
-const quicr::Name group_id_mask = ~(~quicr::Name() << 32) << 16;
 void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
                                                    std::uint8_t* data,
                                                    std::size_t len,
@@ -290,62 +289,59 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         return;
     }
 
-    if (quicrClient)
+    if (!quicrClient) return;
+
+    std::uint8_t pri = priority[0];
+    quicr::Name quicrName(quicrNamespace.name());
+
+    if (groupFlag)
     {
-        std::uint8_t pri = priority[0];
-        quicr::Name quicrName(quicrNamespace.name());
-        if (groupFlag)
-        {
-            quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
-            quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
-            ++groupId;
-            objectId = 0;
+        quicrName = (0x0_name | ++groupId) << 16 | (quicrName & ~group_id_mask);
+        quicrName &= ~object_id_mask;
+        objectId = 0;
+    }
+    else
+    {
+        if (priority.size() > 1) {
+            pri = priority[1];
         }
-        else
-        {
-            if (priority.size() > 1) {
-                pri = priority[1];
-            }
-            quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
-            quicrName = (0x0_name | objectId) | (quicrName & ~object_id_mask);
-            ++objectId;
-        }
+        quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
+        quicrName = (0x0_name | ++objectId) | (quicrName & ~object_id_mask);
+    }
 
-        // Encrypt using sframe
-        try
-        {
-            quicr::bytes output_buffer(len + 16);
-            auto ciphertext = sframe_context.protect(
-                quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                (uint64_t(groupId) << 16) | objectId,
-                output_buffer,
-                {data, len});
-            output_buffer.resize(ciphertext.size());
-            auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
-            buf << quicr::uintVar_t(Fixed_Epoch);
-            buf.push(std::move(output_buffer));
+    // Encrypt using sframe
+    try
+    {
+        quicr::bytes output_buffer(len + 16);
+        auto ciphertext = sframe_context.protect(
+            quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+            (uint64_t(groupId) << 16) | objectId,
+            output_buffer,
+            {data, len});
+        output_buffer.resize(ciphertext.size());
+        auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
+        buf << quicr::uintVar_t(Fixed_Epoch);
+        buf.push(std::move(output_buffer));
 
-            quicrClient->publishNamedObject(quicrName,
-                                            pri,
-                                            expiry,
-                                            reliableTransport,
-                                            buf.get());
-        }
-        catch (const std::exception &e)
-        {
-            logger.log(qtransport::LogLevel::error,
-                       std::string("Exception trying to encrypt sframe and "
-                                   "pubblish: ") +
-                           e.what());
-            return;
-        }
-        catch (...)
-        {
-            logger.log(qtransport::LogLevel::error,
-                       "Exception trying to encrypt sframe and publish");
-            return;
-        }
+        quicrClient->publishNamedObject(quicrName,
+                                        pri,
+                                        expiry,
+                                        reliableTransport,
+                                        buf.get());
+    }
+    catch (const std::exception &e)
+    {
+        logger.log(qtransport::LogLevel::error,
+                    std::string("Exception trying to encrypt sframe and "
+                                "pubblish: ") +
+                        e.what());
+        return;
+    }
+    catch (...)
+    {
+        logger.log(qtransport::LogLevel::error,
+                    "Exception trying to encrypt sframe and publish");
+        return;
     }
 }
-
 }        // namespace qmedia
