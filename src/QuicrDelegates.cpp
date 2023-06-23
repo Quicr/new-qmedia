@@ -146,7 +146,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
             quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
             uint64_t(groupId << 16) | objectId,
             output_buffer,
-            gsl::span{data.data(), data.size()});
+            gsl::span{ciphertext.data(), ciphertext.size()});
         output_buffer.resize(cleartext.size());
 
         qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
@@ -327,7 +327,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
                                             pri,
                                             expiry,
                                             reliableTransport,
-                                            std::move(b));
+                                            buf.get());
         }
         catch (const std::exception &e)
         {
