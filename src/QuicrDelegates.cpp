@@ -302,7 +302,8 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     }
     else
     {
-        if (priority.size() > 1) {
+        if (priority.size() > 1)
+        {
             pri = priority[1];
         }
         quicrName = (0x0_name | groupId) << 16 | (quicrName & ~group_id_mask);
