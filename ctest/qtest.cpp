@@ -6,7 +6,7 @@
 #include <qmedia/QDelegates.hpp>
 #include <qmedia/QuicrDelegates.hpp>
 
-#include <quicr/quicr_namespace.h>
+#include <quicr/namespace.h>
 
 #include <filesystem>
 #include <fstream>
