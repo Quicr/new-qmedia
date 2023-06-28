@@ -5,7 +5,7 @@
 #include <vector>
 #include <optional>
 #include "sframe/sframe.h"
-#include "quicr/quicr_namespace.h"
+#include "quicr/namespace.h"
 #include "quicr/quicr_common.h"
 
 namespace qmedia

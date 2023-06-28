@@ -1,7 +1,7 @@
 #ifndef QDelegates_h
 #define QDelegates_h
 
-#include <quicr/quicr_namespace.h>
+#include <quicr/namespace.h>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
 #include <string>
