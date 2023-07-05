@@ -106,8 +106,8 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         return;
     }
 
-    const auto groupId = quicr::hex_to_uint<uint32_t>(((quicrName & group_id_mask) >> 16).to_hex());
-    const auto objectId = quicr::hex_to_uint<uint16_t>((quicrName & object_id_mask).to_hex());
+    const auto groupId = quicrName.bits<std::uint32_t>(16, 32);
+    const auto objectId = quicrName.bits<std::uint16_t>(0, 16);
 
     // group=5, object=0
     // group=5, object=1
@@ -144,12 +144,12 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         auto buf = quicr::messages::MessageBuffer(data);
         quicr::uintVar_t epoch;
         buf >> epoch;
-        const auto ciphertext = buf.get();
+        const auto ciphertext = buf.take();
         quicr::bytes output_buffer(ciphertext.size());
         auto cleartext = sframe_context.unprotect(
             epoch,
             quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-            (uint64_t(groupId) << 16) | objectId,
+            quicrName.bits<std::uint16_t>(0, 48),
             output_buffer,
             ciphertext);
         output_buffer.resize(cleartext.size());
@@ -317,7 +317,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         quicr::bytes output_buffer(len + 16);
         auto ciphertext = sframe_context.protect(
             quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-            (uint64_t(groupId) << 16) | objectId,
+            quicrName.bits<std::uint16_t>(0, 48),
             output_buffer,
             {data, len});
         output_buffer.resize(ciphertext.size());
@@ -329,7 +329,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
                                         pri,
                                         expiry,
                                         reliableTransport,
-                                        buf.get());
+                                        buf.take());
     }
     catch (const std::exception &e)
     {

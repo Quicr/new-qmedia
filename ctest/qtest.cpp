@@ -63,19 +63,19 @@ private:
 class QSubsciberTestDelegate : public qmedia::QSubscriberDelegate
 {
 public:
-    QSubsciberTestDelegate() 
+    QSubsciberTestDelegate()
     {
     }
 
     std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
     {
-       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::allocateSubByNamespace");        
+       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::allocateSubByNamespace");
        return std::make_shared<QSubscriptionTestDelegate>(quicrNamespace);
     }
 
-    int removeSubByNamespace(const quicr::Namespace& quicrNamespace) 
+    int removeSubByNamespace(const quicr::Namespace& quicrNamespace)
     {
-       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::removeByNamespace"); 
+       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::removeByNamespace");
        return 0;
     }
 
@@ -96,7 +96,7 @@ public:
 public:
     int prepare(const std::string& sourceId,  const std::string& qualityProfile)  {
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::prepare");
-        std::cerr << "pub prepare " << std::endl; 
+        std::cerr << "pub prepare " << std::endl;
         return 0;
     }
     int update(const std::string& sourceId, const std::string& qualityProfile) {
@@ -120,16 +120,16 @@ public:
         logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate constructed");
     }
 
-    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
+    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile)
     {
-       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");        
-       std::cerr << "allocatePubByNamespace " << quicrNamespace.to_hex() << std::endl;
+       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");
+       std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
-    int removePubByNamespace(const quicr::Namespace& quicrNamespace) 
+    int removePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
-       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::removeByNamespace"); 
+       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::removeByNamespace");
        return 0;
     }
 
@@ -139,7 +139,7 @@ private:
 
 int test()
 {
-   //qmedia::basicLogger logger;    
+   //qmedia::basicLogger logger;
     quicr::Namespace quicrNamespace;
 
     auto qSubscriber = std::make_shared<QSubsciberTestDelegate>();
@@ -159,7 +159,7 @@ int test()
     std::stringstream strStream;
     strStream << f.rdbuf();
     auto manifest = strStream.str();
-    
+
     then = timeSinceEpochMillisec();
     qController->updateManifest(manifest);
     now = timeSinceEpochMillisec();

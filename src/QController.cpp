@@ -245,7 +245,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
     return nullptr;
 }
 
-std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
+std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile)
 {
     if (qPublisherDelegate)
     {
@@ -254,7 +254,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
         // found - return
         if (!qPublicationsMap.count(quicrNamespace))
         {
-            qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(quicrNamespace, qualityProfile);
+            qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(quicrNamespace, sourceID, qualityProfile);
         }
         return qPublicationsMap[quicrNamespace];
     }
@@ -409,7 +409,7 @@ int QController::processPublications(json& publications)
             quicr::Namespace quicrNamespace = quicrNamespaceUrlParse(profile["quicrNamespaceUrl"]);
 
             // get a new subscription from the subscriber
-            auto qPublicationDelegate = getPublicationDelegate(quicrNamespace, profile["qualityProfile"]);
+            auto qPublicationDelegate = getPublicationDelegate(quicrNamespace, publication["sourceId"], profile["qualityProfile"]);
             if (qPublicationDelegate)
             {
                 // notify client to prepare for incoming media
