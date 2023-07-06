@@ -48,7 +48,7 @@ public:
 class QPublisherDelegate
 {
 public:
-    virtual std::shared_ptr<QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile) = 0;
+    virtual std::shared_ptr<QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile) = 0;
     virtual int removePubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
 };
 }        // namespace qmedia
