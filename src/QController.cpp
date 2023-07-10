@@ -111,6 +111,7 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
                                      std::size_t len,
                                      bool groupFlag)
 {
+    const std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.count(quicrNamespace))
     {
         auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace);
@@ -231,7 +232,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
     if (qSubscriberDelegate)
     {
         // look up
-        std::lock_guard<std::mutex> _(subsMutex);
+        std::lock_guard<std::mutex> _(qSubsMutex);
         // found - return
         if (!qSubscriptionsMap.count(quicrNamespace))
         {
@@ -250,7 +251,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
     if (qPublisherDelegate)
     {
         // look up
-        std::lock_guard<std::mutex> _(pubsMutex);
+        std::lock_guard<std::mutex> _(qPubsMutex);
         // found - return
         if (!qPublicationsMap.count(quicrNamespace))
         {
@@ -382,7 +383,7 @@ int QController::processSubscriptions(json& subscriptions)
                 }
 
                 // If singleorderd and we have a subscription prepared
-                const std::lock_guard<std::mutex> _(pubsMutex);
+                const std::lock_guard<std::mutex> _(qSubsMutex);
                 if (qSubscriptionsMap.size() > 0 && subscription["profileSet"]["type"] == "singleordered")
                 {
                     break;

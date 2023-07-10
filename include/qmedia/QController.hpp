@@ -93,6 +93,9 @@ private:
     int processPublications(json&);
 
 private:
+
+    std::mutex qSubsMutex;
+    std::mutex qPubsMutex;
     std::mutex subsMutex;
     std::mutex pubsMutex;
     qmedia::basicLogger logger;
