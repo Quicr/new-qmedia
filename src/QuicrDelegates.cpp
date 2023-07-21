@@ -1,19 +1,20 @@
-#include <qmedia/QuicrDelegates.hpp>
+#include "qmedia/QuicrDelegates.hpp"
+#include "basicLogger.h"
+
 #include <quicr/hex_endec.h>
 #include <quicr/message_buffer.h>
+#include <sframe/crypto.h>
+
 #include <iostream>
 #include <sstream>
-#include "sframe/crypto.h"
 #include <ctime>
 
-const quicr::HexEndec<128, 24, 8, 24, 8, 16, 32, 16> delegate_name_format;
 const quicr::Name group_id_mask = ~(~0x0_name << 32) << 16;
 const quicr::Name object_id_mask = ~(~0x0_name << 16);
 
 constexpr uint64_t Fixed_Epoch = 1;
 constexpr uint8_t Quicr_SFrame_Sig_Bits = 80;
-constexpr sframe::CipherSuite Default_Cipher_Suite =
-    sframe::CipherSuite::AES_GCM_128_SHA256;
+constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GCM_128_SHA256;
 
 namespace qmedia
 {
@@ -40,53 +41,51 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
 {
     currentGroupId = 0;
     currentObjectId = -1;
-    logger.log(qtransport::LogLevel::info, "QuicrTransportSubDelegate");
 
     // TODO: This needs to be replaced with valid keying material
-    std::string salt_string =
-        "Quicr epoch master key " + std::to_string(Fixed_Epoch);
+    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(Default_Cipher_Suite, salt,
-        std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    auto epoch_key = hkdf_extract(
+        Default_Cipher_Suite,
+        salt,
+        std::vector<std::uint8_t>{
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
     sframe_context.enableEpoch(Fixed_Epoch);
+
+    LOG_DEBUG(logger, "QuicrTransportSubDelegate");
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
 {
-    std::cerr << "~QuicrTransportSubDelegate" << std::endl;
-    std::stringstream s;
-    s << "~QuicrTransportSubDelegate::";
-    s << "namespace " << quicrNamespace << ":";
-    s << "\tgroup: " << groupCount << " ";
-    s << "\tobject: " << objectCount << " ";
-    s << "\tgroup gap:" << groupGapCount << " ";
-    s << "\tobject gap " << objectGapCount;
-    std::cerr << s.str() << std::endl;
-    logger.log(qtransport::LogLevel::info, s.str());
+    LOG_DEBUG(logger, "~QuicrTransportSubDelegate:");
+    LOG_DEBUG(logger, "\tnamespace: " << quicrNamespace);
+    LOG_DEBUG(logger, "\tgroup: " << groupCount);
+    LOG_DEBUG(logger, "\tobject: " << objectCount);
+    LOG_DEBUG(logger, "\tgroup gap:" << groupGapCount);
+    LOG_DEBUG(logger, "\tobject gap " << objectGapCount);
 }
 
-/*
+/**
  * delegate: onSubscribeResponse
  */
 void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult& /* result */)
 {
-    logger.log(qtransport::LogLevel::info, "sub::onSubscribeResponse");
+    // LOG_DEBUG(logger, __FUNCTION__);
 }
 
-/*
+/**
  * delegate: onSubscriptionEnded
  */
 void QuicrTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
-    logger.log(qtransport::LogLevel::info, "sub::onSubscriptionEnded");
+    LOG_DEBUG(logger, __FUNCTION__);
 }
 
-/*
+/**
  * delegate: onSubscribedObject
  *
  * On receiving subscribed object notification fields are extracted
@@ -99,10 +98,10 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    bool /*use_reliable_transport*/,
                                                    quicr::bytes&& data)
 {
-    logger.log(qtransport::LogLevel::info, "sub::onSubscribeObject");
+    // LOG_DEBUG(logger, __FUNCTION__);
     if (data.empty())
     {
-        logger.log(qtransport::LogLevel::warn, "Object is empty");
+        LOG_WARNING(logger, "Object " << quicrName << " is empty");
         return;
     }
 
@@ -146,33 +145,30 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
         buf >> epoch;
         const auto ciphertext = buf.take();
         quicr::bytes output_buffer(ciphertext.size());
-        auto cleartext = sframe_context.unprotect(
-            epoch,
-            quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-            quicrName.bits<std::uint16_t>(0, 48),
-            output_buffer,
-            ciphertext);
+        auto cleartext = sframe_context.unprotect(epoch,
+                                                  quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                  quicrName.bits<std::uint16_t>(0, 48),
+                                                  output_buffer,
+                                                  ciphertext);
         output_buffer.resize(cleartext.size());
 
-        qDelegate->subscribedObject(std::move(output_buffer),
-                                    groupId,
-                                    objectId);
+        qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
-        logger.log(qtransport::LogLevel::error,
-                   std::string("Exception trying to decrypt with sframe and "
-                               "forward object: ") +
-                       e.what());
+        LOG_ERROR(logger, "Exception trying to decrypt with sframe and forward object: " << e.what());
+    }
+    catch (const std::string& s)
+    {
+        LOG_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
     }
     catch (...)
     {
-        logger.log(qtransport::LogLevel::error,
-                    "Exception trying to encrypt sframe and forward object");
+        LOG_ERROR(logger, "Unknown error trying to decrypt sframe and forward object");
     }
 }
 
-/*
+/**
  * subscribe
  *
  * Use quicrClient to send out a subscription request.
@@ -183,7 +179,7 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
 {
     if (!quicrClient)
     {
-        logger.log(qtransport::LogLevel::error, "Subscribe - quicrCliet doesn't exist");
+        LOG_ERROR(logger, "Subscribe - quicrClient doesn't exist");
         return;
     }
     quicrClient->subscribe(
@@ -195,7 +191,7 @@ void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDel
 {
     if (!quicrClient)
     {
-        logger.log(qtransport::LogLevel::error, "Unsubscibe - quicrCliet doesn't exist");
+        LOG_ERROR(logger, "Unsubscibe - quicrClient doesn't exist");
         return;
     }
 
@@ -224,7 +220,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(time(nullptr)), // TODO: Multiply by packet count.
+    groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
     priority(priority),
     expiry(expiry),
@@ -233,18 +229,19 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     logger(logger),
     sframe_context(Default_Cipher_Suite)
 {
-    logger.log(qtransport::LogLevel::info, "QuicrTransportPubDelegate");
-
     // TODO: This needs to be replaced with valid keying material
-    std::string salt_string =
-        "Quicr epoch master key " + std::to_string(Fixed_Epoch);
+    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(Default_Cipher_Suite, salt,
-        std::vector<std::uint8_t>{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                                  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+    auto epoch_key = hkdf_extract(
+        Default_Cipher_Suite,
+        salt,
+        std::vector<std::uint8_t>{
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
     sframe_context.enableEpoch(Fixed_Epoch);
+
+    LOG_DEBUG(logger, "QuicrTransportPubDelegate");
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -257,25 +254,36 @@ QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
 void QuicrTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                                         const quicr::PublishIntentResult& /* result */)
 {
-    logger.log(qtransport::LogLevel::info, "pub::onPublishIntentResponse");
+    LOG_INFO(logger, __FUNCTION__);
 }
 
 void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
                                               std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
+    if (!quicrClient)
     {
-        quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken, std::move(payload));
+        LOG_DEBUG(logger, "Client was null, can't send PublishIntent");
+        return;
     }
+
+    LOG_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
+    auto result = quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken, std::move(payload));
+    if (!result)
+        LOG_ERROR(logger, "Failed to send PublishIntent for " << quicrNamespace);
+    else
+        LOG_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
 }
 
 void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> /*self*/,
                                                  std::shared_ptr<quicr::QuicRClient> quicrClient)
 {
-    if (quicrClient)
+    if (!quicrClient)
     {
-        quicrClient->publishIntentEnd(quicrNamespace, authToken);
+        LOG_DEBUG(logger, "Client was null, can't send PublishIntentEnd");
+        return;
     }
+
+    quicrClient->publishIntentEnd(quicrNamespace, authToken);
 }
 
 void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
@@ -286,7 +294,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     // If the object data isn't present, return
     if (len == 0)
     {
-        logger.log(qtransport::LogLevel::warn, "Object is empty");
+        LOG_WARNING(logger, "Object is empty");
         return;
     }
 
@@ -315,34 +323,29 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     try
     {
         quicr::bytes output_buffer(len + 16);
-        auto ciphertext = sframe_context.protect(
-            quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-            quicrName.bits<std::uint16_t>(0, 48),
-            output_buffer,
-            {data, len});
+        auto ciphertext = sframe_context.protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                 quicrName.bits<std::uint16_t>(0, 48),
+                                                 output_buffer,
+                                                 {data, len});
         output_buffer.resize(ciphertext.size());
         auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
         buf << quicr::uintVar_t(Fixed_Epoch);
         buf.push(std::move(output_buffer));
 
-        quicrClient->publishNamedObject(quicrName,
-                                        pri,
-                                        expiry,
-                                        reliableTransport,
-                                        buf.take());
+        quicrClient->publishNamedObject(quicrName, pri, expiry, reliableTransport, buf.take());
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
-        logger.log(qtransport::LogLevel::error,
-                    std::string("Exception trying to encrypt sframe and "
-                                "pubblish: ") +
-                        e.what());
+        LOG_ERROR(logger, "Exception trying to encrypt sframe and publish: " << e.what());
         return;
+    }
+    catch (const std::string& s)
+    {
+        LOG_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
     }
     catch (...)
     {
-        logger.log(qtransport::LogLevel::error,
-                    "Exception trying to encrypt sframe and publish");
+        LOG_ERROR(logger, "Unknown error trying to encrypt sframe and publish");
         return;
     }
 }

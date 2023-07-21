@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QuicrDelegates.hpp"
+#include "basicLogger.h"
 
 #include <nlohmann/json.hpp>
 #include <quicr/quicr_common.h>
@@ -10,7 +11,6 @@
 
 #include <mutex>
 #include <thread>
-#include "basicLogger.h"
 
 using json = nlohmann::json;
 

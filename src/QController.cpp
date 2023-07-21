@@ -39,7 +39,11 @@ QController::~QController()
 
 int QController::connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol)
 {
-    quicr::RelayInfo relayInfo = {.hostname = remoteAddress.c_str(), .port = remotePort, .proto = protocol};
+    quicr::RelayInfo relayInfo = {
+        .hostname = remoteAddress.c_str(),
+        .port = remotePort,
+        .proto = protocol,
+    };
 
     qtransport::TransportConfig tcfg{
         .tls_cert_filename = NULL,
@@ -386,7 +390,7 @@ int QController::processSubscriptions(json& subscriptions)
                                   quicrNamespace,
                                   quicr::SubscribeIntent::sync_up,
                                   "",
-                                  false,
+                                  true,
                                   "",
                                   e2eToken);
             }
@@ -434,7 +438,7 @@ int QController::processPublications(json& publications)
                              std::move(payload),
                              profile["priorities"],
                              profile["expiry"],
-                             false);
+                             true);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
             if (publication["profileSet"]["type"] == SingleOrderedStr) break;

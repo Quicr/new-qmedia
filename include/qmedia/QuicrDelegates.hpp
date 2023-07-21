@@ -22,7 +22,7 @@ public:
                               quicr::bytes e2eToken,
                               std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                               qtransport::LogHandler& logger);
-                            
+
     ~QuicrTransportSubDelegate();
 
     virtual void onSubscribeResponse(const quicr::Namespace& quicrNamespace, const quicr::SubscribeResult& result);
@@ -56,7 +56,7 @@ private:
     std::string authToken;
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
-    qtransport::LogHandler logger;
+    qtransport::LogHandler& logger;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
@@ -77,7 +77,7 @@ public:
                               const std::string& originUrl,
                               const std::string& authToken,
                               quicr::bytes&& payload,
-                              const std::vector<std::uint8_t> &priority,
+                              const std::vector<std::uint8_t>& priority,
                               std::uint16_t expiry,
                               bool reliableTransport,
                               std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
@@ -94,11 +94,13 @@ public:
     void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
                           std::shared_ptr<quicr::QuicRClient> quicrClient);
 
-    void publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient, std::uint8_t* data, std::size_t len, bool groupFlag);
-
+    void publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
+                            std::uint8_t* data,
+                            std::size_t len,
+                            bool groupFlag);
 
 private:
-    //bool canPublish;
+    // bool canPublish;
     std::string sourceId;
     quicr::Namespace quicrNamespace;
     const std::string& originUrl;
@@ -110,7 +112,7 @@ private:
     std::uint16_t expiry;
     bool reliableTransport;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
-    qtransport::LogHandler logger;
+    qtransport::LogHandler& logger;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
