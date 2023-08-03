@@ -99,6 +99,8 @@ public:
                             std::size_t len,
                             bool groupFlag);
 
+    void setStartingGroupId(std::uint32_t groupId);
+
 private:
     // bool canPublish;
     std::string sourceId;
@@ -113,6 +115,7 @@ private:
     bool reliableTransport;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     qtransport::LogHandler& logger;
+    bool published;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;

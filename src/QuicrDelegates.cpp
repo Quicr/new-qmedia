@@ -220,7 +220,6 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     originUrl(originUrl),
     authToken(authToken),
     payload(std::move(payload)),
-    groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
     priority(priority),
     expiry(expiry),
@@ -302,6 +301,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
 
     std::uint8_t pri = priority[0];
     quicr::Name quicrName(quicrNamespace.name());
+    published = true;
 
     if (groupFlag)
     {
@@ -348,5 +348,14 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
         LOG_ERROR(logger, "Unknown error trying to encrypt sframe and publish");
         return;
     }
+}
+
+void QuicrTransportPubDelegate::setStartingGroupId(const std::uint32_t groupId)
+{
+    if (published) {
+        LOG_ERROR(logger, "Shouldn't set starting group id after publishing");
+        return;
+    }
+    this->groupId = groupId;
 }
 }        // namespace qmedia
