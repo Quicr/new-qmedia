@@ -2,6 +2,7 @@
 #include <qmedia/QuicrDelegates.hpp>
 
 #include <quicr/hex_endec.h>
+#include <transport/transport.h>
 
 #include <iostream>
 #include <sstream>
@@ -51,12 +52,9 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
         .time_queue_init_queue_size = 200,
     };
 
-    // Bridge to external logging.
     quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
-    if (quicrClient == nullptr)
-    {
-        return -1;
-    }
+
+    if (!quicrClient->connect()) return -1;
 
     // check to see if there is a timer thread...
     keepaliveThread = std::thread(&QController::periodicResubscribe, this, 5);
@@ -82,7 +80,10 @@ void QController::close()
         keepaliveThread.join();
     }
 
-    std::cerr << "QController::close()" << std::endl;
+    if (quicrClient) quicrClient->disconnect();
+
+    LOG_INFO(logger, "Closed all connections!");
+    closed = true;
 }
 
 void QController::periodicResubscribe(const unsigned int seconds)
