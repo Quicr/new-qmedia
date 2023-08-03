@@ -147,6 +147,19 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
     }
 }
 
+void QController::setStartingGroupId(const quicr::Namespace& quicrNamespace, const std::uint32_t groupId)
+{
+    const std::lock_guard<std::mutex> _(pubsMutex);
+    if (quicrPublicationsMap.count(quicrNamespace))
+    {
+        auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace);
+        if (publicationDelegate)
+        {
+            publicationDelegate->setStartingGroupId(groupId);
+        }
+    }
+}
+
 /*===========================================================================*/
 // Quicr Delegates
 /*===========================================================================*/

@@ -34,6 +34,8 @@ public:
     void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
 
+    void setStartingGroupId(const quicr::Namespace& quicrNamespace, std::uint32_t groupId);
+
 private:
     void periodicResubscribe(const unsigned int seconds);
     void removeSubscriptions();
