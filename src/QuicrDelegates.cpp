@@ -155,7 +155,7 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                   ciphertext);
         output_buffer.resize(cleartext.size());
 
-        qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
+        qDelegate->subscribedObject(quicrName, std::move(output_buffer), groupId, objectId);
     }
     catch (const std::exception& e)
     {

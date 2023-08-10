@@ -246,22 +246,22 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
 // QController Delegates
 /*===========================================================================*/
 
-std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
-                                                                            const std::string& qualityProfile)
+std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(const SourceId& sourceId,
+                                                                            const manifest::ProfileSet& profileSet)
 {
     if (!qSubscriberDelegate)
     {
-        LOGGER_ERROR(logger, "Subscription delegate doesn't exist for " << quicrNamespace);
+        LOGGER_ERROR(logger, "Subscription delegate doesn't exist for " << sourceId);
         return nullptr;
     }
 
     std::lock_guard<std::mutex> _(qSubsMutex);
-    if (!qSubscriptionsMap.contains(quicrNamespace))
+    if (!qSubscriptionsMap.contains(sourceId))
     {
-        qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace, qualityProfile);
+        qSubscriptionsMap[sourceId] = qSubscriberDelegate->allocateSubBySourceId(sourceId, profileSet);
     }
 
-    return qSubscriptionsMap[quicrNamespace];
+    return qSubscriptionsMap[sourceId];
 }
 
 std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace,
@@ -379,33 +379,31 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
     LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
     {
-        for (auto& profile : subscription.profileSet.profiles)
+        auto delegate = getSubscriptionDelegate(subscription.sourceId, subscription.profileSet);
+        if (!delegate)
+        {
+            LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
+            continue;
+        }
+
+        int update_error = delegate->update(subscription.sourceId, subscription.label, subscription.profileSet);
+        if (update_error == 0)
+        {
+            LOGGER_INFO(logger, "Updated subscription " << subscription.sourceId);
+            continue;
+        }
+        
+        bool reliable = false;
+        int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, reliable);
+        if (prepare_error != 0)
+        {
+            LOGGER_ERROR(logger, "Error preparing subscription: " << prepare_error);
+            continue;
+        }
+
+        for (const auto& profile : subscription.profileSet.profiles)
         {
             quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
-
-            auto delegate = getSubscriptionDelegate(quicrNamespace, profile.qualityProfile);
-            if (!delegate)
-            {
-                LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
-                continue;
-            }
-
-            int update_error = delegate->update(subscription.sourceId, subscription.label, profile.qualityProfile);
-            if (update_error == 0)
-            {
-                LOGGER_INFO(logger, "Updated subscription " << quicrNamespace);
-                continue;
-            }
-
-            bool reliable = false;
-            int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
-
-            if (prepare_error != 0)
-            {
-                LOGGER_ERROR(logger, "Error preparing subscription: " << prepare_error);
-                continue;
-            }
-
             quicr::bytes e2eToken;
             startSubscription(std::move(delegate),
                               subscription.sourceId,
@@ -416,8 +414,8 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                               "",
                               std::move(e2eToken));
 
-            // If singleordered, and we've successfully processed 1 delegate, break.
-            if (subscription.profileSet.type == "singleordered") break;
+                // If singleordered, and we've successfully processed 1 delegate, break.
+                if (subscription.profileSet.type == "singleordered") break;
         }
     }
 

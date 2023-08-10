@@ -2,6 +2,7 @@
 #include <qmedia/QController.hpp>
 #include <cantina/logger.h>
 
+#include <qmedia/ManifestTypes.hpp>
 #include <qmedia/QDelegates.hpp>
 #include <qmedia/QuicrDelegates.hpp>
 
@@ -26,22 +27,22 @@ static uint64_t then = 0;
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
 public:
-    QSubscriptionTestDelegate(const quicr::Namespace& quicrNamespace) :
-        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST")), quicrNamespace(quicrNamespace)
+    QSubscriptionTestDelegate(const SourceId& sourceId) :
+        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     {
         logger->Log("QSubscriptionTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile, bool& reliable) override {
+    int prepare(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet, bool& reliable) override {
         logger->Log("QSubscriptionTestDelegate::prepare");
         return 0;
     }
-    int update(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile) override {
+    int update(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet) override {
         logger->Log("QSubscriptionTestDelegate::update");
         return 1; //1 = needs prepare
     }
 
-    int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
+    int subscribedObject(const quicr::Name& name, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
         uint64_t now = timeSinceEpochMillisec();
         std::cerr << "groupId = " << groupId << std::endl;
         uint64_t then =  timeBuckets[groupId-1];
@@ -57,7 +58,6 @@ public:
 
 private:
     const cantina::LoggerPointer logger;
-    quicr::Namespace quicrNamespace;
 };
 
 class QSubsciberTestDelegate : public qmedia::QSubscriberDelegate
@@ -67,15 +67,15 @@ public:
     {
     }
 
-    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
+    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubBySourceId(const SourceId& sourceId, const qmedia::manifest::ProfileSet& profileSet)
     {
-       logger->Log("QSubscriberTestDelegate::allocateSubByNamespace");
-       return std::make_shared<QSubscriptionTestDelegate>(quicrNamespace);
+       logger->Log("QSubscriberTestDelegate::allocateSubBySourceId");
+       return std::make_shared<QSubscriptionTestDelegate>(sourceId);
     }
 
-    int removeSubByNamespace(const quicr::Namespace& quicrNamespace)
+    int removeSubBySourceId(const SourceId& sourceId)
     {
-       logger->Log("QSubscriberTestDelegate::removeByNamespace");
+       logger->Log("QSubscriberTestDelegate::removeSubBySourceId");
        return 0;
     }
 

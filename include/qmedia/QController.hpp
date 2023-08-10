@@ -14,6 +14,7 @@
 #include <thread>
 
 using json = nlohmann::json;
+using SourceId = std::string;
 
 namespace qmedia
 {
@@ -85,8 +86,8 @@ private:
                                                                         std::uint16_t expiry,
                                                                         bool reliableTransport);
 
-    std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
-                                                                   const std::string& qualityProfile);
+    std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const SourceId& sourceId,
+                                                                   const manifest::ProfileSet& profileSet);
     std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace,
                                                                  const std::string& sourceID,
                                                                  const std::string& qualityProfile);
@@ -130,11 +131,11 @@ private:
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
 
-    quicr::namespace_map<std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
-    quicr::namespace_map<std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
+    std::map<SourceId, std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
+    std::map<SourceId, std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
 
-    quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
-    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
+    std::map<SourceId, std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
+    std::map<SourceId, std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
 
     std::shared_ptr<quicr::Client> client_session;
 
