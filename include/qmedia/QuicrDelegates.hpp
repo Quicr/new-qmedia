@@ -89,7 +89,8 @@ public:
                                          const quicr::PublishIntentResult& result);
 
     void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
-                       std::shared_ptr<quicr::QuicRClient> quicrClient);
+                       std::shared_ptr<quicr::QuicRClient> quicrClient,
+                       bool reliableTransport=false);
 
     void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
                           std::shared_ptr<quicr::QuicRClient> quicrClient);

@@ -337,7 +337,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     }
 
     // TODO: add more intent parameters - max queue size (in time), default ttl, priority
-    quicrPubDelegate->publishIntent(quicrPubDelegate, quicrClient);
+    quicrPubDelegate->publishIntent(quicrPubDelegate, quicrClient, reliableTransport);
     return 0;
 }
 
