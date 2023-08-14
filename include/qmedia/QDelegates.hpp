@@ -13,6 +13,7 @@ class QSubscriptionDelegate
 {
 public:
     QSubscriptionDelegate() = default;
+
     ~QSubscriptionDelegate() {
         std::cerr << "~QSubscriptionDelegate" << std::endl;
     }
@@ -30,6 +31,10 @@ public:
     {
     }
 
+    ~QPublicationDelegate() {
+        std::cerr << "~QPublicationDelegate" << std::endl;
+    }
+
 public:
     virtual int prepare(const std::string& sourceId, const std::string& qualityProfile) = 0;
     virtual int update(const std::string& sourceId, const std::string& qualityProfile) = 0;
@@ -44,12 +49,18 @@ class QSubscriberDelegate
 public:
     virtual std::shared_ptr<QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile) = 0;
     virtual int removeSubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
+    ~QSubscriberDelegate() {
+        std::cerr << "~QSubscriberDelegate" << std::endl;
+    }
 };
 class QPublisherDelegate
 {
 public:
     virtual std::shared_ptr<QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile) = 0;
     virtual int removePubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
+    ~QPublisherDelegate() {
+        std::cerr << "~QPublisherDelegate" << std::endl;
+    }
 };
 }        // namespace qmedia
 
