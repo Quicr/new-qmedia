@@ -32,7 +32,7 @@ public:
         logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile) override {
+    int prepare(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile, bool& reliable) override {
         logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate::prepare");
         return 0;
     }
@@ -94,7 +94,7 @@ public:
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId,  const std::string& qualityProfile)  {
+    int prepare(const std::string& sourceId,  const std::string& qualityProfile, bool& reliable)  {
         logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::prepare");
         std::cerr << "pub prepare " << std::endl;
         return 0;

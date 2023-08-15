@@ -376,8 +376,9 @@ int QController::processSubscriptions(json& subscriptions)
             if (rc != 0)
             {
                 // notify client to prepare for incoming media
+                bool reliable = false;
                 int prepareError = qSubscriptionDelegate->prepare(
-                    subscription["sourceId"], subscription["label"], profile["qualityProfile"]);
+                    subscription["sourceId"], subscription["label"], profile["qualityProfile"], reliable);
 
                 if (prepareError != 0)
                 {
@@ -391,7 +392,7 @@ int QController::processSubscriptions(json& subscriptions)
                                   quicrNamespace,
                                   quicr::SubscribeIntent::sync_up,
                                   "",
-                                  true,
+                                  reliable,
                                   "",
                                   e2eToken);
             }
@@ -423,7 +424,8 @@ int QController::processPublications(json& publications)
             }
 
             // Notify client to prepare for incoming media
-            int prepareError = qPublicationDelegate->prepare(publication["sourceId"], profile["qualityProfile"]);
+            bool reliable = false;
+            int prepareError = qPublicationDelegate->prepare(publication["sourceId"], profile["qualityProfile"], reliable);
             if (prepareError != 0)
             {
                 LOG_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepareError);
@@ -439,7 +441,7 @@ int QController::processPublications(json& publications)
                              std::move(payload),
                              profile["priorities"],
                              profile["expiry"],
-                             true);
+                             reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
             if (publication["profileSet"]["type"] == SingleOrderedStr) break;
