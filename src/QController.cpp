@@ -49,7 +49,7 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
     qtransport::TransportConfig tcfg{
         .tls_cert_filename = NULL,
         .tls_key_filename = NULL,
-        .time_queue_init_queue_size = 200,
+        .time_queue_init_queue_size = 5000,
     };
 
     quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
