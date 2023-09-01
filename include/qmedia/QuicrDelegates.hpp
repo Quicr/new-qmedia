@@ -2,7 +2,7 @@
 
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-#include <transport/logger.h>
+#include <cantina/logger.h>
 #include <qmedia/QDelegates.hpp>
 #include <string>
 #include "QSFrameContext.hpp"
@@ -21,7 +21,7 @@ public:
                               const std::string authToken,
                               quicr::bytes e2eToken,
                               std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                              qtransport::LogHandler& logger);
+                              const cantina::LoggerPointer& logger);
 
     ~QuicrTransportSubDelegate();
 
@@ -56,7 +56,7 @@ private:
     std::string authToken;
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
-    qtransport::LogHandler& logger;
+    const cantina::LoggerPointer logger;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
@@ -81,7 +81,7 @@ public:
                               std::uint16_t expiry,
                               bool reliableTransport,
                               std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                              qtransport::LogHandler& logger);
+                              const cantina::LoggerPointer& logger);
 
     ~QuicrTransportPubDelegate();
 
@@ -113,7 +113,7 @@ private:
     std::uint16_t expiry;
     bool reliableTransport;
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
-    qtransport::LogHandler& logger;
+    const cantina::LoggerPointer logger;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;

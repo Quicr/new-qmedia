@@ -1,6 +1,5 @@
 add_library(${PROJECT_NAME}
     SHARED
-    basicLogger.cpp
     QController.cpp
     QuicrDelegates.cpp
     QSFrameContext.cpp
@@ -10,6 +9,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${LIBRARIES}
         quicr
+        cantina::logger
         numero_uri_lib
         sframe)
 
@@ -22,7 +22,7 @@ target_compile_options(${PROJECT_NAME}
     PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>: -Wpedantic -Wextra -Wall>
         $<$<CXX_COMPILER_ID:MSVC>: >)
-        
+
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
         CXX_STANDARD 20
@@ -30,5 +30,3 @@ set_target_properties(${PROJECT_NAME}
         CXX_EXTENSIONS OFF)
 
 #add_subdirectory(extern)
-
-

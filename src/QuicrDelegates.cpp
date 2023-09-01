@@ -1,5 +1,5 @@
 #include "qmedia/QuicrDelegates.hpp"
-#include "basicLogger.h"
+#include <cantina/logger.h>
 
 #include <quicr/hex_endec.h>
 #include <quicr/message_buffer.h>
@@ -26,7 +26,7 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
                                                      const std::string authToken,
                                                      quicr::bytes e2eToken,
                                                      std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                                                     qtransport::LogHandler& logger) :
+                                                     const cantina::LoggerPointer& logger) :
     canReceiveSubs(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
@@ -36,7 +36,7 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
     authToken(authToken),
     e2eToken(e2eToken),
     qDelegate(qDelegate),
-    logger(logger),
+    logger(std::make_shared<cantina::Logger>("TSDEL", logger)),
     sframe_context(Default_Cipher_Suite)
 {
     currentGroupId = 0;
@@ -54,17 +54,17 @@ QuicrTransportSubDelegate::QuicrTransportSubDelegate(const std::string sourceId,
 
     sframe_context.enableEpoch(Fixed_Epoch);
 
-    LOG_DEBUG(logger, "QuicrTransportSubDelegate");
+    LOGGER_DEBUG(this->logger, "QuicrTransportSubDelegate");
 }
 
 QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
 {
-    LOG_DEBUG(logger, "~QuicrTransportSubDelegate:");
-    LOG_DEBUG(logger, "\tnamespace: " << quicrNamespace);
-    LOG_DEBUG(logger, "\tgroup: " << groupCount);
-    LOG_DEBUG(logger, "\tobject: " << objectCount);
-    LOG_DEBUG(logger, "\tgroup gap:" << groupGapCount);
-    LOG_DEBUG(logger, "\tobject gap " << objectGapCount);
+    LOGGER_DEBUG(logger, "~QuicrTransportSubDelegate:");
+    LOGGER_DEBUG(logger, "\tnamespace: " << quicrNamespace);
+    LOGGER_DEBUG(logger, "\tgroup: " << groupCount);
+    LOGGER_DEBUG(logger, "\tobject: " << objectCount);
+    LOGGER_DEBUG(logger, "\tgroup gap:" << groupGapCount);
+    LOGGER_DEBUG(logger, "\tobject gap " << objectGapCount);
 }
 
 /**
@@ -73,7 +73,7 @@ QuicrTransportSubDelegate::~QuicrTransportSubDelegate()
 void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult& /* result */)
 {
-    // LOG_DEBUG(logger, __FUNCTION__);
+    // LOGGER_DEBUG(logger, __FUNCTION__);
 }
 
 /**
@@ -82,7 +82,7 @@ void QuicrTransportSubDelegate::onSubscribeResponse(const quicr::Namespace& /* q
 void QuicrTransportSubDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
                                                     const quicr::SubscribeResult::SubscribeStatus& /* result */)
 {
-    LOG_DEBUG(logger, __FUNCTION__);
+    LOGGER_DEBUG(logger, __FUNCTION__);
 }
 
 /**
@@ -98,10 +98,10 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                    bool /*use_reliable_transport*/,
                                                    quicr::bytes&& data)
 {
-    // LOG_DEBUG(logger, __FUNCTION__);
+    // LOGGER_DEBUG(logger, __FUNCTION__);
     if (data.empty())
     {
-        LOG_WARNING(logger, "Object " << quicrName << " is empty");
+        LOGGER_WARNING(logger, "Object " << quicrName << " is empty");
         return;
     }
 
@@ -156,15 +156,15 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
     }
     catch (const std::exception& e)
     {
-        LOG_ERROR(logger, "Exception trying to decrypt with sframe and forward object: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to decrypt with sframe and forward object: " << e.what());
     }
     catch (const std::string& s)
     {
-        LOG_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
+        LOGGER_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
     }
     catch (...)
     {
-        LOG_ERROR(logger, "Unknown error trying to decrypt sframe and forward object");
+        LOGGER_ERROR(logger, "Unknown error trying to decrypt sframe and forward object");
     }
 }
 
@@ -179,7 +179,7 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
 {
     if (!quicrClient)
     {
-        LOG_ERROR(logger, "Subscribe - quicrClient doesn't exist");
+        LOGGER_ERROR(logger, "Subscribe - quicrClient doesn't exist");
         return;
     }
 
@@ -192,7 +192,7 @@ void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDel
 {
     if (!quicrClient)
     {
-        LOG_ERROR(logger, "Unsubscibe - quicrClient doesn't exist");
+        LOGGER_ERROR(logger, "Unsubscibe - quicrClient doesn't exist");
         return;
     }
 
@@ -214,7 +214,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
                                                      std::uint16_t expiry,
                                                      bool reliableTransport,
                                                      std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                                                     qtransport::LogHandler& logger) :
+                                                     const cantina::LoggerPointer& logger) :
     // canPublish(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
@@ -227,7 +227,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
     expiry(expiry),
     reliableTransport(reliableTransport),
     qDelegate(qDelegate),
-    logger(logger),
+    logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
     sframe_context(Default_Cipher_Suite)
 {
     // TODO: This needs to be replaced with valid keying material
@@ -242,7 +242,7 @@ QuicrTransportPubDelegate::QuicrTransportPubDelegate(std::string sourceId,
 
     sframe_context.enableEpoch(Fixed_Epoch);
 
-    LOG_DEBUG(logger, "QuicrTransportPubDelegate");
+    LOGGER_DEBUG(this->logger, "QuicrTransportPubDelegate");
 }
 
 QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
@@ -255,7 +255,7 @@ QuicrTransportPubDelegate::~QuicrTransportPubDelegate()
 void QuicrTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                                         const quicr::PublishIntentResult& /* result */)
 {
-    LOG_INFO(logger, __FUNCTION__);
+    LOGGER_INFO(logger, __FUNCTION__);
 }
 
 void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
@@ -264,17 +264,17 @@ void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubD
 {
     if (!quicrClient)
     {
-        LOG_DEBUG(logger, "Client was null, can't send PublishIntent");
+        LOGGER_DEBUG(logger, "Client was null, can't send PublishIntent");
         return;
     }
 
-    LOG_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
+    LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     auto result = quicrClient->publishIntent(self, quicrNamespace, originUrl, authToken,
                                              std::move(payload), reliableTransport);
     if (!result)
-        LOG_ERROR(logger, "Failed to send PublishIntent for " << quicrNamespace);
+        LOGGER_ERROR(logger, "Failed to send PublishIntent for " << quicrNamespace);
     else
-        LOG_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
+        LOGGER_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
 }
 
 void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> /*self*/,
@@ -282,7 +282,7 @@ void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportP
 {
     if (!quicrClient)
     {
-        LOG_DEBUG(logger, "Client was null, can't send PublishIntentEnd");
+        LOGGER_DEBUG(logger, "Client was null, can't send PublishIntentEnd");
         return;
     }
 
@@ -297,7 +297,7 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     // If the object data isn't present, return
     if (len == 0)
     {
-        LOG_WARNING(logger, "Object is empty");
+        LOGGER_WARNING(logger, "Object is empty");
         return;
     }
 
@@ -339,16 +339,16 @@ void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRC
     }
     catch (const std::exception& e)
     {
-        LOG_ERROR(logger, "Exception trying to encrypt sframe and publish: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to encrypt sframe and publish: " << e.what());
         return;
     }
     catch (const std::string& s)
     {
-        LOG_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
+        LOGGER_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
     }
     catch (...)
     {
-        LOG_ERROR(logger, "Unknown error trying to encrypt sframe and publish");
+        LOGGER_ERROR(logger, "Unknown error trying to encrypt sframe and publish");
         return;
     }
 }
