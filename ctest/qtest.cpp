@@ -1,7 +1,6 @@
 #include <iostream>
 #include <qmedia/QController.hpp>
-#include <transport/logger.h>
-#include "basicLogger.h"
+#include <cantina/logger.h>
 
 #include <qmedia/QDelegates.hpp>
 #include <qmedia/QuicrDelegates.hpp>
@@ -27,17 +26,18 @@ static uint64_t then = 0;
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
 public:
-    QSubscriptionTestDelegate(const quicr::Namespace& quicrNamespace) : quicrNamespace(quicrNamespace)
+    QSubscriptionTestDelegate(const quicr::Namespace& quicrNamespace) :
+        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST")), quicrNamespace(quicrNamespace)
     {
-        logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate constructed");
+        logger->Log("QSubscriptionTestDelegate constructed");
     }
 public:
     int prepare(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile, bool& reliable) override {
-        logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate::prepare");
+        logger->Log("QSubscriptionTestDelegate::prepare");
         return 0;
     }
     int update(const std::string& sourceId,  const std::string& label, const std::string& qualityProfile) override {
-        logger.log(qtransport::LogLevel::info, "QSubscriptionTestDelegate::update");
+        logger->Log("QSubscriptionTestDelegate::update");
         return 1; //1 = needs prepare
     }
 
@@ -56,31 +56,31 @@ public:
     }
 
 private:
+    const cantina::LoggerPointer logger;
     quicr::Namespace quicrNamespace;
-    qmedia::basicLogger logger;
 };
 
 class QSubsciberTestDelegate : public qmedia::QSubscriberDelegate
 {
 public:
-    QSubsciberTestDelegate()
+    QSubsciberTestDelegate() : logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     {
     }
 
     std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& qualityProfile)
     {
-       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::allocateSubByNamespace");
+       logger->Log("QSubscriberTestDelegate::allocateSubByNamespace");
        return std::make_shared<QSubscriptionTestDelegate>(quicrNamespace);
     }
 
     int removeSubByNamespace(const quicr::Namespace& quicrNamespace)
     {
-       logger.log(qtransport::LogLevel::info, "QSubscriberTestDelegate::removeByNamespace");
+       logger->Log("QSubscriberTestDelegate::removeByNamespace");
        return 0;
     }
 
 private:
-    qmedia::basicLogger logger;
+    const cantina::LoggerPointer logger;
 };
 
 ////// PUBLISH
@@ -88,53 +88,55 @@ private:
 class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 {
 public:
-    QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) : qmedia::QPublicationDelegate(quicrNamespace)
+    QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) :
+        qmedia::QPublicationDelegate(quicrNamespace),
+        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     //quicrNamespace(quicrNamespace)
     {
-        logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate constructed");
+        logger->Log("QPublicationTestDelegate constructed");
     }
 public:
     int prepare(const std::string& sourceId,  const std::string& qualityProfile, bool& reliable)  {
-        logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::prepare");
+        logger->Log("QPublicationTestDelegate::prepare");
         std::cerr << "pub prepare " << std::endl;
         return 0;
     }
     int update(const std::string& sourceId, const std::string& qualityProfile) {
-        logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::update");
+        logger->Log("QPublicationTestDelegate::update");
         return 1; //1 = needs prepare
     }
     void publish(bool pubFlag) {
-        logger.log(qtransport::LogLevel::info, "QPublicationTestDelegate::publish");
+        logger->Log("QPublicationTestDelegate::publish");
     }
 
 private:
+    cantina::LoggerPointer logger;
     quicr::Namespace quicrNamespace;
-    qmedia::basicLogger logger;
 };
 
 class QPubisherTestDelegate : public qmedia::QPublisherDelegate
 {
 public:
-    QPubisherTestDelegate()
+    QPubisherTestDelegate() : logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     {
-        logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate constructed");
+        logger->Log("QPubisherTestDelegate constructed");
     }
 
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile)
     {
-       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::allocatePubByNamespace");
+       logger->Log("QPubisherTestDelegate::allocatePubByNamespace");
        std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
     int removePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
-       logger.log(qtransport::LogLevel::info, "QPubisherTestDelegate::removeByNamespace");
+       logger->Log("QPubisherTestDelegate::removeByNamespace");
        return 0;
     }
 
 private:
-    qmedia::basicLogger logger;
+    cantina::LoggerPointer logger;
 };
 
 int test()
@@ -146,7 +148,7 @@ int test()
     auto qPublisher = std::make_shared<QPubisherTestDelegate>();
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
 
-    //logger.log(qtransport::LogLevel::info, "connecting to qController");
+    //logger->Log("connecting to qController");
     then = timeSinceEpochMillisec();
     qController->connect("127.0.0.1", 33435, quicr::RelayInfo::Protocol::QUIC);
     //qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);

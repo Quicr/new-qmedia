@@ -1,12 +1,11 @@
 #pragma once
 
 #include "QuicrDelegates.hpp"
-#include "basicLogger.h"
 
 #include <nlohmann/json.hpp>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-#include <transport/logger.h>
+#include <cantina/logger.h>
 #include <UrlEncoder.h>
 
 #include <mutex>
@@ -101,7 +100,7 @@ private:
     std::mutex qPubsMutex;
     std::mutex subsMutex;
     std::mutex pubsMutex;
-    qmedia::basicLogger logger;
+    const cantina::LoggerPointer logger;
     UrlEncoder encoder;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;

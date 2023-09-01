@@ -18,9 +18,13 @@ namespace qmedia
 
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate) :
-    qSubscriberDelegate(qSubscriberDelegate), qPublisherDelegate(qPublisherDelegate), stop(false), closed(false)
+    logger(std::make_shared<cantina::Logger>("QMedia", "QCTRL")),
+    qSubscriberDelegate(qSubscriberDelegate),
+    qPublisherDelegate(qPublisherDelegate),
+    stop(false),
+    closed(false)
 {
-    LOG_INFO(logger, "QController started...");
+    LOGGER_INFO(logger, "QController started...");
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
     //   org, app,   conf, media, endpoint,     group, object
@@ -82,7 +86,7 @@ void QController::close()
 
     if (quicrClient) quicrClient->disconnect();
 
-    LOG_INFO(logger, "Closed all connections!");
+    LOGGER_INFO(logger, "Closed all connections!");
     closed = true;
 }
 
@@ -97,7 +101,7 @@ void QController::periodicResubscribe(const unsigned int seconds)
 
         if (now >= timeout && !stop)
         {
-            LOG_INFO(logger, "re-subscribe");
+            LOGGER_INFO(logger, "re-subscribe");
             const std::lock_guard<std::mutex> _(subsMutex);
             for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
             {
@@ -111,7 +115,7 @@ void QController::periodicResubscribe(const unsigned int seconds)
 
 void QController::removeSubscriptions()
 {
-    LOG_INFO(logger, "QController - remove subscriptions");
+    LOGGER_INFO(logger, "QController - remove subscriptions");
     const std::lock_guard<std::mutex> _(subsMutex);
     for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
     {
@@ -176,7 +180,7 @@ QController::createQuicrSubscriptionDelegate(const std::string sourceId,
     std::lock_guard<std::mutex> _(subsMutex);
     if (quicrSubscriptionsMap.count(quicrNamespace))
     {
-        LOG_ERROR(logger, "Quicr Subscription delegate for \"" << quicrNamespace << "\" already exists!");
+        LOGGER_ERROR(logger, "Quicr Subscription delegate for \"" << quicrNamespace << "\" already exists!");
         return nullptr;
     }
 
@@ -210,7 +214,7 @@ QController::createQuicrPublicationDelegate(const std::string sourceId,
     std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.count(quicrNamespace))
     {
-        LOG_ERROR(logger, "Quicr Publication delegate for \"" << quicrNamespace << "\" already exists!");
+        LOGGER_ERROR(logger, "Quicr Publication delegate for \"" << quicrNamespace << "\" already exists!");
         return nullptr;
     }
 
@@ -237,7 +241,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
 {
     if (!qSubscriberDelegate)
     {
-        LOG_ERROR(logger, "Subscription delegate doesn't exist");
+        LOGGER_ERROR(logger, "Subscription delegate doesn't exist");
         return nullptr;
     }
 
@@ -256,7 +260,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
 {
     if (!qPublisherDelegate)
     {
-        LOG_ERROR(logger, "Publication delegate doesn't exist");
+        LOGGER_ERROR(logger, "Publication delegate doesn't exist");
         return nullptr;
     }
 
@@ -289,7 +293,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
 
     if (!quicrSubDelegate)
     {
-        LOG_ERROR(logger, "Starting subscription: Failed to find or create delegate");
+        LOGGER_ERROR(logger, "Starting subscription: Failed to find or create delegate");
         return -1;
     }
 
@@ -301,7 +305,7 @@ void QController::stopSubscription(const quicr::Namespace& /* quicrNamespace */)
 {
     // TODO: What do we want to do here?
     // TODO(trigaux): Prompt Decimus to remove/stop rendering subscription possibly? Or maybe remove it?
-    LOG_ERROR(logger, __PRETTY_FUNCTION__ << " is not implemented.");
+    LOGGER_ERROR(logger, __PRETTY_FUNCTION__ << " is not implemented.");
 }
 
 int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
@@ -317,7 +321,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
 {
     if (!quicrClient)
     {
-        LOG_ERROR(logger, "Starting publication: No Quicr session established");
+        LOGGER_ERROR(logger, "Starting publication: No Quicr session established");
         return -1;
     }
 
@@ -332,7 +336,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                                            qDelegate);
     if (!quicrPubDelegate)
     {
-        LOG_ERROR(logger, "Starting publication: Delegate was null");
+        LOGGER_ERROR(logger, "Starting publication: Delegate was null");
         return -1;
     }
 
@@ -343,19 +347,19 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
 
 int QController::processURLTemplates(json& urlTemplates)
 {
-    LOG_DEBUG(logger, "Processing URL templates...");
+    LOGGER_DEBUG(logger, "Processing URL templates...");
     for (auto& urlTemplate : urlTemplates)
     {
         std::string temp = urlTemplate;
         encoder.AddTemplate(temp, true);
     }
-    LOG_INFO(logger, "Finished processing templates!");
+    LOGGER_INFO(logger, "Finished processing templates!");
     return 0;
 }
 
 int QController::processSubscriptions(json& subscriptions)
 {
-    LOG_DEBUG(logger, "Processing subscriptions...");
+    LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
     {
         for (auto& profile : subscription["profileSet"]["profiles"])
@@ -366,7 +370,7 @@ int QController::processSubscriptions(json& subscriptions)
             auto qSubscriptionDelegate = getSubscriptionDelegate(quicrNamespace, profile["qualityProfile"]);
             if (!qSubscriptionDelegate)
             {
-                LOG_WARNING(logger, "Unable to allocate subscription delegate.");
+                LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
                 continue;
             }
 
@@ -382,7 +386,7 @@ int QController::processSubscriptions(json& subscriptions)
 
                 if (prepareError != 0)
                 {
-                    LOG_ERROR(logger, "Error preparing subscription: " << prepareError);
+                    LOGGER_ERROR(logger, "Error preparing subscription: " << prepareError);
                     continue;
                 }
 
@@ -402,13 +406,13 @@ int QController::processSubscriptions(json& subscriptions)
         }
     }
 
-    LOG_INFO(logger, "Finished processing subscriptions!");
+    LOGGER_INFO(logger, "Finished processing subscriptions!");
     return 0;
 }
 
 int QController::processPublications(json& publications)
 {
-    LOG_DEBUG(logger, "Processing publications...");
+    LOGGER_DEBUG(logger, "Processing publications...");
     for (auto& publication : publications)
     {
         for (auto& profile : publication["profileSet"]["profiles"])
@@ -419,7 +423,7 @@ int QController::processPublications(json& publications)
                 quicrNamespace, publication["sourceId"], profile["qualityProfile"]);
             if (!qPublicationDelegate)
             {
-                LOG_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
+                LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
                 continue;
             }
 
@@ -428,7 +432,7 @@ int QController::processPublications(json& publications)
             int prepareError = qPublicationDelegate->prepare(publication["sourceId"], profile["qualityProfile"], reliable);
             if (prepareError != 0)
             {
-                LOG_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepareError);
+                LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepareError);
                 continue;
             }
 
@@ -448,7 +452,7 @@ int QController::processPublications(json& publications)
         }
     }
 
-    LOG_INFO(logger, "Finished processing publications!");
+    LOGGER_INFO(logger, "Finished processing publications!");
     return 0;
 }
 
@@ -456,13 +460,13 @@ int QController::updateManifest(const std::string manifest)
 {
     auto manifest_object = json::parse(manifest);
 
-    LOG_DEBUG(logger, "Parsing manifest...");
+    LOGGER_DEBUG(logger, "Parsing manifest...");
 
     processURLTemplates(manifest_object["urlTemplates"]);
     processSubscriptions(manifest_object["subscriptions"]);
     processPublications(manifest_object["publications"]);
 
-    LOG_INFO(logger, "Finished parsing manifest!");
+    LOGGER_INFO(logger, "Finished parsing manifest!");
     return 0;
 }
 
