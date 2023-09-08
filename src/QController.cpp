@@ -16,9 +16,10 @@ constexpr std::string_view SimulcastStr = "singleordered";
 namespace qmedia
 {
 
-QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
-                         std::shared_ptr<QPublisherDelegate> qPublisherDelegate) :
-    logger(std::make_shared<cantina::Logger>("QMedia", "QCTRL")),
+QController::QController(const std::shared_ptr<QSubscriberDelegate>& qSubscriberDelegate,
+                         const std::shared_ptr<QPublisherDelegate>& qPublisherDelegate,
+                         const cantina::LoggerPointer& logger) :
+    logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
     qSubscriberDelegate(qSubscriberDelegate),
     qPublisherDelegate(qPublisherDelegate),
     stop(false),
@@ -467,6 +468,7 @@ int QController::updateManifest(const std::string manifest)
     processPublications(manifest_object["publications"]);
 
     LOGGER_INFO(logger, "Finished parsing manifest!");
+
     return 0;
 }
 

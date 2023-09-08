@@ -19,8 +19,9 @@ namespace qmedia
 class QController
 {
 public:
-    QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
-                std::shared_ptr<QPublisherDelegate> publisherDelegate);
+    QController(const std::shared_ptr<QSubscriberDelegate>& subscriberDelegate,
+                const std::shared_ptr<QPublisherDelegate>& publisherDelegate,
+                const cantina::LoggerPointer& logger);
 
     ~QController();
     int connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol);
