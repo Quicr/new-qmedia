@@ -27,7 +27,7 @@ public:
     int connect(const std::string remoteAddress,
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
-                const qtransport::TransportConfig config);
+                const qtransport::TransportConfig& config);
     int disconnect();
 
     void close();

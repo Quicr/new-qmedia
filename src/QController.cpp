@@ -44,7 +44,7 @@ QController::~QController()
 int QController::connect(const std::string remoteAddress,
                          std::uint16_t remotePort,
                          quicr::RelayInfo::Protocol protocol,
-                         const qtransport::TransportConfig config)
+                         const qtransport::TransportConfig& config)
 {
     quicr::RelayInfo relayInfo = {
         .hostname = remoteAddress.c_str(),
