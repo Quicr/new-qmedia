@@ -146,7 +146,8 @@ int test()
 
     auto qSubscriber = std::make_shared<QSubsciberTestDelegate>();
     auto qPublisher = std::make_shared<QPubisherTestDelegate>();
-    auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher);
+    auto logger = std::make_shared<cantina::Logger>("QTest", "QTEST");
+    auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher, logger);
 
     //logger->Log("connecting to qController");
     then = timeSinceEpochMillisec();
