@@ -2,7 +2,6 @@
 #include <qmedia/QuicrDelegates.hpp>
 
 #include <quicr/hex_endec.h>
-#include <transport/transport.h>
 
 #include <iostream>
 #include <sstream>
@@ -42,7 +41,10 @@ QController::~QController()
     close();
 }
 
-int QController::connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol)
+int QController::connect(const std::string remoteAddress,
+                         std::uint16_t remotePort,
+                         quicr::RelayInfo::Protocol protocol,
+                         const qtransport::TransportConfig config)
 {
     quicr::RelayInfo relayInfo = {
         .hostname = remoteAddress.c_str(),
@@ -50,13 +52,7 @@ int QController::connect(const std::string remoteAddress, std::uint16_t remotePo
         .proto = protocol,
     };
 
-    qtransport::TransportConfig tcfg{
-        .tls_cert_filename = NULL,
-        .tls_key_filename = NULL,
-        .time_queue_init_queue_size = 200,
-    };
-
-    quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, std::move(tcfg), logger);
+    quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, config, logger);
 
     if (!quicrClient->connect()) return -1;
 
