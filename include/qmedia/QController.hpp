@@ -7,6 +7,7 @@
 #include <quicr/quicr_client.h>
 #include <cantina/logger.h>
 #include <UrlEncoder.h>
+#include <transport/transport.h>
 
 #include <mutex>
 #include <thread>
@@ -23,7 +24,10 @@ public:
                 std::shared_ptr<QPublisherDelegate> publisherDelegate);
 
     ~QController();
-    int connect(const std::string remoteAddress, std::uint16_t remotePort, quicr::RelayInfo::Protocol protocol);
+    int connect(const std::string remoteAddress,
+                std::uint16_t remotePort,
+                quicr::RelayInfo::Protocol protocol,
+                const qtransport::TransportConfig& config);
     int disconnect();
 
     void close();
