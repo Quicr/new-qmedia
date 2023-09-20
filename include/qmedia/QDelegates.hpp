@@ -22,6 +22,7 @@ public:
     virtual int update(const std::string& sourceId, const std::string& label, const std::string& qualityProfile) = 0;
     virtual int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
 };
+
 class QPublicationDelegate
 {
 public:

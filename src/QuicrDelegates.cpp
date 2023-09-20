@@ -150,7 +150,7 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
         quicr::bytes output_buffer(ciphertext.size());
         auto cleartext = sframe_context.unprotect(epoch,
                                                   quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                  quicrName.bits<std::uint16_t>(0, 48),
+                                                  quicrName.bits<std::uint64_t>(0, 48),
                                                   output_buffer,
                                                   ciphertext);
         output_buffer.resize(cleartext.size());
@@ -349,7 +349,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     {
         quicr::bytes output_buffer(len + 16);
         auto ciphertext = sframe_context.protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                 quicrName.bits<std::uint16_t>(0, 48),
+                                                 quicrName.bits<std::uint64_t>(0, 48),
                                                  output_buffer,
                                                  {data, len});
         output_buffer.resize(ciphertext.size());

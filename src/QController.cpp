@@ -387,7 +387,6 @@ int QController::processSubscriptions(json& subscriptions)
         {
             quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceURL);
 
-            // look up subscription delegate or allocate new one
             auto delegate = getSubscriptionDelegate(quicrNamespace, profile.qualityProfile);
             if (!delegate)
             {
@@ -422,7 +421,7 @@ int QController::processSubscriptions(json& subscriptions)
                               std::move(e2eToken));
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (subscription["profileSet"]["type"] == "singleordered") break;
+            if (s.profileSet.type == "singleordered") break;
         }
     }
 
