@@ -53,7 +53,7 @@ int QController::connect(const std::string remoteAddress,
         .proto = protocol,
     };
 
-    quicrClient = std::make_unique<quicr::QuicRClient>(relayInfo, config, logger);
+    quicrClient = std::make_unique<quicr::Client>(relayInfo, config, logger);
 
     if (!quicrClient->connect()) return -1;
 

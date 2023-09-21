@@ -43,8 +43,8 @@ public:
 
     bool isActive() { return canReceiveSubs; }
 
-    void subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
-    void unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::Client> quicrClient);
+    void unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::Client> quicrClient);
 
 private:
     bool canReceiveSubs;
@@ -89,13 +89,13 @@ public:
                                          const quicr::PublishIntentResult& result);
 
     void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
-                       std::shared_ptr<quicr::QuicRClient> quicrClient,
+                       std::shared_ptr<quicr::Client> quicrClient,
                        bool reliableTransport=false);
 
     void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
-                          std::shared_ptr<quicr::QuicRClient> quicrClient);
+                          std::shared_ptr<quicr::Client> quicrClient);
 
-    void publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
+    void publishNamedObject(std::shared_ptr<quicr::Client> quicrClient,
                             std::uint8_t* data,
                             std::size_t len,
                             bool groupFlag);

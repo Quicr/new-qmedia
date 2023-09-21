@@ -78,7 +78,7 @@ sframe::bytes QSFrameContext::derive_base_key(
 {
     // NOTE: caller must lock the mutex
     std::string salt_string =
-        "Quicr epoch base key " + quicr_namespace.to_hex();
+        "Quicr epoch base key " + std::string(quicr_namespace);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
     return sframe::hkdf_extract(cipher_suite, salt, epoch_secrets[epoch_id]);
 }
