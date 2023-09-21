@@ -117,7 +117,7 @@ private:
     std::map<quicr::Namespace, std::shared_ptr<QuicrTransportSubDelegate>> quicrSubscriptionsMap;
     std::map<quicr::Namespace, std::shared_ptr<QuicrTransportPubDelegate>> quicrPublicationsMap;
 
-    std::shared_ptr<quicr::QuicRClient> quicrClient;
+    std::shared_ptr<quicr::Client> quicrClient;
 
     std::thread keepaliveThread;
     bool stop;

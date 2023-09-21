@@ -175,7 +175,7 @@ void QuicrTransportSubDelegate::onSubscribedObject(const quicr::Name& quicrName,
  */
 
 void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDelegate> self,
-                                          std::shared_ptr<quicr::QuicRClient> quicrClient)
+                                          std::shared_ptr<quicr::Client> quicrClient)
 {
     if (!quicrClient)
     {
@@ -188,7 +188,7 @@ void QuicrTransportSubDelegate::subscribe(std::shared_ptr<QuicrTransportSubDeleg
 }
 
 void QuicrTransportSubDelegate::unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> /*self*/,
-                                            std::shared_ptr<quicr::QuicRClient> quicrClient)
+                                            std::shared_ptr<quicr::Client> quicrClient)
 {
     if (!quicrClient)
     {
@@ -259,7 +259,7 @@ void QuicrTransportPubDelegate::onPublishIntentResponse(const quicr::Namespace& 
 }
 
 void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
-                                              std::shared_ptr<quicr::QuicRClient> quicrClient,
+                                              std::shared_ptr<quicr::Client> quicrClient,
                                               bool reliableTransport)
 {
     if (!quicrClient)
@@ -278,7 +278,7 @@ void QuicrTransportPubDelegate::publishIntent(std::shared_ptr<QuicrTransportPubD
 }
 
 void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> /*self*/,
-                                                 std::shared_ptr<quicr::QuicRClient> quicrClient)
+                                                 std::shared_ptr<quicr::Client> quicrClient)
 {
     if (!quicrClient)
     {
@@ -289,7 +289,7 @@ void QuicrTransportPubDelegate::publishIntentEnd(std::shared_ptr<QuicrTransportP
     quicrClient->publishIntentEnd(quicrNamespace, authToken);
 }
 
-void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
+void QuicrTransportPubDelegate::publishNamedObject(std::shared_ptr<quicr::Client> quicrClient,
                                                    std::uint8_t* data,
                                                    std::size_t len,
                                                    bool groupFlag)
