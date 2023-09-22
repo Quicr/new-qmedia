@@ -137,7 +137,7 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
 {
     const std::lock_guard<std::mutex> _(pubsMutex);
 
-    if (!quicrPublicationsMap.count(quicrNamespace)) return;
+    if (!quicrPublicationsMap.contains(quicrNamespace)) return;
 
     if (auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace))
     {
@@ -151,11 +151,10 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
 void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag)
 {
     const std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.size() > 0)
-    {
-        auto publicationDelegate = quicrPublicationsMap.begin()->second;
-        publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
-    }
+    if (quicrPublicationsMap.empty()) return;
+
+    auto publicationDelegate = quicrPublicationsMap.begin()->second;
+    publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
 }
 
 /*===========================================================================*/
@@ -183,7 +182,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate)
 {
     std::lock_guard<std::mutex> _(subsMutex);
-    if (quicrSubscriptionsMap.count(quicrNamespace))
+    if (quicrSubscriptionsMap.contains(quicrNamespace))
     {
         LOGGER_ERROR(logger, "Quicr Subscription delegate for \"" << quicrNamespace << "\" already exists!");
         return nullptr;
@@ -204,7 +203,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
 std::shared_ptr<PublicationDelegate> QController::findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace)
 {
     std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.count(quicrNamespace))
+    if (quicrPublicationsMap.contains(quicrNamespace))
     {
         return quicrPublicationsMap[quicrNamespace]->getptr();
     }
@@ -223,7 +222,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                             bool reliableTransport)
 {
     std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.count(quicrNamespace))
+    if (quicrPublicationsMap.contains(quicrNamespace))
     {
         LOGGER_ERROR(logger, "Quicr Publication delegate for \"" << quicrNamespace << "\" already exists!");
         return nullptr;
@@ -257,7 +256,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
     }
 
     std::lock_guard<std::mutex> _(qSubsMutex);
-    if (!qSubscriptionsMap.count(quicrNamespace))
+    if (!qSubscriptionsMap.contains(quicrNamespace))
     {
         qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace, qualityProfile);
     }
@@ -276,7 +275,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
     }
 
     std::lock_guard<std::mutex> _(qPubsMutex);
-    if (!qPublicationsMap.count(quicrNamespace))
+    if (!qPublicationsMap.contains(quicrNamespace))
     {
         qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(
             quicrNamespace, sourceID, qualityProfile);
@@ -320,7 +319,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
 
 void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
 {
-    if (!quicrSubscriptionsMap.count(quicrNamespace)) return;
+    if (!quicrSubscriptionsMap.contains(quicrNamespace)) return;
 
     auto& sub_delegate = quicrSubscriptionsMap[quicrNamespace];
     sub_delegate->unsubscribe(client_session);
