@@ -20,52 +20,66 @@ namespace qmedia
 class QController
 {
 public:
-    QController(const std::shared_ptr<QSubscriberDelegate>& subscriberDelegate,
-                const std::shared_ptr<QPublisherDelegate>& publisherDelegate,
+    QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
+                std::shared_ptr<QPublisherDelegate> publisherDelegate,
                 const cantina::LoggerPointer& logger);
 
     ~QController();
+
     int connect(const std::string remoteAddress,
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
                 const qtransport::TransportConfig& config);
+
     int disconnect();
 
-    void close();
+    [[deprecated("Use QController::disconnect instead")]] void close();
 
-    int updateManifest(const std::string manifest);
+    int updateManifest(const std::string& manifest);
 
     void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
 
 private:
+    /**
+     * @brief Periodic keep-alive method that sends a subscribe message.
+     * @param seconds The repeating interval in seconds
+     */
     void periodicResubscribe(const unsigned int seconds);
+
+    /**
+     * @brief Unsubscribe from all subscriptions.
+     */
     void removeSubscriptions();
 
-    std::shared_ptr<QuicrTransportSubDelegate> findQuicrSubscriptionDelegate(const quicr::Namespace& quicrNamespace);
+    /**
+     * @brief Finds the appropriate SubscriptionDelegate, or creates it if it does not exist.
+     * @param quicrNamespace The namespace of the delegate.
+     * @returns Shared pointer to the appropriate SubscriptionDelegate.
+     */
+    std::shared_ptr<SubscriptionDelegate> findQuicrSubscriptionDelegate(const quicr::Namespace& quicrNamespace);
 
-    std::shared_ptr<QuicrTransportSubDelegate>
-    createQuicrSubscriptionDelegate(const std::string,
-                                    const quicr::Namespace&,
+    std::shared_ptr<SubscriptionDelegate>
+    createQuicrSubscriptionDelegate(const std::string& sourceID,
+                                    const quicr::Namespace& quicrNamespace,
                                     const quicr::SubscribeIntent intent,
-                                    const std::string originUrl,
+                                    const std::string& originUrl,
                                     const bool useReliableTransport,
-                                    const std::string authToken,
-                                    quicr::bytes e2eToken,
-                                    std::shared_ptr<qmedia::QSubscriptionDelegate>);
+                                    const std::string& authToken,
+                                    quicr::bytes&& e2eToken,
+                                    std::shared_ptr<qmedia::QSubscriptionDelegate> delegate);
 
-    std::shared_ptr<QuicrTransportPubDelegate> findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace);
+    std::shared_ptr<PublicationDelegate> findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace);
 
-    std::shared_ptr<QuicrTransportPubDelegate>
-    createQuicrPublicationDelegate(const std::string,
-                                   const quicr::Namespace&,
-                                   const std::string& originUrl,
-                                   const std::string& authToken,
-                                   quicr::bytes&& payload,
-                                   const std::vector<std::uint8_t>& priority,
-                                   std::uint16_t expiry,
-                                   bool reliableTransport,
-                                   std::shared_ptr<qmedia::QPublicationDelegate>);
+    std::shared_ptr<PublicationDelegate> createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate>,
+                                                                        const std::string&,
+                                                                        const quicr::Namespace&,
+                                                                        const std::string& originUrl,
+                                                                        const std::string& authToken,
+                                                                        quicr::bytes&& payload,
+                                                                        const std::vector<std::uint8_t>& priority,
+                                                                        std::uint16_t expiry,
+                                                                        bool reliableTransport);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
                                                                    const std::string& qualityProfile);
@@ -74,13 +88,13 @@ private:
                                                                  const std::string& qualityProfile);
 
     int startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                          const std::string sourceId,
+                          const std::string& sourceId,
                           const quicr::Namespace& quicrNamespace,
                           const quicr::SubscribeIntent intent,
-                          const std::string originUrl,
+                          const std::string& originUrl,
                           const bool useReliableTransport,
-                          const std::string authToken,
-                          quicr::bytes e2eToken);
+                          const std::string& authToken,
+                          quicr::bytes&& e2eToken);
 
     void stopSubscription(const quicr::Namespace& quicrNamespace);
 
@@ -105,19 +119,20 @@ private:
     std::mutex qPubsMutex;
     std::mutex subsMutex;
     std::mutex pubsMutex;
+
     const cantina::LoggerPointer logger;
     UrlEncoder encoder;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
 
-    std::map<quicr::Namespace, std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
-    std::map<quicr::Namespace, std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
+    quicr::namespace_map<std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
+    quicr::namespace_map<std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
 
-    std::map<quicr::Namespace, std::shared_ptr<QuicrTransportSubDelegate>> quicrSubscriptionsMap;
-    std::map<quicr::Namespace, std::shared_ptr<QuicrTransportPubDelegate>> quicrPublicationsMap;
+    quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
+    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
 
-    std::shared_ptr<quicr::Client> quicrClient;
+    std::shared_ptr<quicr::Client> client_session;
 
     std::thread keepaliveThread;
     bool stop;
