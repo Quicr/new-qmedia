@@ -12,9 +12,9 @@
 constexpr quicr::Name Group_ID_Mask = ~(~0x0_name << 32) << 16;
 constexpr quicr::Name Object_ID_Mask = ~(~0x0_name << 16);
 
+// XXX(richbarn) Get rid of this initialization, initialize from MLS context
 constexpr uint64_t Fixed_Epoch = 1;
 constexpr uint8_t Quicr_SFrame_Sig_Bits = 80;
-constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GCM_128_SHA256;
 
 namespace qmedia
 {
@@ -26,6 +26,7 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            const std::string& authToken,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+                                           std::shared_ptr<QSFrameContext> sframe_context,
                                            const cantina::LoggerPointer& logger) :
     canReceiveSubs(true),
     sourceId(sourceId),
@@ -37,21 +38,10 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     e2eToken(e2eToken),
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TSDEL", logger)),
-    sframe_context(Default_Cipher_Suite)
+    sframe_context(std::move(sframe_context))
 {
     currentGroupId = 0;
     currentObjectId = -1;
-
-    // TODO: This needs to be replaced with valid keying material
-    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
-    sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(
-        Default_Cipher_Suite,
-        salt,
-        {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
-
-    sframe_context.enableEpoch(Fixed_Epoch);
 }
 
 std::shared_ptr<SubscriptionDelegate>
@@ -63,6 +53,7 @@ SubscriptionDelegate::create(const std::string& sourceId,
                              const std::string& authToken,
                              quicr::bytes e2eToken,
                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+                             std::shared_ptr<QSFrameContext> sframe_context,
                              const cantina::LoggerPointer& logger)
 {
     return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
@@ -73,6 +64,7 @@ SubscriptionDelegate::create(const std::string& sourceId,
                                                                           authToken,
                                                                           e2eToken,
                                                                           std::move(qDelegate),
+                                                                          std::move(sframe_context),
                                                                           logger));
 }
 
@@ -148,11 +140,11 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
         buf >> epoch;
         const auto ciphertext = buf.take();
         quicr::bytes output_buffer(ciphertext.size());
-        auto cleartext = sframe_context.unprotect(epoch,
-                                                  quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                  quicrName.bits<std::uint64_t>(0, 48),
-                                                  output_buffer,
-                                                  ciphertext);
+        auto cleartext = sframe_context->unprotect(epoch,
+                                                   quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                   quicrName.bits<std::uint64_t>(0, 48),
+                                                   output_buffer,
+                                                   ciphertext);
         output_buffer.resize(cleartext.size());
 
         qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
@@ -211,6 +203,7 @@ void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
  */
 
 PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+                                         std::shared_ptr<QSFrameContext> sframe_context,
                                          const std::string& sourceId,
                                          const quicr::Namespace& quicrNamespace,
                                          const std::string& originUrl,
@@ -233,21 +226,11 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     priority(priority),
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
-    sframe_context(Default_Cipher_Suite)
-{
-    // TODO: This needs to be replaced with valid keying material
-    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
-    sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(
-        Default_Cipher_Suite,
-        salt,
-        std::vector<std::uint8_t>{
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
+    sframe_context(std::move(sframe_context))
+{}
 
-    sframe_context.enableEpoch(Fixed_Epoch);
-}
 std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+                                                                 std::shared_ptr<QSFrameContext> sframe_context,
                                                                  const std::string& sourceId,
                                                                  const quicr::Namespace& quicrNamespace,
                                                                  const std::string& originUrl,
@@ -259,6 +242,7 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                  const cantina::LoggerPointer& logger)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
+                                                                        std::move(sframe_context),
                                                                         sourceId,
                                                                         quicrNamespace,
                                                                         originUrl,
@@ -348,10 +332,10 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     try
     {
         quicr::bytes output_buffer(len + 16);
-        auto ciphertext = sframe_context.protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                 quicrName.bits<std::uint64_t>(0, 48),
-                                                 output_buffer,
-                                                 {data, len});
+        auto ciphertext = sframe_context->protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                  quicrName.bits<std::uint64_t>(0, 48),
+                                                  output_buffer,
+                                                  {data, len});
         output_buffer.resize(ciphertext.size());
         auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
         buf << quicr::uintVar_t(Fixed_Epoch);

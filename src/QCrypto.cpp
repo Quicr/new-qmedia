@@ -1,9 +1,30 @@
 #include <bit>
-#include "qmedia/QCrypto.hpp"
-#include "sframe/crypto.h"
+#include <qmedia/QCrypto.hpp>
+#include <sframe/crypto.h>
 
 namespace qmedia
 {
+
+std::shared_ptr<QSFrameContext> MLSClient::make_sframe_context()
+{
+    // NB: Rare exception to "no naked new" rule; std::make_shared cannot access
+    // non-public constructors.
+    const auto ctx = std::shared_ptr<QSFrameContext>(new QSFrameContext(sframe_cipher_suite));
+    sframe_contexts.push_back(ctx);
+
+    // Provision a static key
+    static constexpr auto fixed_epoch = uint64_t(1);
+    static const auto fixed_base_key = sframe::bytes{
+      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+      0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    };
+
+    ctx->addEpoch(fixed_epoch, fixed_base_key);
+    ctx->enableEpoch(fixed_epoch);
+
+    return ctx;
+}
+
 QSFrameContext::QSFrameContext(sframe::CipherSuite cipher_suite) : cipher_suite(cipher_suite)
 {
     // Nothing more to do
