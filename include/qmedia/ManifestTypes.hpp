@@ -38,4 +38,4 @@ struct Subscription
 
 void to_json(json& j, const Subscription& profile);
 void from_json(const json& j, Subscription& profile);
-}
+}        // namespace qmedia::manifest

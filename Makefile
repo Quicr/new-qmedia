@@ -22,7 +22,7 @@ cclean:
 	rm -rf build
 
 format:
-	find include -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
-	find src -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
-	find cmd -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
-	find test -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
+	find include -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
+	find src -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
+	find test -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
+	find ctest -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
