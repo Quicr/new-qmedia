@@ -95,9 +95,8 @@ private:
 class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 {
 public:
-    QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) :
-        qmedia::QPublicationDelegate(quicrNamespace), logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
-    // quicrNamespace(quicrNamespace)
+    QPublicationTestDelegate() :
+        qmedia::QPublicationDelegate(), logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     {
         logger->Log("QPublicationTestDelegate constructed");
     }
@@ -135,7 +134,7 @@ public:
     {
         logger->Log("QPubisherTestDelegate::allocatePubByNamespace");
         std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
-        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
+        return std::make_shared<QPublicationTestDelegate>();
     }
 
     int removePubByNamespace(const quicr::Namespace& quicrNamespace)
