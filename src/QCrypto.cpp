@@ -1,5 +1,5 @@
 #include <bit>
-#include "qmedia/QSFrameContext.hpp"
+#include "qmedia/QCrypto.hpp"
 #include "sframe/crypto.h"
 
 namespace qmedia
@@ -67,7 +67,6 @@ void QSFrameContext::ensure_key(uint64_t epoch_id,
         ns_contexts.emplace(quicr_namespace, sframe::ContextBase(cipher_suite));
     }
 
-    const auto &epoch_secret = epoch_secrets.at(epoch_id);
     const auto base_key = derive_base_key(epoch_id, quicr_namespace);
     ns_contexts.at(quicr_namespace).add_key(epoch_id, base_key);
 }

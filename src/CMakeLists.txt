@@ -2,7 +2,7 @@ add_library(${PROJECT_NAME}
     SHARED
     QController.cpp
     QuicrDelegates.cpp
-    QSFrameContext.cpp
+    QCrypto.cpp
     ManifestTypes.cpp
 )
 

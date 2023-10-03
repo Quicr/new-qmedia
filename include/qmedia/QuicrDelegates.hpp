@@ -1,6 +1,6 @@
 #pragma once
 
-#include "QSFrameContext.hpp"
+#include "QCrypto.hpp"
 #include "qmedia/QDelegates.hpp"
 
 #include <cantina/logger.h>
