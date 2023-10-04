@@ -1,29 +1,48 @@
 #pragma once
 
+#include "QSFrameContext.hpp"
+#include "qmedia/QDelegates.hpp"
+
+#include <cantina/logger.h>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-#include <cantina/logger.h>
-#include <qmedia/QDelegates.hpp>
+
 #include <string>
-#include "QSFrameContext.hpp"
 
 namespace qmedia
 {
 
-class QuicrTransportSubDelegate : public quicr::SubscriberDelegate
+class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enable_shared_from_this<SubscriptionDelegate>
 {
-public:
-    QuicrTransportSubDelegate(const std::string sourceId,
-                              const quicr::Namespace& quicrNamespace,
-                              const quicr::SubscribeIntent intent,
-                              const std::string originUrl,
-                              const bool useReliableTransport,
-                              const std::string authToken,
-                              quicr::bytes e2eToken,
-                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                              const cantina::LoggerPointer& logger);
+    SubscriptionDelegate(const std::string& sourceId,
+                         const quicr::Namespace& quicrNamespace,
+                         const quicr::SubscribeIntent intent,
+                         const std::string& originUrl,
+                         const bool useReliableTransport,
+                         const std::string& authToken,
+                         quicr::bytes e2eToken,
+                         std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+                         const cantina::LoggerPointer& logger);
 
-    ~QuicrTransportSubDelegate();
+public:
+    [[nodiscard]] static std::shared_ptr<SubscriptionDelegate>
+    create(const std::string& sourceId,
+           const quicr::Namespace& quicrNamespace,
+           const quicr::SubscribeIntent intent,
+           const std::string& originUrl,
+           const bool useReliableTransport,
+           const std::string& authToken,
+           quicr::bytes e2eToken,
+           std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+           const cantina::LoggerPointer& logger);
+
+    std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
+
+    bool isActive() const { return canReceiveSubs; }
+
+    /*===========================================================================*/
+    // Events
+    /*===========================================================================*/
 
     virtual void onSubscribeResponse(const quicr::Namespace& quicrNamespace, const quicr::SubscribeResult& result);
 
@@ -37,14 +56,14 @@ public:
                                     quicr::bytes&& data);
 
     virtual void
-    onSubscribedObjectFragment(const quicr::Name&, uint8_t, uint16_t, bool, const uint64_t&, bool, quicr::bytes&&)
-    {
-    }
+    onSubscribedObjectFragment(const quicr::Name&, uint8_t, uint16_t, bool, const uint64_t&, bool, quicr::bytes&&);
 
-    bool isActive() { return canReceiveSubs; }
+    /*===========================================================================*/
+    // Actions
+    /*===========================================================================*/
 
-    void subscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
-    void unsubscribe(std::shared_ptr<QuicrTransportSubDelegate> self, std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void subscribe(std::shared_ptr<quicr::Client> quicrClient);
+    void unsubscribe(std::shared_ptr<quicr::Client> quicrClient);
 
 private:
     bool canReceiveSubs;
@@ -69,54 +88,67 @@ private:
     QSFrameContext sframe_context;
 };
 
-class QuicrTransportPubDelegate : public quicr::PublisherDelegate
+class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_shared_from_this<PublicationDelegate>
 {
-public:
-    QuicrTransportPubDelegate(std::string sourceId,
-                              quicr::Namespace quicrNamespace,
-                              const std::string& originUrl,
-                              const std::string& authToken,
-                              quicr::bytes&& payload,
-                              const std::vector<std::uint8_t>& priority,
-                              std::uint16_t expiry,
-                              bool reliableTransport,
-                              std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                              const cantina::LoggerPointer& logger);
+    PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+                        const std::string& sourceId,
+                        const quicr::Namespace& quicrNamespace,
+                        const std::string& originUrl,
+                        const std::string& authToken,
+                        quicr::bytes&& payload,
+                        const std::vector<std::uint8_t>& priority,
+                        std::uint16_t expiry,
+                        bool reliableTransport,
+                        const cantina::LoggerPointer& logger);
 
-    ~QuicrTransportPubDelegate();
+public:
+    [[nodiscard]] static std::shared_ptr<PublicationDelegate>
+    create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+           const std::string& sourceId,
+           const quicr::Namespace& quicrNamespace,
+           const std::string& originUrl,
+           const std::string& authToken,
+           quicr::bytes&& payload,
+           const std::vector<std::uint8_t>& priority,
+           std::uint16_t expiry,
+           bool reliableTransport,
+           const cantina::LoggerPointer& logger);
+
+    std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
+
+    /*===========================================================================*/
+    // Events
+    /*===========================================================================*/
 
     virtual void onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                          const quicr::PublishIntentResult& result);
 
-    void publishIntent(std::shared_ptr<QuicrTransportPubDelegate> self,
-                       std::shared_ptr<quicr::QuicRClient> quicrClient,
-                       bool reliableTransport=false);
+    /*===========================================================================*/
+    // Actions
+    /*===========================================================================*/
 
-    void publishIntentEnd(std::shared_ptr<QuicrTransportPubDelegate> self,
-                          std::shared_ptr<quicr::QuicRClient> quicrClient);
+    void publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport = false);
 
-    void publishNamedObject(std::shared_ptr<quicr::QuicRClient> quicrClient,
-                            std::uint8_t* data,
-                            std::size_t len,
-                            bool groupFlag);
+    void publishIntentEnd(std::shared_ptr<quicr::Client> client);
+
+    void publishNamedObject(std::shared_ptr<quicr::Client> client, std::uint8_t* data, std::size_t len, bool groupFlag);
 
 private:
     // bool canPublish;
     std::string sourceId;
-    quicr::Namespace quicrNamespace;
     const std::string& originUrl;
     const std::string& authToken;
-    quicr::bytes&& payload;
+
+    quicr::Namespace quicrNamespace;
     std::uint32_t groupId;
     std::uint16_t objectId;
-    std::vector<std::uint8_t> priority;
     std::uint16_t expiry;
     bool reliableTransport;
+    quicr::bytes&& payload;
+    std::vector<std::uint8_t> priority;
+
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     const cantina::LoggerPointer logger;
-
-    std::uint64_t groupCount;
-    std::uint64_t objectCount;
 
     QSFrameContext sframe_context;
 };

@@ -71,10 +71,10 @@ mac-client can be run with
  1. Copy libqmedia.dylib from build/src/extern into mac-client/Neo directory
  2. Open RTMC.xcodeproj under mac-client
  3. Build and Run
-   3.1 This needs a QuicR relay to be started as explained below
+   3.1 This needs a  relay to be started as explained below
 ```
 
-Running mac-client needs a backend QuicR relay server which
+Running mac-client needs a backend  relay server which
 can be run locally with
 ```
 1. cd build/_deps/quicrq-build
