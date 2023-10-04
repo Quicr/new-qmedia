@@ -364,27 +364,25 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     return 0;
 }
 
-int QController::processURLTemplates(json& urlTemplates)
+int QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
 {
     LOGGER_DEBUG(logger, "Processing URL templates...");
     for (auto& urlTemplate : urlTemplates)
     {
-        std::string temp = urlTemplate;
-        encoder.AddTemplate(temp, true);
+        encoder.AddTemplate(urlTemplate, true);
     }
     LOGGER_INFO(logger, "Finished processing templates!");
     return 0;
 }
 
-int QController::processSubscriptions(json& subscriptions)
+int QController::processSubscriptions(const std::vector<manifest::Subscription>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
     {
-        manifest::Subscription s = subscription;
-        for (auto& profile : s.profileSet.profiles)
+        for (auto& profile : subscription.profileSet.profiles)
         {
-            quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceURL);
+            quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
 
             auto delegate = getSubscriptionDelegate(quicrNamespace, profile.qualityProfile);
             if (!delegate)
@@ -393,7 +391,7 @@ int QController::processSubscriptions(json& subscriptions)
                 continue;
             }
 
-            int update_error = delegate->update(s.sourceID, s.label, profile.qualityProfile);
+            int update_error = delegate->update(subscription.sourceId, subscription.label, profile.qualityProfile);
             if (update_error == 0)
             {
                 LOGGER_INFO(logger, "Updated subscription " << quicrNamespace);
@@ -401,7 +399,7 @@ int QController::processSubscriptions(json& subscriptions)
             }
 
             bool reliable = false;
-            int prepare_error = delegate->prepare(s.sourceID, s.label, profile.qualityProfile, reliable);
+            int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
 
             if (prepare_error != 0)
             {
@@ -411,7 +409,7 @@ int QController::processSubscriptions(json& subscriptions)
 
             quicr::bytes e2eToken;
             startSubscription(std::move(delegate),
-                              s.sourceID,
+                              subscription.sourceId,
                               quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
@@ -420,7 +418,7 @@ int QController::processSubscriptions(json& subscriptions)
                               std::move(e2eToken));
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (s.profileSet.type == "singleordered") break;
+            if (subscription.profileSet.type == "singleordered") break;
         }
     }
 
@@ -428,16 +426,16 @@ int QController::processSubscriptions(json& subscriptions)
     return 0;
 }
 
-int QController::processPublications(json& publications)
+int QController::processPublications(const std::vector<manifest::Publication>& publications)
 {
     LOGGER_DEBUG(logger, "Processing publications...");
     for (auto& publication : publications)
     {
-        for (auto& profile : publication["profileSet"]["profiles"])
+        for (auto& profile : publication.profileSet.profiles)
         {
-            const auto& quicrNamespace = encoder.EncodeUrl(profile["quicrNamespaceUrl"]);
+            const auto& quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
 
-            auto delegate = getPublicationDelegate(quicrNamespace, publication["sourceId"], profile["qualityProfile"]);
+            auto delegate = getPublicationDelegate(quicrNamespace, publication.sourceId, profile.qualityProfile);
             if (!delegate)
             {
                 LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
@@ -446,7 +444,7 @@ int QController::processPublications(json& publications)
 
             // Notify client to prepare for incoming media
             bool reliable = false;
-            int prepare_error = delegate->prepare(publication["sourceId"], profile["qualityProfile"], reliable);
+            int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
                 LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepare_error);
@@ -455,17 +453,17 @@ int QController::processPublications(json& publications)
 
             quicr::bytes payload;
             startPublication(delegate,
-                             publication["sourceId"],
+                             publication.sourceId,
                              quicrNamespace,
                              "",
                              "",
                              std::move(payload),
-                             profile["priorities"],
-                             profile["expiry"],
+                             profile.priorities,
+                             profile.expiry,
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (publication["profileSet"]["type"] == "singleordered") break;
+            if (publication.profileSet.type == "singleordered") break;
         }
     }
 
@@ -473,17 +471,25 @@ int QController::processPublications(json& publications)
     return 0;
 }
 
-int QController::updateManifest(const std::string& manifest)
+int QController::updateManifest(const std::string& manifest_json)
 {
-    auto manifest_object = json::parse(manifest);
+  LOGGER_DEBUG(logger, "Parsing manifest...");
+  const auto manifest_parsed = json::parse(manifest_json);
+  const auto manifest_obj = manifest::Manifest(manifest_parsed);
+  LOGGER_INFO(logger, "Finished parsing manifest!");
 
-    LOGGER_DEBUG(logger, "Parsing manifest...");
+  return updateManifest(manifest_obj);
+}
 
-    processURLTemplates(manifest_object["urlTemplates"]);
-    processSubscriptions(manifest_object["subscriptions"]);
-    processPublications(manifest_object["publications"]);
+int QController::updateManifest(const manifest::Manifest& manifest_obj)
+{
+    LOGGER_DEBUG(logger, "Importing manifest...");
 
-    LOGGER_INFO(logger, "Finished parsing manifest!");
+    processURLTemplates(manifest_obj.urlTemplates);
+    processSubscriptions(manifest_obj.subscriptions);
+    processPublications(manifest_obj.publications);
+
+    LOGGER_INFO(logger, "Finished importing manifest!");
 
     return 0;
 }

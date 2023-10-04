@@ -166,7 +166,7 @@ int test()
     // load file into string
     std::stringstream strStream;
     strStream << f.rdbuf();
-    auto manifest = strStream.str();
+    auto manifest = json::parse(strStream.str()).get<qmedia::manifest::Manifest>();
 
     then = timeSinceEpochMillisec();
     qController->updateManifest(manifest);

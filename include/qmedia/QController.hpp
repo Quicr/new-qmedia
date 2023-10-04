@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QuicrDelegates.hpp"
+#include "ManifestTypes.hpp"
 
 #include <nlohmann/json.hpp>
 #include <quicr/quicr_common.h>
@@ -35,7 +36,10 @@ public:
 
     [[deprecated("Use QController::disconnect instead")]] void close();
 
-    int updateManifest(const std::string& manifest);
+    [[deprecated("Use parsed Manifest object instead of string")]]
+    int updateManifest(const std::string& manifest_json);
+
+    int updateManifest(const manifest::Manifest& manifest_obj);
 
     void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
@@ -110,9 +114,9 @@ private:
 
     void stopPublication(const quicr::Namespace& quicrNamespace);
 
-    int processURLTemplates(json&);
-    int processSubscriptions(json&);
-    int processPublications(json&);
+    int processURLTemplates(const std::vector<std::string>& urlTemplates);
+    int processSubscriptions(const std::vector<manifest::Subscription>& subscriptions);
+    int processPublications(const std::vector<manifest::Publication>& publications);
 
 private:
     std::mutex qSubsMutex;

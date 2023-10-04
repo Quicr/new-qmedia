@@ -12,30 +12,45 @@ namespace qmedia::manifest
 struct Profile
 {
     std::string qualityProfile;
-    std::string quicrNamespaceURL;
-};
+    std::string quicrNamespaceUrl;
+    std::vector<uint8_t> priorities;
+    uint16_t expiry;
 
-void to_json(json& j, const Profile& profile);
-void from_json(const json& j, Profile& profile);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Profile, qualityProfile, quicrNamespaceUrl, priorities, expiry)
+};
 
 struct ProfileSet
 {
     std::string type;
     std::vector<Profile> profiles;
-};
 
-void to_json(json& j, const ProfileSet& profile);
-void from_json(const json& j, ProfileSet& profile);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ProfileSet, type, profiles)
+};
 
 struct Subscription
 {
     std::string mediaType;
     std::string sourceName;
-    std::string sourceID;
+    std::string sourceId;
     std::string label;
     ProfileSet profileSet;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Subscription, mediaType, sourceName, sourceId, label, profileSet)
 };
 
-void to_json(json& j, const Subscription& profile);
-void from_json(const json& j, Subscription& profile);
+struct Publication {
+  std::string sourceId;
+  ProfileSet profileSet;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Publication, sourceId, profileSet)
+};
+
+struct Manifest {
+  std::vector<std::string> urlTemplates;
+  std::vector<Subscription> subscriptions;
+  std::vector<Publication> publications;
+
+  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, urlTemplates, subscriptions, publications)
+};
+
 }
