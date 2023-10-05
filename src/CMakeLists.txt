@@ -3,7 +3,6 @@ add_library(${PROJECT_NAME}
     QController.cpp
     QuicrDelegates.cpp
     QSFrameContext.cpp
-    ManifestTypes.cpp
 )
 
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
