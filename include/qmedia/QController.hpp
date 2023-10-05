@@ -37,9 +37,9 @@ public:
     [[deprecated("Use QController::disconnect instead")]] void close();
 
     [[deprecated("Use parsed Manifest object instead of string")]]
-    int updateManifest(const std::string& manifest_json);
+    void updateManifest(const std::string& manifest_json);
 
-    int updateManifest(const manifest::Manifest& manifest_obj);
+    void updateManifest(const manifest::Manifest& manifest_obj);
 
     void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
@@ -114,9 +114,9 @@ private:
 
     void stopPublication(const quicr::Namespace& quicrNamespace);
 
-    int processURLTemplates(const std::vector<std::string>& urlTemplates);
-    int processSubscriptions(const std::vector<manifest::Subscription>& subscriptions);
-    int processPublications(const std::vector<manifest::Publication>& publications);
+    void processURLTemplates(const std::vector<std::string>& urlTemplates);
+    void processSubscriptions(const std::vector<manifest::Subscription>& subscriptions);
+    void processPublications(const std::vector<manifest::Publication>& publications);
 
 private:
     std::mutex qSubsMutex;

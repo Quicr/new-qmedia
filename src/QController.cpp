@@ -364,7 +364,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     return 0;
 }
 
-int QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
+void QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
 {
     LOGGER_DEBUG(logger, "Processing URL templates...");
     for (auto& urlTemplate : urlTemplates)
@@ -372,10 +372,9 @@ int QController::processURLTemplates(const std::vector<std::string>& urlTemplate
         encoder.AddTemplate(urlTemplate, true);
     }
     LOGGER_INFO(logger, "Finished processing templates!");
-    return 0;
 }
 
-int QController::processSubscriptions(const std::vector<manifest::Subscription>& subscriptions)
+void QController::processSubscriptions(const std::vector<manifest::Subscription>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
@@ -423,10 +422,9 @@ int QController::processSubscriptions(const std::vector<manifest::Subscription>&
     }
 
     LOGGER_INFO(logger, "Finished processing subscriptions!");
-    return 0;
 }
 
-int QController::processPublications(const std::vector<manifest::Publication>& publications)
+void QController::processPublications(const std::vector<manifest::Publication>& publications)
 {
     LOGGER_DEBUG(logger, "Processing publications...");
     for (auto& publication : publications)
@@ -468,20 +466,19 @@ int QController::processPublications(const std::vector<manifest::Publication>& p
     }
 
     LOGGER_INFO(logger, "Finished processing publications!");
-    return 0;
 }
 
-int QController::updateManifest(const std::string& manifest_json)
+void QController::updateManifest(const std::string& manifest_json)
 {
   LOGGER_DEBUG(logger, "Parsing manifest...");
   const auto manifest_parsed = json::parse(manifest_json);
   const auto manifest_obj = manifest::Manifest(manifest_parsed);
   LOGGER_INFO(logger, "Finished parsing manifest!");
 
-  return updateManifest(manifest_obj);
+  updateManifest(manifest_obj);
 }
 
-int QController::updateManifest(const manifest::Manifest& manifest_obj)
+void QController::updateManifest(const manifest::Manifest& manifest_obj)
 {
     LOGGER_DEBUG(logger, "Importing manifest...");
 
@@ -490,8 +487,6 @@ int QController::updateManifest(const manifest::Manifest& manifest_obj)
     processPublications(manifest_obj.publications);
 
     LOGGER_INFO(logger, "Finished importing manifest!");
-
-    return 0;
 }
 
 }        // namespace qmedia
