@@ -3,7 +3,8 @@
 add_executable(qmedia_test
                main.cpp
                manifest.cpp
-               qmedia.cpp)
+               qmedia.cpp
+               relay.cpp)
 target_include_directories(qmedia_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(qmedia_test PRIVATE qmedia doctest::doctest)
@@ -23,5 +24,5 @@ if(MSVC)
 endif()
 
 include(${CMAKE_SOURCE_DIR}/dependencies/doctest/scripts/cmake/doctest.cmake)
-doctest_discover_tests(qmedia_test)
-
+doctest_discover_tests(qmedia_test
+  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/test")

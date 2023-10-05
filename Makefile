@@ -8,7 +8,7 @@ BUILD_DIR=build
 CLANG_FORMAT=clang-format -i
 TEST_BIN=${BUILD_DIR}/test/qmedia_test
 
-.PHONY: all clean cclean format
+.PHONY: all test clean cclean format
 
 all: ${BUILD_DIR} src/* test/*
 	cmake --build build
@@ -16,9 +16,10 @@ all: ${BUILD_DIR} src/* test/*
 ${BUILD_DIR}: CMakeLists.txt
 	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON  .
 
-${TEST_BIN}: all
+${TEST_BIN}: 
+	cmake --build build --target qmedia_test
 
-test: ${TEST_BIN}
+test: ${TEST_BIN} test/*
 	cmake --build build --target test
 
 dtest: ${TEST_BIN}
