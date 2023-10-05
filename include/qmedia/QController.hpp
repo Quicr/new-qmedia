@@ -115,8 +115,8 @@ private:
     void stopPublication(const quicr::Namespace& quicrNamespace);
 
     void processURLTemplates(const std::vector<std::string>& urlTemplates);
-    void processSubscriptions(const std::vector<manifest::Subscription>& subscriptions);
-    void processPublications(const std::vector<manifest::Publication>& publications);
+    void processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions);
+    void processPublications(const std::vector<manifest::MediaStream>& publications);
 
 private:
     std::mutex qSubsMutex;

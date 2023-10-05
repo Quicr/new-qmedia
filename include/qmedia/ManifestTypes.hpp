@@ -9,15 +9,22 @@ using json = nlohmann::json;
 
 namespace qmedia::manifest
 {
+
 struct Profile
 {
     std::string qualityProfile;
     std::string quicrNamespaceUrl;
     std::vector<uint8_t> priorities;
-    uint16_t expiry;
+    std::optional<uint16_t> expiry = 0;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Profile, qualityProfile, quicrNamespaceUrl, priorities, expiry)
+    friend bool operator==(const Profile& lhs, const Profile& rhs);
 };
+
+// A custom parser is required here because the `priorities` and `expiry` fields
+// are optional.  The `to_json` method is a stub, provided only to allow for the
+// use of macros to define JSON formatting for higher-level structs.
+void to_json(nlohmann::json& j, const Profile& profile);
+void from_json(const nlohmann::json& j, Profile& profile);
 
 struct ProfileSet
 {
@@ -25,9 +32,10 @@ struct ProfileSet
     std::vector<Profile> profiles;
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ProfileSet, type, profiles)
+    friend bool operator==(const ProfileSet& lhs, const ProfileSet& rhs);
 };
 
-struct Subscription
+struct MediaStream
 {
     std::string mediaType;
     std::string sourceName;
@@ -35,22 +43,18 @@ struct Subscription
     std::string label;
     ProfileSet profileSet;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Subscription, mediaType, sourceName, sourceId, label, profileSet)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(MediaStream, mediaType, sourceName, sourceId, label, profileSet)
+    friend bool operator==(const MediaStream& lhs, const MediaStream& rhs);
 };
 
-struct Publication {
-  std::string sourceId;
-  ProfileSet profileSet;
+struct Manifest
+{
+    std::vector<std::string> urlTemplates;
+    std::vector<MediaStream> subscriptions;
+    std::vector<MediaStream> publications;
 
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Publication, sourceId, profileSet)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, urlTemplates, subscriptions, publications)
+    friend bool operator==(const Manifest& lhs, const Manifest& rhs);
 };
 
-struct Manifest {
-  std::vector<std::string> urlTemplates;
-  std::vector<Subscription> subscriptions;
-  std::vector<Publication> publications;
-
-  NLOHMANN_DEFINE_TYPE_INTRUSIVE(Manifest, urlTemplates, subscriptions, publications)
-};
-
-}
+}        // namespace qmedia::manifest
