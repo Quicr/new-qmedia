@@ -1,5 +1,6 @@
 add_library(${PROJECT_NAME}
     SHARED
+    ManifestTypes.cpp
     QController.cpp
     QuicrDelegates.cpp
     QSFrameContext.cpp

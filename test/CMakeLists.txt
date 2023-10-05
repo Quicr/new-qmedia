@@ -2,6 +2,7 @@
 
 add_executable(qmedia_test
                main.cpp
+               manifest.cpp
                qmedia.cpp)
 target_include_directories(qmedia_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 

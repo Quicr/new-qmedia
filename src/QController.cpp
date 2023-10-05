@@ -374,7 +374,7 @@ void QController::processURLTemplates(const std::vector<std::string>& urlTemplat
     LOGGER_INFO(logger, "Finished processing templates!");
 }
 
-void QController::processSubscriptions(const std::vector<manifest::Subscription>& subscriptions)
+void QController::processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
@@ -424,7 +424,7 @@ void QController::processSubscriptions(const std::vector<manifest::Subscription>
     LOGGER_INFO(logger, "Finished processing subscriptions!");
 }
 
-void QController::processPublications(const std::vector<manifest::Publication>& publications)
+void QController::processPublications(const std::vector<manifest::MediaStream>& publications)
 {
     LOGGER_DEBUG(logger, "Processing publications...");
     for (auto& publication : publications)
@@ -457,7 +457,7 @@ void QController::processPublications(const std::vector<manifest::Publication>& 
                              "",
                              std::move(payload),
                              profile.priorities,
-                             profile.expiry,
+                             profile.expiry.value(),
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.

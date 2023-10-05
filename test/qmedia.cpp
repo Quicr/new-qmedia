@@ -1,5 +1,7 @@
 #include <doctest/doctest.h>
 
-TEST_CASE("Hello world") {
-  REQUIRE(1 == 1);
+// TODO(richbarn) Add actual qmedia tests here
+TEST_CASE("Hello world")
+{
+    REQUIRE(1 == 1);
 }
