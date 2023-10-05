@@ -125,8 +125,8 @@ static const auto expected_manifest_obj = Manifest{
                                                   {.qualityProfile = "h264,width=640,height=360,fps=20,br=500",
                                                    .quicrNamespaceUrl = "quicr://webex.cisco.com/conferences/13/"
                                                                         "mediatype/194/endpoint/1",
-                                                   .expiry = 500,
-                                                   .priorities = {2, 3}}}}},
+                                                   .priorities = {2, 3},
+                                                   .expiry = 500,}}}},
                      {.mediaType = "audio",
                       .sourceName = "Audio A1",
                       .sourceId = "68ff975e-17e2-4960-b900-8b74f3e1da85",
@@ -135,8 +135,8 @@ static const auto expected_manifest_obj = Manifest{
                                      .profiles = {{.qualityProfile = "opus,br=6",
                                                    .quicrNamespaceUrl = "quicr://webex.cisco.com/conferences/13/"
                                                                         "mediatype/1/endpoint/1",
-                                                   .expiry = 500,
-                                                   .priorities = {1}}}}}}};
+                                                   .priorities = {1},
+                                                   .expiry = 500}}}}}};
 
 TEST_CASE("Manifest parsing")
 {
