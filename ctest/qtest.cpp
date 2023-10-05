@@ -89,7 +89,7 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 {
 public:
     QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) :
-        qmedia::QPublicationDelegate(quicrNamespace),
+        qmedia::QPublicationDelegate(),
         logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
     //quicrNamespace(quicrNamespace)
     {

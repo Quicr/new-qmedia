@@ -7,12 +7,12 @@
 BUILD_DIR=build
 CLANG_FORMAT=clang-format -i
 
-.PHONY: all clean cclean format
+.PHONY: all build clean cclean format
 
 all: build
 	cmake --build build
 
-build: CMakeLists.txt test/CMakeLists.txt cmd/CMakeLists.txt
+build: CMakeLists.txt
 	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON  .
 
 clean:
@@ -24,5 +24,5 @@ cclean:
 format:
 	find include -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
 	find src -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
-	find cmd -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
+	find qtest -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
 	find test -iname "*.hh" -or -iname "*.cc" | xargs ${CLANG_FORMAT}
