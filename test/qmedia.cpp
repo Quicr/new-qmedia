@@ -1,5 +1,6 @@
 #include <doctest/doctest.h>
 
+#include <UrlEncoder.h>
 #include <cantina/logger.h>
 #include <qmedia/QController.hpp>
 #include <qmedia/QDelegates.hpp>
@@ -79,14 +80,11 @@ struct SubscriptionCollector {
     }
 
     object_future->wait();
-    const auto out = std::move(objects);
-    objects.clear();
     return collected_payloads();
   }
 };
 
 
-// TODO actually record data on the collector
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
 public:
@@ -105,19 +103,16 @@ public:
         return 0;
     }
 
-    int update(const std::string& sourceId,
-               const std::string& label,
-               const std::string& qualityProfile) override
+    int update(const std::string& /* sourceId */,
+               const std::string& /* label */,
+               const std::string& /* qualityProfile */) override
     {
-        collector->sourceId = sourceId;
-        collector->label = label;
-        collector->qualityProfile = qualityProfile;
-        return 0;
+        // Always error on update to force a prepare call
+        return 1;
     }
 
     int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override
     {
-        std::cout << "recv " << groupId << " " << objectId << " " << data.size() << std::endl;
         collector->add_object({ groupId, objectId, data });
         return 0;
     }
@@ -183,14 +178,16 @@ static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector
     return {sub, pub, logger};
 }
 
-static const auto url_template = "quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/"
-                                 "endpoint/<int16>";
-
 static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
 {
     const auto source_base = "source ";
     const auto label_base = "Participant ";
-    const auto url_base = "quicr://webex.cisco.com/conferences/34/mediatype/1/endpoint/";
+
+    const auto url_template = std::string("quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/"
+                                 "endpoint/<int16>");
+    const auto url_base = std::string("quicr://webex.cisco.com/conferences/34/mediatype/1/endpoint/");
+    auto encoder = UrlEncoder{};
+    encoder.AddTemplate(url_template);
 
     const auto endpoint_id_string = std::to_string(endpoint_id);
     return {.mediaType = "audio",
@@ -200,7 +197,7 @@ static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
             .profileSet = {.type = "singleordered",
                            .profiles = {{
                                .qualityProfile = "opus,br=6",
-                               .quicrNamespaceUrl = url_base + endpoint_id_string,
+                               .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
                                .priorities = {1},
                                .expiry = 500,
                            }}}};
@@ -241,15 +238,15 @@ TEST_CASE("Two-party session")
     const auto media_b = make_media_stream(2);
 
     const auto manifest_a = qmedia::manifest::Manifest{
-        .subscriptions = {media_b}, .publications = {media_a}, .urlTemplates = {url_template}};
+        .subscriptions = {media_b}, .publications = {media_a}};
     controller_a.updateManifest(manifest_a);
 
     const auto manifest_b = qmedia::manifest::Manifest{
-        .subscriptions = {media_a}, .publications = {media_b}, .urlTemplates = {url_template}};
+        .subscriptions = {media_a}, .publications = {media_b}};
     controller_b.updateManifest(manifest_b);
 
-    const auto ns_a = controller_a.namespace_for_url(media_a.profileSet.profiles[0].quicrNamespaceUrl);
-    const auto ns_b = controller_a.namespace_for_url(media_b.profileSet.profiles[0].quicrNamespaceUrl);
+    const auto ns_a = media_a.profileSet.profiles[0].quicrNamespace;
+    const auto ns_b = media_b.profileSet.profiles[0].quicrNamespace;
 
     // Send media from participant 1 and verify that it arrived at the other participants
     const auto sent_a = test_data(1);
@@ -263,7 +260,7 @@ TEST_CASE("Two-party session")
     // Send media from participant 2 and verify that it arrived at the other participants
     const auto sent_b = test_data(2);
     for (const auto& obj : sent_b) {
-      controller_a.publishNamedObject(ns_b, obj.data(), obj.size(), false);
+      controller_b.publishNamedObject(ns_b, obj.data(), obj.size(), false);
     }
 
     const auto received_a = collector_a->await(sent_b.size());
