@@ -130,8 +130,13 @@ void QController::removeSubscriptions()
     LOGGER_INFO(logger, "Unsubscribed from all subscriptions");
 }
 
+quicr::Namespace QController::namespace_for_url(const std::string& url)
+{
+  return encoder.EncodeUrl(url);
+}
+
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
-                                     std::uint8_t* data,
+                                     const std::uint8_t* data,
                                      std::size_t len,
                                      bool groupFlag)
 {

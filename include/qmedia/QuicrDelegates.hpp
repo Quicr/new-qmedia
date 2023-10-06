@@ -131,7 +131,7 @@ public:
 
     void publishIntentEnd(std::shared_ptr<quicr::Client> client);
 
-    void publishNamedObject(std::shared_ptr<quicr::Client> client, std::uint8_t* data, std::size_t len, bool groupFlag);
+    void publishNamedObject(std::shared_ptr<quicr::Client> client, const std::uint8_t* data, std::size_t len, bool groupFlag);
 
 private:
     // bool canPublish;

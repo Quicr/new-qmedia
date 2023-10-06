@@ -2,15 +2,8 @@
 
 #include "relay.h"
 
-#include <quicr/encode.h>
-#include <quicr/message_buffer.h>
-#include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-#include <transport/transport.h>
 
-#include <cantina/logger.h>
-
-#include <iostream>
 #include <future>
 #include <chrono>
 
@@ -29,7 +22,7 @@ public:
                          const std::string& /* auth_token */,
                          quicr::bytes&& /* e2e_token */) override
     {
-        std::cout << "PublishIntent namespace=" << quicr_namespace << std::endl << std::flush;
+        logger->info << "PublishIntent namespace=" << quicr_namespace << std::flush;
 
         quicr::PublishIntentResult result{quicr::messages::Response::Ok, {}, {}};
         server->publishIntentResponse(quicr_namespace, result);
@@ -81,7 +74,7 @@ public:
                            bool /* use_reliable_transport */,
                            quicr::messages::PublishDatagram&& datagram) override
     {
-        logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size();
+        logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size() << std::flush;
 
         const auto name = datagram.header.name;
         for (const auto& [ns, subs] : subscriptions)
@@ -93,12 +86,14 @@ public:
 
             for (const auto& sub : subs)
             {
-                if (sub.context_id != context_id)
+                if (sub.context_id == context_id)
                 {
                     // No loopback
+                    logger->info << "  Skipping loopback to subscriber_id=" << sub.subscriber_id << std::flush;
                     continue;
                 }
 
+                logger->info << "  Forwarding to subscriber_id=" << sub.subscriber_id << std::flush;
                 server->sendNamedObject(sub.subscriber_id, false, 1, 200, datagram);
             }
         }
@@ -116,7 +111,7 @@ private:
     std::map<quicr::Namespace, std::vector<Subscriber>> subscriptions;
 };
 
-LocalhostRelay::LocalhostRelay(uint16_t port, const std::string& cert, const std::string& key)
+LocalhostRelay::LocalhostRelay()
 {
     const auto relayInfo = quicr::RelayInfo{
         .hostname = "127.0.0.1",
@@ -125,8 +120,8 @@ LocalhostRelay::LocalhostRelay(uint16_t port, const std::string& cert, const std
     };
 
     const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = cert.c_str(),
-        .tls_key_filename = key.c_str(),
+        .tls_cert_filename = cert_file,
+        .tls_key_filename = key_file,
     };
 
     const auto logger = std::make_shared<cantina::Logger>("LocalhostRelay");
@@ -136,7 +131,10 @@ LocalhostRelay::LocalhostRelay(uint16_t port, const std::string& cert, const std
     delegate->set_server(server);
 }
 
-void LocalhostRelay::run() const { server->run(); }
+void LocalhostRelay::run() const
+{
+    server->run();
+}
 
 void LocalhostRelay::stop()
 {
@@ -149,15 +147,18 @@ void LocalhostRelay::stop()
 // Test case to verify that the relay works properly
 struct SubDelegate : quicr::SubscriberDelegate
 {
-    SubDelegate() : promise(), future(promise.get_future()) {}
-
-    std::tuple<quicr::Name, quicr::bytes> recv() {
-      return future.get();
+    SubDelegate() :
+        resp_promise(), resp_future(resp_promise.get_future()), recv_promise(), recv_future(recv_promise.get_future())
+    {
     }
+
+    void await_subscribe_response() { resp_future.wait(); }
+    std::tuple<quicr::Name, quicr::bytes> recv() { return recv_future.get(); }
 
     void onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
                              const quicr::SubscribeResult& /* result */) override
     {
+        resp_promise.set_value();
     }
 
     void onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
@@ -171,7 +172,7 @@ struct SubDelegate : quicr::SubscriberDelegate
                             bool /* use_reliable_transport */,
                             quicr::bytes&& data) override
     {
-        promise.set_value({ quicr_name, std::move(data) });
+        recv_promise.set_value({quicr_name, std::move(data)});
     }
 
     void onSubscribedObjectFragment(const quicr::Name& /* quicr_name */,
@@ -185,8 +186,11 @@ struct SubDelegate : quicr::SubscriberDelegate
     }
 
 private:
-    std::promise<std::tuple<quicr::Name, quicr::bytes>> promise;
-    std::future<std::tuple<quicr::Name, quicr::bytes>> future;
+    std::promise<void> resp_promise;
+    std::future<void> resp_future;
+
+    std::promise<std::tuple<quicr::Name, quicr::bytes>> recv_promise;
+    std::future<std::tuple<quicr::Name, quicr::bytes>> recv_future;
 };
 
 struct PubDelegate : quicr::PublisherDelegate
@@ -196,13 +200,10 @@ struct PubDelegate : quicr::PublisherDelegate
     void onPublishIntentResponse(const quicr::Namespace& /* quicr_namespace */,
                                  const quicr::PublishIntentResult& /* result */) override
     {
-        std::cout << "pub intent response" << std::endl;
         promise.set_value();
     }
 
-    void await_publish_intent_response() {
-        future.wait();
-    }
+    void await_publish_intent_response() { future.wait(); }
 
 private:
     std::promise<void> promise;
@@ -211,15 +212,14 @@ private:
 
 TEST_CASE("Localhost relay")
 {
-    const auto port = uint16_t(1234);
-    const auto relay = LocalhostRelay(port, "server-cert.pem", "server-key.pem");
+    const auto relay = LocalhostRelay();
     relay.run();
 
     // Construct three clients
     const auto logger = std::make_shared<cantina::Logger>("LocalhostRelayTestClient");
     const auto relayInfo = quicr::RelayInfo{
         .hostname = "127.0.0.1",
-        .port = port,
+        .port = LocalhostRelay::port,
         .proto = quicr::RelayInfo::Protocol::QUIC,
     };
 
@@ -229,18 +229,19 @@ TEST_CASE("Localhost relay")
     };
 
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1000ms);
 
     logger->Log("Connecting...");
     auto client_a = quicr::Client(relayInfo, tcfg, logger);
     auto client_b = quicr::Client(relayInfo, tcfg, logger);
     auto client_c = quicr::Client(relayInfo, tcfg, logger);
 
-    std::this_thread::sleep_for(1000ms);
+    client_a.connect();
+    client_b.connect();
+    client_c.connect();
 
-    logger->info << "Connected? " << int(client_a.status()) << " "
-                                  << int(client_b.status()) << " "
-                                  << int(client_c.status()) << std::flush;
+    REQUIRE(client_a.connected());
+    REQUIRE(client_b.connected());
+    REQUIRE(client_c.connected());
 
     // All three clients subscribe to the same namespace
     logger->Log("Subscribing...");
@@ -249,12 +250,15 @@ TEST_CASE("Localhost relay")
 
     const auto sub_del_a = std::make_shared<SubDelegate>();
     client_a.subscribe(sub_del_a, ns, intent, "origin_url", false, "auth_token", {});
+    sub_del_a->await_subscribe_response();
 
     const auto sub_del_b = std::make_shared<SubDelegate>();
     client_b.subscribe(sub_del_b, ns, intent, "origin_url", false, "auth_token", {});
+    sub_del_b->await_subscribe_response();
 
     const auto sub_del_c = std::make_shared<SubDelegate>();
     client_c.subscribe(sub_del_c, ns, intent, "origin_url", false, "auth_token", {});
+    sub_del_c->await_subscribe_response();
 
     // One client publishes on the namespace
     logger->Log("Publishing...");
@@ -265,6 +269,7 @@ TEST_CASE("Localhost relay")
     auto pub_del_a = std::make_shared<PubDelegate>();
     client_a.publishIntent(pub_del_a, ns, {}, {}, {});
     pub_del_a->await_publish_intent_response();
+
     client_a.publishNamedObject(name_a, 0, 1000, false, std::move(data));
 
     // Verify that both other clients received on the namespace

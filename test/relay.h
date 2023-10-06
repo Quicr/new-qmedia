@@ -2,10 +2,16 @@
 
 #include <quicr/quicr_server.h>
 
+#include <string_view>
+
 class LocalhostRelay
 {
 public:
-    LocalhostRelay(uint16_t port, const std::string& cert, const std::string& key);
+    static constexpr auto port = uint16_t(12345);
+    static constexpr auto* cert_file = "server-cert.pem";
+    static constexpr auto* key_file = "server-key.pem";
+
+    LocalhostRelay();
 
     void run() const;
     void stop();
