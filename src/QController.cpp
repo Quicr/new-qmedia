@@ -364,16 +364,6 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     return 0;
 }
 
-void QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
-{
-    LOGGER_DEBUG(logger, "Processing URL templates...");
-    for (auto& urlTemplate : urlTemplates)
-    {
-        encoder.AddTemplate(urlTemplate, true);
-    }
-    LOGGER_INFO(logger, "Finished processing templates!");
-}
-
 void QController::processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
@@ -381,9 +371,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
     {
         for (auto& profile : subscription.profileSet.profiles)
         {
-            quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
-
-            auto delegate = getSubscriptionDelegate(quicrNamespace, profile.qualityProfile);
+            auto delegate = getSubscriptionDelegate(profile.quicrNamespace, profile.qualityProfile);
             if (!delegate)
             {
                 LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
@@ -393,7 +381,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             int update_error = delegate->update(subscription.sourceId, subscription.label, profile.qualityProfile);
             if (update_error == 0)
             {
-                LOGGER_INFO(logger, "Updated subscription " << quicrNamespace);
+                LOGGER_INFO(logger, "Updated subscription " << profile.quicrNamespace);
                 continue;
             }
 
@@ -409,7 +397,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             quicr::bytes e2eToken;
             startSubscription(std::move(delegate),
                               subscription.sourceId,
-                              quicrNamespace,
+                              profile.quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
                               reliable,
@@ -431,12 +419,10 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
     {
         for (auto& profile : publication.profileSet.profiles)
         {
-            const auto& quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
-
-            auto delegate = getPublicationDelegate(quicrNamespace, publication.sourceId, profile.qualityProfile);
+            auto delegate = getPublicationDelegate(profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
             if (!delegate)
             {
-                LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
+                LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
                 continue;
             }
 
@@ -445,14 +431,14 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
-                LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepare_error);
+                LOGGER_WARNING(logger, "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
                 continue;
             }
 
             quicr::bytes payload;
             startPublication(delegate,
                              publication.sourceId,
-                             quicrNamespace,
+                             profile.quicrNamespace,
                              "",
                              "",
                              std::move(payload),
@@ -482,7 +468,6 @@ void QController::updateManifest(const manifest::Manifest& manifest_obj)
 {
     LOGGER_DEBUG(logger, "Importing manifest...");
 
-    processURLTemplates(manifest_obj.urlTemplates);
     processSubscriptions(manifest_obj.subscriptions);
     processPublications(manifest_obj.publications);
 
