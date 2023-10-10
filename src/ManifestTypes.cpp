@@ -6,7 +6,7 @@ namespace qmedia::manifest
 {
 
 struct ParseContext {
-  UrlEncoder encoder;
+  UrlEncoder url_encoder;
 };
 
 void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profile)
@@ -14,7 +14,7 @@ void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profil
     j.at("qualityProfile").get_to(profile.qualityProfile);
 
     const auto namespace_url = j.at("quicrNamespaceUrl").get<std::string>();
-    profile.quicrNamespace = ctx.encoder.EncodeUrl(namespace_url);
+    profile.quicrNamespace = ctx.url_encoder.EncodeUrl(namespace_url);
 
     if (j.contains("priorities")) {
       j.at("priorities").get_to(profile.priorities);
@@ -49,7 +49,7 @@ void from_json(const nlohmann::json& j, Manifest& manifest)
     auto ctx = ParseContext{};
     const auto url_templates = j.at("urlTemplates").get<std::vector<std::string>>();
     for (const auto& url_template : url_templates) {
-      ctx.encoder.AddTemplate(url_template, true);
+      ctx.url_encoder.AddTemplate(url_template, true);
     }
 
     for (const auto& j : j.at("subscriptions")) {
