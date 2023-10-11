@@ -386,7 +386,8 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             }
 
             bool reliable = false;
-            int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
+            int prepare_error = delegate->prepare(
+                subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
 
             if (prepare_error != 0)
             {
@@ -419,7 +420,8 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
     {
         for (auto& profile : publication.profileSet.profiles)
         {
-            auto delegate = getPublicationDelegate(profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
+            auto delegate = getPublicationDelegate(
+                profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
             if (!delegate)
             {
                 LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
@@ -431,7 +433,8 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
-                LOGGER_WARNING(logger, "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
+                LOGGER_WARNING(logger,
+                               "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
                 continue;
             }
 
@@ -456,12 +459,12 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
 
 void QController::updateManifest(const std::string& manifest_json)
 {
-  LOGGER_DEBUG(logger, "Parsing manifest...");
-  const auto manifest_parsed = json::parse(manifest_json);
-  const auto manifest_obj = manifest::Manifest(manifest_parsed);
-  LOGGER_INFO(logger, "Finished parsing manifest!");
+    LOGGER_DEBUG(logger, "Parsing manifest...");
+    const auto manifest_parsed = json::parse(manifest_json);
+    const auto manifest_obj = manifest::Manifest(manifest_parsed);
+    LOGGER_INFO(logger, "Finished parsing manifest!");
 
-  updateManifest(manifest_obj);
+    updateManifest(manifest_obj);
 }
 
 void QController::updateManifest(const manifest::Manifest& manifest_obj)
