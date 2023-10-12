@@ -18,25 +18,10 @@ constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GC
 
 namespace qmedia
 {
-SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
-                                           const quicr::Namespace& quicrNamespace,
-                                           const quicr::SubscribeIntent intent,
-                                           const std::string& originUrl,
-                                           const bool useReliableTransport,
-                                           const std::string& authToken,
-                                           quicr::bytes e2eToken,
-                                           std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+SubscriptionDelegate::SubscriptionDelegate(const quicr::Namespace& quicrNamespace,
                                            const cantina::LoggerPointer& logger) :
-    canReceiveSubs(true),
-    sourceId(sourceId),
+    logger(std::make_shared<cantina::Logger>("SDEL", logger)),
     quicrNamespace(quicrNamespace),
-    intent(intent),
-    originUrl(originUrl),
-    useReliableTransport(useReliableTransport),
-    authToken(authToken),
-    e2eToken(e2eToken),
-    qDelegate(std::move(qDelegate)),
-    logger(std::make_shared<cantina::Logger>("TSDEL", logger)),
     sframe_context(Default_Cipher_Suite)
 {
     currentGroupId = 0;
@@ -52,28 +37,6 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
     sframe_context.enableEpoch(Fixed_Epoch);
-}
-
-std::shared_ptr<SubscriptionDelegate>
-SubscriptionDelegate::create(const std::string& sourceId,
-                             const quicr::Namespace& quicrNamespace,
-                             const quicr::SubscribeIntent intent,
-                             const std::string& originUrl,
-                             const bool useReliableTransport,
-                             const std::string& authToken,
-                             quicr::bytes e2eToken,
-                             std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                             const cantina::LoggerPointer& logger)
-{
-    return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
-                                                                          quicrNamespace,
-                                                                          intent,
-                                                                          originUrl,
-                                                                          useReliableTransport,
-                                                                          authToken,
-                                                                          e2eToken,
-                                                                          std::move(qDelegate),
-                                                                          logger));
 }
 
 void SubscriptionDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
@@ -92,7 +55,7 @@ void SubscriptionDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_
  * delegate: onSubscribedObject
  *
  * On receiving subscribed object notification fields are extracted
- * from the quicr::name. These fields along with the notificaiton
+ * from the quicr::name. These fields along with the notification
  * data are passed to the client callback.
  */
 void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
@@ -101,7 +64,6 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                               bool /*use_reliable_transport*/,
                                               quicr::bytes&& data)
 {
-    // LOGGER_DEBUG(logger, __FUNCTION__);
     if (data.empty())
     {
         LOGGER_WARNING(logger, "Object " << quicrName << " is empty");
@@ -155,7 +117,7 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                                   ciphertext);
         output_buffer.resize(cleartext.size());
 
-        qDelegate->subscribedObject(std::move(output_buffer), groupId, objectId);
+        subscribedObject(std::move(output_buffer), groupId, objectId);
     }
     catch (const std::exception& e)
     {
@@ -181,7 +143,12 @@ void SubscriptionDelegate::onSubscribedObjectFragment(const quicr::Name&,
 {
 }
 
-void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
+void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client,
+                                     const quicr::SubscribeIntent intent,
+                                     const std::string& originUrl,
+                                     const bool useReliableTransport,
+                                     const std::string& authToken,
+                                     quicr::bytes&& e2eToken)
 {
     if (!client)
     {
@@ -193,7 +160,9 @@ void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
         shared_from_this(), quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
 }
 
-void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
+void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client,
+                                       const std::string& originUrl,
+                                       const std::string& authToken)
 {
     if (!client)
     {
@@ -210,29 +179,18 @@ void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
  * Delegate constructor.
  */
 
-PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                                         const std::string& sourceId,
+PublicationDelegate::PublicationDelegate(const std::string& sourceId,
                                          const quicr::Namespace& quicrNamespace,
-                                         const std::string& originUrl,
-                                         const std::string& authToken,
-                                         quicr::bytes&& payload,
-                                         const std::vector<std::uint8_t>& priority,
+                                         const std::vector<std::uint8_t>& priorities,
                                          std::uint16_t expiry,
-                                         bool reliableTransport,
                                          const cantina::LoggerPointer& logger) :
-    // canPublish(true),
-    sourceId(sourceId),
-    originUrl(originUrl),
-    authToken(authToken),
+    logger(std::make_shared<cantina::Logger>("PDEL", logger)),
     quicrNamespace(quicrNamespace),
+    sourceId(sourceId),
     groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
     expiry(expiry),
-    reliableTransport(reliableTransport),
-    payload(std::move(payload)),
-    priority(priority),
-    qDelegate(std::move(qDelegate)),
-    logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
+    priorities(priorities),
     sframe_context(Default_Cipher_Suite)
 {
     // TODO: This needs to be replaced with valid keying material
@@ -247,27 +205,10 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
 
     sframe_context.enableEpoch(Fixed_Epoch);
 }
-std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                                                                 const std::string& sourceId,
-                                                                 const quicr::Namespace& quicrNamespace,
-                                                                 const std::string& originUrl,
-                                                                 const std::string& authToken,
-                                                                 quicr::bytes&& payload,
-                                                                 const std::vector<std::uint8_t>& priority,
-                                                                 std::uint16_t expiry,
-                                                                 bool reliableTransport,
-                                                                 const cantina::LoggerPointer& logger)
+
+void PublicationDelegate::setClientSession(std::shared_ptr<quicr::Client> client)
 {
-    return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
-                                                                        sourceId,
-                                                                        quicrNamespace,
-                                                                        originUrl,
-                                                                        authToken,
-                                                                        std::move(payload),
-                                                                        priority,
-                                                                        expiry,
-                                                                        reliableTransport,
-                                                                        logger));
+    client_session = std::move(client);
 }
 
 void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
@@ -277,8 +218,10 @@ void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_
                 "Received PublishIntent response for " << quicr_namespace << ": " << static_cast<int>(result.status));
 }
 
-void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport)
+void PublicationDelegate::publishIntent(bool reliableTransport,
+                                        quicr::bytes&& payload)
 {
+    auto client = client_session.lock();
     if (!client)
     {
         LOGGER_ERROR(logger, "Client was null, can't send PublishIntent");
@@ -287,7 +230,7 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
 
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     bool success = client->publishIntent(
-        shared_from_this(), quicrNamespace, originUrl, authToken, std::move(payload), reliableTransport);
+        shared_from_this(), quicrNamespace, "", "", std::move(payload), reliableTransport);
 
     if (!success)
     {
@@ -298,8 +241,9 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
     LOGGER_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
 }
 
-void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client)
+void PublicationDelegate::publishIntentEnd(const std::string& authToken)
 {
+    auto client = client_session.lock();
     if (!client)
     {
         LOGGER_ERROR(logger, "Client was null, can't send PublishIntentEnd");
@@ -309,10 +253,10 @@ void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client
     client->publishIntentEnd(quicrNamespace, authToken);
 }
 
-void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> client,
-                                             std::uint8_t* data,
+void PublicationDelegate::publishNamedObject(std::uint8_t* data,
                                              std::size_t len,
-                                             bool groupFlag)
+                                             bool groupFlag,
+                                             bool reliableTransport)
 {
     // If the object data isn't present, return
     if (len == 0)
@@ -321,13 +265,14 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         return;
     }
 
+    auto client = client_session.lock();
     if (!client)
     {
         LOGGER_ERROR(logger, "Client was null, can't Publish");
         return;
     }
 
-    std::uint8_t pri = priority[0];
+    std::uint8_t pri = priorities[0];
     quicr::Name quicrName(quicrNamespace.name());
 
     if (groupFlag)
@@ -338,7 +283,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     }
     else
     {
-        if (priority.size() > 1) pri = priority[1];
+        if (priorities.size() > 1) pri = priorities[1];
 
         quicrName = (0x0_name | groupId) << 16 | (quicrName & ~Group_ID_Mask);
         quicrName = (0x0_name | ++objectId) | (quicrName & ~Object_ID_Mask);

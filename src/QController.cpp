@@ -10,12 +10,12 @@
 namespace qmedia
 {
 
-QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
-                         std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
+QController::QController(std::shared_ptr<SubscriberDelegate> subscriberDelegate,
+                         std::shared_ptr<PublisherDelegate> publisherDelegate,
                          const cantina::LoggerPointer& logger) :
     logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
-    qSubscriberDelegate(std::move(qSubscriberDelegate)),
-    qPublisherDelegate(std::move(qPublisherDelegate)),
+    subscriberDelegate(std::move(subscriberDelegate)),
+    publisherDelegate(std::move(publisherDelegate)),
     stop(false),
     closed(false)
 {
@@ -50,7 +50,15 @@ int QController::connect(const std::string remoteAddress,
 
     client_session = std::make_unique<quicr::Client>(relayInfo, config, logger);
 
-    if (!client_session->connect()) return -1;
+    try
+    {
+        if (!client_session->connect()) return -1;
+    }
+    catch (const std::exception& e)
+    {
+        LOGGER_ERROR(logger, "Failed to connect to " << remoteAddress << ": " << e.what());
+        return -1;
+    }
 
     // check to see if there is a timer thread...
     keepaliveThread = std::thread(&QController::periodicResubscribe, this, 5);
@@ -76,6 +84,7 @@ int QController::disconnect()
     if (client_session)
     {
         client_session->disconnect();
+        client_session.reset();
     }
 
     closed = true;
@@ -83,11 +92,6 @@ int QController::disconnect()
     LOGGER_INFO(logger, "Disconnected client session");
 
     return 0;
-}
-
-void QController::close()
-{
-    disconnect();
 }
 
 void QController::periodicResubscribe(const unsigned int seconds)
@@ -105,9 +109,9 @@ void QController::periodicResubscribe(const unsigned int seconds)
         {
             LOGGER_DEBUG(logger, "Resubscribing...");
             const std::lock_guard<std::mutex> _(subsMutex);
-            for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
+            for (auto const& [key, delegate] : subscriptionsMap)
             {
-                quicrSubDelegate->subscribe(client_session);
+                delegate->subscribe(client_session, quicr::SubscribeIntent::sync_up, "", true, "", {});
             }
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
         }
@@ -121,10 +125,10 @@ void QController::removeSubscriptions()
     LOGGER_DEBUG(logger, "Unsubscribing from all subscriptions...");
 
     const std::lock_guard<std::mutex> _(subsMutex);
-    for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
+    for (auto const& [ns, delegate] : subscriptionsMap)
     {
-        quicrSubDelegate->unsubscribe(client_session);
-        LOGGER_DEBUG(logger, "Unsubscribed " << key);
+        delegate->unsubscribe(client_session, "", "");
+        LOGGER_DEBUG(logger, "Unsubscribed " << ns);
     }
 
     LOGGER_INFO(logger, "Unsubscribed from all subscriptions");
@@ -133,28 +137,29 @@ void QController::removeSubscriptions()
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
                                      std::uint8_t* data,
                                      std::size_t len,
-                                     bool groupFlag)
+                                     bool groupFlag,
+                                     bool reliableTransport)
 {
     const std::lock_guard<std::mutex> _(pubsMutex);
 
-    if (!quicrPublicationsMap.contains(quicrNamespace)) return;
+    if (!publicationsMap.contains(quicrNamespace)) return;
 
-    if (auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace))
+    if (auto publicationDelegate = publicationsMap.at(quicrNamespace))
     {
-        publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
+        publicationDelegate->publishNamedObject(data, len, groupFlag, reliableTransport);
     }
 }
 
 /*
  * For Test Only
  */
-void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag)
+void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag, bool reliableTransport)
 {
     const std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.empty()) return;
+    if (publicationsMap.empty()) return;
 
-    auto publicationDelegate = quicrPublicationsMap.begin()->second;
-    publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
+    auto publicationDelegate = publicationsMap.begin()->second;
+    publicationDelegate->publishNamedObject(data, len, groupFlag, reliableTransport);
 }
 
 /*===========================================================================*/
@@ -164,204 +169,69 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
 std::shared_ptr<SubscriptionDelegate> QController::findQuicrSubscriptionDelegate(const quicr::Namespace& quicrNamespace)
 {
     std::lock_guard<std::mutex> _(subsMutex);
-    if (quicrSubscriptionsMap.contains(quicrNamespace))
+    if (subscriptionsMap.contains(quicrNamespace))
     {
-        return quicrSubscriptionsMap[quicrNamespace];
+        return subscriptionsMap[quicrNamespace];
     }
     return nullptr;
-}
-
-std::shared_ptr<SubscriptionDelegate>
-QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
-                                             const quicr::Namespace& quicrNamespace,
-                                             const quicr::SubscribeIntent intent,
-                                             const std::string& originUrl,
-                                             const bool useReliableTransport,
-                                             const std::string& authToken,
-                                             quicr::bytes&& e2eToken,
-                                             std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate)
-{
-    std::lock_guard<std::mutex> _(subsMutex);
-    if (quicrSubscriptionsMap.contains(quicrNamespace))
-    {
-        LOGGER_ERROR(logger, "Quicr Subscription delegate for \"" << quicrNamespace << "\" already exists!");
-        return nullptr;
-    }
-
-    quicrSubscriptionsMap[quicrNamespace] = SubscriptionDelegate::create(sourceId,
-                                                                         quicrNamespace,
-                                                                         intent,
-                                                                         originUrl,
-                                                                         useReliableTransport,
-                                                                         authToken,
-                                                                         std::move(e2eToken),
-                                                                         std::move(qDelegate),
-                                                                         logger);
-    return quicrSubscriptionsMap[quicrNamespace];
 }
 
 std::shared_ptr<PublicationDelegate> QController::findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace)
 {
     std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.contains(quicrNamespace))
+    if (publicationsMap.contains(quicrNamespace))
     {
-        return quicrPublicationsMap[quicrNamespace]->getptr();
+        return publicationsMap[quicrNamespace];
     }
     return nullptr;
-}
-
-std::shared_ptr<PublicationDelegate>
-QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                                            const std::string& sourceId,
-                                            const quicr::Namespace& quicrNamespace,
-                                            const std::string& originUrl,
-                                            const std::string& authToken,
-                                            quicr::bytes&& payload,
-                                            const std::vector<std::uint8_t>& priority,
-                                            std::uint16_t expiry,
-                                            bool reliableTransport)
-{
-    std::lock_guard<std::mutex> _(pubsMutex);
-    if (quicrPublicationsMap.contains(quicrNamespace))
-    {
-        LOGGER_ERROR(logger, "Quicr Publication delegate for \"" << quicrNamespace << "\" already exists!");
-        return nullptr;
-    }
-
-    quicrPublicationsMap[quicrNamespace] = PublicationDelegate::create(std::move(qDelegate),
-                                                                       sourceId,
-                                                                       quicrNamespace,
-                                                                       originUrl,
-                                                                       authToken,
-                                                                       std::move(payload),
-                                                                       priority,
-                                                                       expiry,
-                                                                       reliableTransport,
-                                                                       logger);
-
-    return quicrPublicationsMap[quicrNamespace]->getptr();
 }
 
 /*===========================================================================*/
 // QController Delegates
 /*===========================================================================*/
 
-std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
-                                                                            const std::string& qualityProfile)
+std::shared_ptr<SubscriptionDelegate> QController::getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
+                                                                           const std::string& qualityProfile)
 {
-    if (!qSubscriberDelegate)
+    if (!subscriberDelegate)
     {
         LOGGER_ERROR(logger, "Subscription delegate doesn't exist for " << quicrNamespace);
         return nullptr;
     }
 
     std::lock_guard<std::mutex> _(qSubsMutex);
-    if (!qSubscriptionsMap.contains(quicrNamespace))
+    if (!subscriptionsMap.contains(quicrNamespace))
     {
-        qSubscriptionsMap[quicrNamespace] = qSubscriberDelegate->allocateSubByNamespace(quicrNamespace, qualityProfile);
+        subscriptionsMap[quicrNamespace] = subscriberDelegate->allocateSubByNamespace(
+            quicrNamespace, qualityProfile, logger);
     }
 
-    return qSubscriptionsMap[quicrNamespace];
+    return subscriptionsMap[quicrNamespace];
 }
 
-std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace,
-                                                                          const std::string& sourceID,
-                                                                          const std::string& qualityProfile)
+std::shared_ptr<PublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace,
+                                                                         const std::string& sourceID,
+                                                                         const std::vector<std::uint8_t>& priorities,
+                                                                         std::uint16_t expiry,
+                                                                         const std::string& qualityProfile)
 {
-    if (!qPublisherDelegate)
+    if (!publisherDelegate)
     {
         LOGGER_ERROR(logger, "Publication delegate doesn't exist for " << quicrNamespace);
         return nullptr;
     }
 
     std::lock_guard<std::mutex> _(qPubsMutex);
-    if (!qPublicationsMap.contains(quicrNamespace))
+    if (!publicationsMap.contains(quicrNamespace))
     {
-        qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(
-            quicrNamespace, sourceID, qualityProfile);
+        auto delegate = publisherDelegate->allocatePubByNamespace(
+            quicrNamespace, sourceID, priorities, expiry, qualityProfile, logger);
+
+        delegate->setClientSession(client_session);
+        publicationsMap[quicrNamespace] = delegate;
     }
 
-    return qPublicationsMap[quicrNamespace];
-}
-
-int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                                   const std::string& sourceId,
-                                   const quicr::Namespace& quicrNamespace,
-                                   const quicr::SubscribeIntent intent,
-                                   const std::string& originUrl,
-                                   const bool useReliableTransport,
-                                   const std::string& authToken,
-                                   quicr::bytes&& e2eToken)
-{
-    // look to see if we already have a quicr delegate
-    auto sub_delegate = findQuicrSubscriptionDelegate(quicrNamespace);
-    if (!sub_delegate)
-    {
-        sub_delegate = createQuicrSubscriptionDelegate(sourceId,
-                                                       quicrNamespace,
-                                                       intent,
-                                                       originUrl,
-                                                       useReliableTransport,
-                                                       authToken,
-                                                       std::move(e2eToken),
-                                                       std::move(qDelegate));
-    }
-
-    if (!sub_delegate)
-    {
-        LOGGER_ERROR(logger, "Failed to find or create Subscription delegate for " << quicrNamespace);
-        return -1;
-    }
-
-    sub_delegate->subscribe(client_session);
-    return 0;
-}
-
-void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
-{
-    if (!quicrSubscriptionsMap.contains(quicrNamespace)) return;
-
-    auto& sub_delegate = quicrSubscriptionsMap[quicrNamespace];
-    sub_delegate->unsubscribe(client_session);
-
-    LOGGER_INFO(logger, "Unsubscribed " << quicrNamespace);
-}
-
-int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                                  std::string sourceId,
-                                  const quicr::Namespace& quicrNamespace,
-                                  const std::string& originUrl,
-                                  const std::string& authToken,
-                                  quicr::bytes&& payload,
-                                  const std::vector<std::uint8_t>& priority,
-                                  std::uint16_t expiry,
-                                  bool reliableTransport)
-
-{
-    if (!client_session)
-    {
-        LOGGER_ERROR(logger, "Failed to start publication for " << quicrNamespace << ": No Quicr session established");
-        return -1;
-    }
-
-    auto quicrPubDelegate = createQuicrPublicationDelegate(std::move(qDelegate),
-                                                           sourceId,
-                                                           quicrNamespace,
-                                                           originUrl,
-                                                           authToken,
-                                                           std::move(payload),
-                                                           priority,
-                                                           expiry,
-                                                           reliableTransport);
-    if (!quicrPubDelegate)
-    {
-        LOGGER_ERROR(logger, "Failed to start publication for " << quicrNamespace << ": Delegate was null");
-        return -1;
-    }
-
-    // TODO: add more intent parameters - max queue size (in time), default ttl, priority
-    quicrPubDelegate->publishIntent(client_session, reliableTransport);
-    return 0;
+    return publicationsMap[quicrNamespace];
 }
 
 void QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
@@ -390,7 +260,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                 continue;
             }
 
-            int update_error = delegate->update(subscription.sourceId, subscription.label, profile.qualityProfile);
+            int update_error = delegate->update(subscription.label, profile.qualityProfile);
             if (update_error == 0)
             {
                 LOGGER_INFO(logger, "Updated subscription " << quicrNamespace);
@@ -398,7 +268,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             }
 
             bool reliable = false;
-            int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
+            int prepare_error = delegate->prepare(subscription.label, profile.qualityProfile, reliable);
 
             if (prepare_error != 0)
             {
@@ -407,14 +277,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             }
 
             quicr::bytes e2eToken;
-            startSubscription(std::move(delegate),
-                              subscription.sourceId,
-                              quicrNamespace,
-                              quicr::SubscribeIntent::sync_up,
-                              "",
-                              reliable,
-                              "",
-                              std::move(e2eToken));
+            delegate->subscribe(client_session, quicr::SubscribeIntent::sync_up, "", reliable, "", std::move(e2eToken));
 
             // If singleordered, and we've successfully processed 1 delegate, break.
             if (subscription.profileSet.type == "singleordered") break;
@@ -433,7 +296,9 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
         {
             const auto& quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
 
-            auto delegate = getPublicationDelegate(quicrNamespace, publication.sourceId, profile.qualityProfile);
+            std::uint16_t expiry = profile.expiry.has_value() ? profile.expiry.value() : 0;
+            auto delegate = getPublicationDelegate(
+                quicrNamespace, publication.sourceId, profile.priorities, expiry, profile.qualityProfile);
             if (!delegate)
             {
                 LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
@@ -442,23 +307,14 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
 
             // Notify client to prepare for incoming media
             bool reliable = false;
-            int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
+            int prepare_error = delegate->prepare(profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
                 LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepare_error);
                 continue;
             }
 
-            quicr::bytes payload;
-            startPublication(delegate,
-                             publication.sourceId,
-                             quicrNamespace,
-                             "",
-                             "",
-                             std::move(payload),
-                             profile.priorities,
-                             profile.expiry.value(),
-                             reliable);
+            delegate->publishIntent(reliable, {});
 
             // If singleordered, and we've successfully processed 1 delegate, break.
             if (publication.profileSet.type == "singleordered") break;
@@ -466,16 +322,6 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
     }
 
     LOGGER_INFO(logger, "Finished processing publications!");
-}
-
-void QController::updateManifest(const std::string& manifest_json)
-{
-  LOGGER_DEBUG(logger, "Parsing manifest...");
-  const auto manifest_parsed = json::parse(manifest_json);
-  const auto manifest_obj = manifest::Manifest(manifest_parsed);
-  LOGGER_INFO(logger, "Finished parsing manifest!");
-
-  updateManifest(manifest_obj);
 }
 
 void QController::updateManifest(const manifest::Manifest& manifest_obj)

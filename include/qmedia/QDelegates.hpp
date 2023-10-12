@@ -9,42 +9,25 @@
 
 namespace qmedia
 {
-class QSubscriptionDelegate
+class SubscriberDelegate
 {
 public:
-    QSubscriptionDelegate() = default;
-
-public:
-    virtual int prepare(const std::string& sourceId,
-                        const std::string& label,
-                        const std::string& qualityProfile,
-                        bool& reliable) = 0;
-    virtual int update(const std::string& sourceId, const std::string& label, const std::string& qualityProfile) = 0;
-    virtual int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
-};
-
-class QPublicationDelegate
-{
-public:
-    virtual int prepare(const std::string& sourceId, const std::string& qualityProfile, bool& reliable) = 0;
-    virtual int update(const std::string& sourceId, const std::string& qualityProfile) = 0;
-    virtual void publish(bool) = 0;
-};
-
-class QSubscriberDelegate
-{
-public:
-    virtual std::shared_ptr<QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace,
-                                                                          const std::string& qualityProfile) = 0;
+    virtual std::shared_ptr<class SubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& quicrNamespace,
+                                                                               const std::string& qualityProfile,
+                                                                               const cantina::LoggerPointer& logger) = 0;
     virtual int removeSubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
 };
 
-class QPublisherDelegate
+class PublisherDelegate
 {
 public:
-    virtual std::shared_ptr<QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace,
-                                                                         const std::string& sourceID,
-                                                                         const std::string& qualityProfile) = 0;
+    virtual std::shared_ptr<class PublicationDelegate>
+    allocatePubByNamespace(const quicr::Namespace& quicrNamespace,
+                           const std::string& sourceID,
+                           const std::vector<std::uint8_t>& priorities,
+                           std::uint16_t expiry,
+                           const std::string& qualityProfile,
+                           const cantina::LoggerPointer& logger) = 0;
     virtual int removePubByNamespace(const quicr::Namespace& quicrNamespace) = 0;
 };
 }        // namespace qmedia

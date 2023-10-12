@@ -21,8 +21,8 @@ namespace qmedia
 class QController
 {
 public:
-    QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
-                std::shared_ptr<QPublisherDelegate> publisherDelegate,
+    QController(std::shared_ptr<SubscriberDelegate> subscriberDelegate,
+                std::shared_ptr<PublisherDelegate> publisherDelegate,
                 const cantina::LoggerPointer& logger);
 
     ~QController();
@@ -34,15 +34,14 @@ public:
 
     int disconnect();
 
-    [[deprecated("Use QController::disconnect instead")]] void close();
-
-    [[deprecated("Use parsed Manifest object instead of string")]]
-    void updateManifest(const std::string& manifest_json);
-
     void updateManifest(const manifest::Manifest& manifest_obj);
 
-    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
-    void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
+    void publishNamedObject(const quicr::Namespace& quicrNamespace,
+                            std::uint8_t* data,
+                            std::size_t len,
+                            bool groupFlag,
+                            bool reliableTransport = false);
+    void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag, bool reliableTransport = false);
 
 private:
     /**
@@ -63,56 +62,16 @@ private:
      */
     std::shared_ptr<SubscriptionDelegate> findQuicrSubscriptionDelegate(const quicr::Namespace& quicrNamespace);
 
-    std::shared_ptr<SubscriptionDelegate>
-    createQuicrSubscriptionDelegate(const std::string& sourceID,
-                                    const quicr::Namespace& quicrNamespace,
-                                    const quicr::SubscribeIntent intent,
-                                    const std::string& originUrl,
-                                    const bool useReliableTransport,
-                                    const std::string& authToken,
-                                    quicr::bytes&& e2eToken,
-                                    std::shared_ptr<qmedia::QSubscriptionDelegate> delegate);
-
     std::shared_ptr<PublicationDelegate> findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace);
 
-    std::shared_ptr<PublicationDelegate> createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate>,
-                                                                        const std::string&,
-                                                                        const quicr::Namespace&,
-                                                                        const std::string& originUrl,
-                                                                        const std::string& authToken,
-                                                                        quicr::bytes&& payload,
-                                                                        const std::vector<std::uint8_t>& priority,
-                                                                        std::uint16_t expiry,
-                                                                        bool reliableTransport);
+    std::shared_ptr<SubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
+                                                                  const std::string& qualityProfile);
 
-    std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const quicr::Namespace& quicrNamespace,
-                                                                   const std::string& qualityProfile);
-    std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace,
-                                                                 const std::string& sourceID,
-                                                                 const std::string& qualityProfile);
-
-    int startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                          const std::string& sourceId,
-                          const quicr::Namespace& quicrNamespace,
-                          const quicr::SubscribeIntent intent,
-                          const std::string& originUrl,
-                          const bool useReliableTransport,
-                          const std::string& authToken,
-                          quicr::bytes&& e2eToken);
-
-    void stopSubscription(const quicr::Namespace& quicrNamespace);
-
-    int startPublication(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
-                         const std::string sourceId,
-                         const quicr::Namespace& quicrNamespace,
-                         const std::string& origin_url,
-                         const std::string& auth_token,
-                         quicr::bytes&& payload,
-                         const std::vector<std::uint8_t>& priority,
-                         std::uint16_t expiry,
-                         bool reliableTransport);
-
-    void stopPublication(const quicr::Namespace& quicrNamespace);
+    std::shared_ptr<PublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace,
+                                                                const std::string& sourceID,
+                                                                const std::vector<std::uint8_t>& priorities,
+                                                                std::uint16_t expiry,
+                                                                const std::string& qualityProfile);
 
     void processURLTemplates(const std::vector<std::string>& urlTemplates);
     void processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions);
@@ -127,14 +86,11 @@ private:
     const cantina::LoggerPointer logger;
     UrlEncoder encoder;
 
-    std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
-    std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
+    std::shared_ptr<SubscriberDelegate> subscriberDelegate;
+    std::shared_ptr<PublisherDelegate> publisherDelegate;
 
-    quicr::namespace_map<std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
-    quicr::namespace_map<std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
-
-    quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
-    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
+    quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> subscriptionsMap;
+    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> publicationsMap;
 
     std::shared_ptr<quicr::Client> client_session;
 
