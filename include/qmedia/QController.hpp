@@ -35,8 +35,7 @@ public:
 
     [[deprecated("Use QController::disconnect instead")]] void close();
 
-    [[deprecated("Use parsed Manifest object instead of string")]]
-    void updateManifest(const std::string& manifest_json);
+    [[deprecated("Use parsed Manifest object instead of string")]] void updateManifest(const std::string& manifest_json);
 
     void updateManifest(const manifest::Manifest& manifest_obj);
 
