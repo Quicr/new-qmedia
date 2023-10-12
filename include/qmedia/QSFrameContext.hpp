@@ -16,31 +16,30 @@ class QSFrameContext
 public:
     QSFrameContext(sframe::CipherSuite cipher_suite);
 
-    void addEpoch(uint64_t epoch_id, const quicr::bytes &epoch_secret);
+    void addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret);
     void enableEpoch(uint64_t epoch_id);
 
-    sframe::output_bytes protect(const quicr::Namespace &quicr_namespace,
+    sframe::output_bytes protect(const quicr::Namespace& quicr_namespace,
                                  sframe::Counter ctr,
                                  sframe::output_bytes ciphertext,
                                  const sframe::input_bytes plaintext);
 
     sframe::output_bytes unprotect(uint64_t epoch,
-                                   const quicr::Namespace &quicr_namespace,
+                                   const quicr::Namespace& quicr_namespace,
                                    sframe::Counter ctr,
                                    sframe::output_bytes plaintext,
                                    const sframe::input_bytes ciphertext);
 
 protected:
-    void ensure_key(uint64_t epoch_id, const quicr::Namespace &quicr_namespace);
-    sframe::bytes derive_base_key(uint64_t epoch_id,
-                                 const quicr::Namespace &quicr_namespace);
+    void ensure_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
+    sframe::bytes derive_base_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
 
     sframe::CipherSuite cipher_suite;
     std::optional<uint64_t> current_epoch;
     std::map<uint64_t, quicr::bytes> epoch_secrets;
-    std::map<quicr::Namespace, sframe::ContextBase> ns_contexts; // key_id=epoch
+    std::map<quicr::Namespace, sframe::ContextBase> ns_contexts;        // key_id=epoch
 
     std::mutex context_mutex;
 };
 
-} // namespace qmedia
+}        // namespace qmedia
