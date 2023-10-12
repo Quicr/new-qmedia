@@ -10,85 +10,91 @@
 #include <set>
 #include <future>
 
-struct SubscriptionCollector {
-  struct Object {
-    uint32_t groupId;
-    uint16_t objectId;
-    quicr::bytes data;
+using namespace std::string_literals;
 
-    bool operator<(const Object& rhs) const {
-      return groupId < rhs.groupId || (groupId == rhs.groupId &&
-        objectId < rhs.objectId);
-    }
-
-    bool operator==(const Object& rhs) const {
-      return groupId == rhs.groupId &&
-        objectId == rhs.objectId &&
-        data == rhs.data;
-    }
-  };
-
-  std::optional<std::string> sourceId;
-  std::optional<std::string> label;
-  std::optional<std::string> qualityProfile;
-
-  std::set<Object> objects;
-
-  std::mutex object_mutex;
-  std::optional<size_t> expected_object_count;
-  std::optional<std::promise<void>> object_promise;
-  std::optional<std::future<void>> object_future;
-
-  void add_object(Object obj) {
-    const auto _ = std::unique_lock(object_mutex);
-    objects.insert(std::move(obj));
-
-    if (expected_object_count && objects.size() >= expected_object_count.value()) {
-      object_promise->set_value();
-    }
-  }
-
-  // XXX(richbarn): Currently we collect only the payloads of the subscribed
-  // objects.  We should also verify that the group/object IDs are
-  // consistent, but it appears that the sender has no idea what the transmitted
-  // IDs are, so we can't compare to them.  So we have this method to map the
-  // collected objects to just their payloads.
-  //
-  // Note that we use std::set and not an ordered container like std::vector so
-  // that delivery order doesn't matter.
-  std::set<quicr::bytes> collected_payloads() {
-    auto out = std::set<quicr::bytes>{};
-    std::transform(
-        objects.begin(),
-        objects.end(),
-        std::inserter(out, out.end()),
-        [](const auto& obj) { return obj.data; });
-    objects.clear();
-    return out;
-  }
-
-  std::set<quicr::bytes> await(size_t object_count) {
+struct SubscriptionCollector
+{
+    struct Object
     {
-      const auto _ = std::unique_lock(object_mutex);
-      expected_object_count = object_count;
-      object_promise = std::promise<void>{};
-      object_future = object_promise->get_future();
+        uint32_t groupId;
+        uint16_t objectId;
+        quicr::bytes data;
 
-      if (objects.size() >= object_count) {
-        return collected_payloads();
-      }
+        bool operator<(const Object& rhs) const
+        {
+            return groupId < rhs.groupId || (groupId == rhs.groupId && objectId < rhs.objectId);
+        }
+
+        bool operator==(const Object& rhs) const
+        {
+            return groupId == rhs.groupId && objectId == rhs.objectId && data == rhs.data;
+        }
+    };
+
+    std::optional<std::string> sourceId;
+    std::optional<std::string> label;
+    std::optional<std::string> qualityProfile;
+
+    std::set<Object> objects;
+
+    std::mutex object_mutex;
+    std::optional<size_t> expected_object_count;
+    std::optional<std::promise<void>> object_promise;
+    std::optional<std::future<void>> object_future;
+
+    void add_object(Object obj)
+    {
+        const auto _ = std::lock_guard(object_mutex);
+        objects.insert(std::move(obj));
+
+        if (expected_object_count && objects.size() >= expected_object_count.value())
+        {
+            object_promise->set_value();
+        }
     }
 
-    object_future->wait();
-    return collected_payloads();
-  }
-};
+    // XXX(richbarn): Currently we collect only the payloads of the subscribed
+    // objects.  We should also verify that the group/object IDs are
+    // consistent, but it appears that the sender has no idea what the transmitted
+    // IDs are, so we can't compare to them.  So we have this method to map the
+    // collected objects to just their payloads.
+    //
+    // Note that we use std::set and not an ordered container like std::vector so
+    // that delivery order doesn't matter.
+    std::set<quicr::bytes> collected_payloads()
+    {
+        auto out = std::set<quicr::bytes>{};
+        std::transform(
+            objects.begin(), objects.end(), std::inserter(out, out.end()), [](const auto& obj) { return obj.data; });
+        objects.clear();
+        return out;
+    }
 
+    std::set<quicr::bytes> await(size_t object_count)
+    {
+        {
+            const auto _ = std::lock_guard(object_mutex);
+            expected_object_count = object_count;
+            object_promise = std::promise<void>{};
+            object_future = object_promise->get_future();
+
+            if (objects.size() >= object_count)
+            {
+                return collected_payloads();
+            }
+        }
+
+        object_future->wait();
+        return collected_payloads();
+    }
+};
 
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
 public:
-    QSubscriptionTestDelegate(std::shared_ptr<SubscriptionCollector> collector_in) : collector(std::move(collector_in)) {}
+    QSubscriptionTestDelegate(std::shared_ptr<SubscriptionCollector> collector_in) : collector(std::move(collector_in))
+    {
+    }
 
     virtual ~QSubscriptionTestDelegate() = default;
 
@@ -113,7 +119,7 @@ public:
 
     int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override
     {
-        collector->add_object({ groupId, objectId, data });
+        collector->add_object({groupId, objectId, data});
         return 0;
     }
 
@@ -180,36 +186,46 @@ static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector
 
 static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
 {
-    const auto source_base = "source ";
-    const auto label_base = "Participant ";
+    const auto source_base = "source "s;
+    const auto label_base = "Participant "s;
 
-    const auto url_template = std::string("quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/"
-                                 "endpoint/<int16>");
-    const auto url_base = std::string("quicr://webex.cisco.com/conferences/34/mediatype/1/endpoint/");
+    const auto url_template =
+        "quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/endpoint/<int16>"s;
+    const auto url_base = "quicr://webex.cisco.com/conferences/34/mediatype/1/endpoint/"s;
     auto encoder = UrlEncoder{};
     encoder.AddTemplate(url_template);
 
     const auto endpoint_id_string = std::to_string(endpoint_id);
-    return {.mediaType = "audio",
-            .sourceName = source_base + endpoint_id_string,
-            .sourceId = endpoint_id_string,
-            .label = label_base + endpoint_id_string,
-            .profileSet = {.type = "singleordered",
-                           .profiles = {{
-                               .qualityProfile = "opus,br=6",
-                               .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
-                               .priorities = {1},
-                               .expiry = 500,
-                           }}}};
+    return {
+        .mediaType = "audio",
+        .sourceName = source_base + endpoint_id_string,
+        .sourceId = endpoint_id_string,
+        .label = label_base + endpoint_id_string,
+        .profileSet =
+            {
+                .type = "singleordered",
+                .profiles =
+                    {
+                        {
+                            .qualityProfile = "opus,br=6",
+                            .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
+                            .priorities = {1},
+                            .expiry = 500,
+                        },
+                    },
+            },
+    };
 }
 
-static std::set<quicr::bytes> test_data(uint8_t label) {
-  auto out = std::set<quicr::bytes>{};
-  for (auto i = size_t(0); i < 256; i++) {
-    const auto data = quicr::bytes{ 0, 0, label, static_cast<uint8_t>(i) };
-    out.insert(data);
-  }
-  return out;
+static std::set<quicr::bytes> test_data(uint8_t label)
+{
+    auto out = std::set<quicr::bytes>{};
+    for (auto i = size_t(0); i < 256; i++)
+    {
+        const auto data = quicr::bytes{0, 0, label, static_cast<uint8_t>(i)};
+        out.insert(data);
+    }
+    return out;
 }
 
 TEST_CASE("Two-party session")
@@ -237,12 +253,10 @@ TEST_CASE("Two-party session")
     const auto media_a = make_media_stream(1);
     const auto media_b = make_media_stream(2);
 
-    const auto manifest_a = qmedia::manifest::Manifest{
-        .subscriptions = {media_b}, .publications = {media_a}};
+    const auto manifest_a = qmedia::manifest::Manifest{.subscriptions = {media_b}, .publications = {media_a}};
     controller_a.updateManifest(manifest_a);
 
-    const auto manifest_b = qmedia::manifest::Manifest{
-        .subscriptions = {media_a}, .publications = {media_b}};
+    const auto manifest_b = qmedia::manifest::Manifest{.subscriptions = {media_a}, .publications = {media_b}};
     controller_b.updateManifest(manifest_b);
 
     const auto ns_a = media_a.profileSet.profiles[0].quicrNamespace;
@@ -250,8 +264,9 @@ TEST_CASE("Two-party session")
 
     // Send media from participant 1 and verify that it arrived at the other participants
     const auto sent_a = test_data(1);
-    for (const auto& obj : sent_a) {
-      controller_a.publishNamedObject(ns_a, obj.data(), obj.size(), false);
+    for (const auto& obj : sent_a)
+    {
+        controller_a.publishNamedObject(ns_a, obj.data(), obj.size(), false);
     }
 
     const auto received_b = collector_b->await(sent_a.size());
@@ -259,8 +274,9 @@ TEST_CASE("Two-party session")
 
     // Send media from participant 2 and verify that it arrived at the other participants
     const auto sent_b = test_data(2);
-    for (const auto& obj : sent_b) {
-      controller_b.publishNamedObject(ns_b, obj.data(), obj.size(), false);
+    for (const auto& obj : sent_b)
+    {
+        controller_b.publishNamedObject(ns_b, obj.data(), obj.size(), false);
     }
 
     const auto received_a = collector_a->await(sent_b.size());

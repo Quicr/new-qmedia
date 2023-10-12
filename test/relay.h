@@ -2,8 +2,6 @@
 
 #include <quicr/quicr_server.h>
 
-#include <string_view>
-
 class LocalhostRelay
 {
 public:

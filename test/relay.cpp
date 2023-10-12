@@ -74,7 +74,8 @@ public:
                            bool /* use_reliable_transport */,
                            quicr::messages::PublishDatagram&& datagram) override
     {
-        logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size() << std::flush;
+        logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size()
+                     << std::flush;
 
         const auto name = datagram.header.name;
         for (const auto& [ns, subs] : subscriptions)
@@ -142,7 +143,9 @@ void LocalhostRelay::stop()
     server = nullptr;
 }
 
-////////// Test case code below this line //////////
+////////// Test case and supporting types below this line //////////
+
+namespace {
 
 // Test case to verify that the relay works properly
 struct SubDelegate : quicr::SubscriberDelegate
@@ -209,6 +212,8 @@ private:
     std::promise<void> promise;
     std::future<void> future;
 };
+
+} // namespace
 
 TEST_CASE("Localhost relay")
 {
