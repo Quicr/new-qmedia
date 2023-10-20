@@ -11,6 +11,7 @@
 #include <future>
 
 using namespace std::string_literals;
+using namespace std::chrono_literals;
 
 struct SubscriptionCollector
 {
@@ -38,18 +39,22 @@ struct SubscriptionCollector
     std::set<Object> objects;
 
     std::mutex object_mutex;
-    std::optional<size_t> expected_object_count;
-    std::optional<std::promise<void>> object_promise;
-    std::optional<std::future<void>> object_future;
+    size_t expected_object_count = std::numeric_limits<size_t>::max();
+    std::promise<void> object_promise;
+    std::future<void> object_future;
+
+    SubscriptionCollector()
+      : object_future(object_promise.get_future())
+    {}
 
     void add_object(Object obj)
     {
         const auto _ = std::lock_guard(object_mutex);
         objects.insert(std::move(obj));
 
-        if (expected_object_count && objects.size() >= expected_object_count.value())
+        if (objects.size() >= expected_object_count)
         {
-            object_promise->set_value();
+            object_promise.set_value();
         }
     }
 
@@ -75,8 +80,6 @@ struct SubscriptionCollector
         {
             const auto _ = std::lock_guard(object_mutex);
             expected_object_count = object_count;
-            object_promise = std::promise<void>{};
-            object_future = object_promise->get_future();
 
             if (objects.size() >= object_count)
             {
@@ -84,7 +87,14 @@ struct SubscriptionCollector
             }
         }
 
-        object_future->wait();
+        // The mutex must be unlocked here so that the transport thread can
+        // add objects to the set.
+        const auto status = object_future.wait_for(1000ms);
+        if (status != std::future_status::ready) {
+           throw std::runtime_error("Object collection timed out");
+        }
+
+        const auto _ = std::lock_guard(object_mutex);
         return collected_payloads();
     }
 };
@@ -271,6 +281,9 @@ TEST_CASE("Two-party session")
 
     const auto received_b = collector_b->await(sent_a.size());
     REQUIRE(sent_a == received_b);
+    REQUIRE(collector_b->sourceId.value() == "1");
+    REQUIRE(collector_b->label.value() == "Participant 1");
+    REQUIRE(collector_b->qualityProfile.value() == "opus,br=6");
 
     // Send media from participant 2 and verify that it arrived at the other participants
     const auto sent_b = test_data(2);
@@ -281,4 +294,7 @@ TEST_CASE("Two-party session")
 
     const auto received_a = collector_a->await(sent_b.size());
     REQUIRE(sent_b == received_a);
+    REQUIRE(collector_a->sourceId.value() == "2");
+    REQUIRE(collector_a->label.value() == "Participant 2");
+    REQUIRE(collector_a->qualityProfile.value() == "opus,br=6");
 }
