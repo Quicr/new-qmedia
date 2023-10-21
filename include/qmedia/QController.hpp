@@ -39,7 +39,12 @@ public:
 
     void updateManifest(const manifest::Manifest& manifest_obj);
 
-    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
+    // FIXME(richbarn): These methods should use std::range<const uint8_t>
+    // instead of naked pointers and lengths.
+    void publishNamedObject(const quicr::Namespace& quicrNamespace,
+                            const std::uint8_t* data,
+                            std::size_t len,
+                            bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
 
 private:

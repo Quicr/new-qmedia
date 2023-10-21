@@ -131,7 +131,7 @@ void QController::removeSubscriptions()
 }
 
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
-                                     std::uint8_t* data,
+                                     const std::uint8_t* data,
                                      std::size_t len,
                                      bool groupFlag)
 {

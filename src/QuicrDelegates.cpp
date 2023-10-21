@@ -310,7 +310,7 @@ void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client
 }
 
 void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> client,
-                                             std::uint8_t* data,
+                                             const std::uint8_t* data,
                                              std::size_t len,
                                              bool groupFlag)
 {
