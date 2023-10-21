@@ -15,64 +15,18 @@ using namespace std::chrono_literals;
 
 struct SubscriptionCollector
 {
-    struct Object
-    {
-        uint32_t groupId;
-        uint16_t objectId;
-        quicr::bytes data;
 
-        bool operator<(const Object& rhs) const
-        {
-            return groupId < rhs.groupId || (groupId == rhs.groupId && objectId < rhs.objectId);
-        }
+    SubscriptionCollector() : object_future(object_promise.get_future()) {}
 
-        bool operator==(const Object& rhs) const
-        {
-            return groupId == rhs.groupId && objectId == rhs.objectId && data == rhs.data;
-        }
-    };
-
-    std::optional<std::string> sourceId;
-    std::optional<std::string> label;
-    std::optional<std::string> qualityProfile;
-
-    std::set<Object> objects;
-
-    std::mutex object_mutex;
-    size_t expected_object_count = std::numeric_limits<size_t>::max();
-    std::promise<void> object_promise;
-    std::future<void> object_future;
-
-    SubscriptionCollector()
-      : object_future(object_promise.get_future())
-    {}
-
-    void add_object(Object obj)
+    void add_object(quicr::bytes&& data)
     {
         const auto _ = std::lock_guard(object_mutex);
-        objects.insert(std::move(obj));
+        _objects.insert(std::move(data));
 
-        if (objects.size() >= expected_object_count)
+        if (_objects.size() >= expected_object_count)
         {
             object_promise.set_value();
         }
-    }
-
-    // XXX(richbarn): Currently we collect only the payloads of the subscribed
-    // objects.  We should also verify that the group/object IDs are
-    // consistent, but it appears that the sender has no idea what the transmitted
-    // IDs are, so we can't compare to them.  So we have this method to map the
-    // collected objects to just their payloads.
-    //
-    // Note that we use std::set and not an ordered container like std::vector so
-    // that delivery order doesn't matter.
-    std::set<quicr::bytes> collected_payloads()
-    {
-        auto out = std::set<quicr::bytes>{};
-        std::transform(
-            objects.begin(), objects.end(), std::inserter(out, out.end()), [](const auto& obj) { return obj.data; });
-        objects.clear();
-        return out;
     }
 
     std::set<quicr::bytes> await(size_t object_count)
@@ -81,22 +35,56 @@ struct SubscriptionCollector
             const auto _ = std::lock_guard(object_mutex);
             expected_object_count = object_count;
 
-            if (objects.size() >= object_count)
+            if (_objects.size() >= object_count)
             {
-                return collected_payloads();
+                return _objects;
             }
         }
 
         // The mutex must be unlocked here so that the transport thread can
         // add objects to the set.
         const auto status = object_future.wait_for(1000ms);
-        if (status != std::future_status::ready) {
-           throw std::runtime_error("Object collection timed out");
+        if (status != std::future_status::ready)
+        {
+            throw std::runtime_error("Object collection timed out");
         }
 
-        const auto _ = std::lock_guard(object_mutex);
-        return collected_payloads();
+        return _objects;
     }
+
+    // Thread-safe, unwrapping accessors
+#define STRING_ACCESSOR(field_name) \
+    void field_name(std::string field_name) { \
+      const auto _ = std::lock_guard(object_mutex); \
+      _##field_name = std::move(field_name); \
+    } \
+    \
+    std::string field_name() { \
+      const auto _ = std::lock_guard(object_mutex); \
+      return _##field_name.value(); \
+    }
+
+    STRING_ACCESSOR(sourceId)
+    STRING_ACCESSOR(label)
+    STRING_ACCESSOR(qualityProfile)
+#undef STRING_ACCESSOR
+
+private:
+    std::optional<std::string> _sourceId;
+    std::optional<std::string> _label;
+    std::optional<std::string> _qualityProfile;
+
+    // XXX(richbarn): We currently collect only the payloads of the subcribed
+    // objects.  In principle, we should also capture and verify the
+    // group/object IDs.  However, it appears that the sender has no idea what
+    // the transmitted IDs are, so we can't compare them.  So for now we only
+    // capture the objects themselves.
+    std::set<quicr::bytes> _objects;
+
+    size_t expected_object_count = std::numeric_limits<size_t>::max();
+    std::mutex object_mutex;
+    std::promise<void> object_promise;
+    std::future<void> object_future;
 };
 
 class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
@@ -113,9 +101,9 @@ public:
                 const std::string& qualityProfile,
                 bool& /* reliable */) override
     {
-        collector->sourceId = sourceId;
-        collector->label = label;
-        collector->qualityProfile = qualityProfile;
+        collector->sourceId(sourceId);
+        collector->label(label);
+        collector->qualityProfile(qualityProfile);
         return 0;
     }
 
@@ -127,9 +115,9 @@ public:
         return 1;
     }
 
-    int subscribedObject(quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override
+    int subscribedObject(quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
     {
-        collector->add_object({groupId, objectId, data});
+        collector->add_object(std::move(data));
         return 0;
     }
 
@@ -281,9 +269,9 @@ TEST_CASE("Two-party session")
 
     const auto received_b = collector_b->await(sent_a.size());
     REQUIRE(sent_a == received_b);
-    REQUIRE(collector_b->sourceId.value() == "1");
-    REQUIRE(collector_b->label.value() == "Participant 1");
-    REQUIRE(collector_b->qualityProfile.value() == "opus,br=6");
+    REQUIRE(collector_b->sourceId() == "1");
+    REQUIRE(collector_b->label() == "Participant 1");
+    REQUIRE(collector_b->qualityProfile() == "opus,br=6");
 
     // Send media from participant 2 and verify that it arrived at the other participants
     const auto sent_b = test_data(2);
@@ -294,7 +282,7 @@ TEST_CASE("Two-party session")
 
     const auto received_a = collector_a->await(sent_b.size());
     REQUIRE(sent_b == received_a);
-    REQUIRE(collector_a->sourceId.value() == "2");
-    REQUIRE(collector_a->label.value() == "Participant 2");
-    REQUIRE(collector_a->qualityProfile.value() == "opus,br=6");
+    REQUIRE(collector_a->sourceId() == "2");
+    REQUIRE(collector_a->label() == "Participant 2");
+    REQUIRE(collector_a->qualityProfile() == "opus,br=6");
 }

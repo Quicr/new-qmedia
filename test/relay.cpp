@@ -145,7 +145,8 @@ void LocalhostRelay::stop()
 
 ////////// Test case and supporting types below this line //////////
 
-namespace {
+namespace
+{
 
 // Test case to verify that the relay works properly
 struct SubDelegate : quicr::SubscriberDelegate
@@ -213,7 +214,7 @@ private:
     std::future<void> future;
 };
 
-} // namespace
+}        // namespace
 
 TEST_CASE("Localhost relay")
 {
