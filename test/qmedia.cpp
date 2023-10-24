@@ -15,7 +15,6 @@ using namespace std::chrono_literals;
 
 struct SubscriptionCollector
 {
-
     SubscriptionCollector() : object_future(object_promise.get_future()) {}
 
     void add_object(quicr::bytes&& data)
@@ -53,15 +52,17 @@ struct SubscriptionCollector
     }
 
     // Thread-safe, unwrapping accessors
-#define STRING_ACCESSOR(field_name) \
-    void field_name(std::string field_name) { \
-      const auto _ = std::lock_guard(object_mutex); \
-      _##field_name = std::move(field_name); \
-    } \
-    \
-    std::string field_name() { \
-      const auto _ = std::lock_guard(object_mutex); \
-      return _##field_name.value(); \
+#define STRING_ACCESSOR(field_name)                   \
+    void field_name(std::string field_name)           \
+    {                                                 \
+        const auto _ = std::lock_guard(object_mutex); \
+        _##field_name = std::move(field_name);        \
+    }                                                 \
+                                                      \
+    std::string field_name()                          \
+    {                                                 \
+        const auto _ = std::lock_guard(object_mutex); \
+        return _##field_name.value();                 \
     }
 
     STRING_ACCESSOR(sourceId)
@@ -149,14 +150,16 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     virtual ~QPublicationTestDelegate() = default;
 
-    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, bool& /* reliable */)
+    int prepare(const std::string& /* sourceId */,
+                const std::string& /* qualityProfile */,
+                bool& /* reliable */) override
     {
         return 0;
     }
 
-    int update(const std::string& /* sourceId */, const std::string& /* qualityProfile */) { return 0; }
+    int update(const std::string& /* sourceId */, const std::string& /* qualityProfile */) override { return 0; }
 
-    void publish(bool /* pubFlag */) {}
+    void publish(bool /* pubFlag */) override {}
 };
 
 class QPublisherTestDelegate : public qmedia::QPublisherDelegate

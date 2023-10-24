@@ -107,7 +107,10 @@ void QController::periodicResubscribe(const unsigned int seconds)
             const std::lock_guard<std::mutex> _(subsMutex);
             for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
             {
-                quicrSubDelegate->subscribe(client_session);
+                const auto success = quicrSubDelegate->subscribe(client_session);
+                if (!success) {
+                    LOGGER_DEBUG(logger, "Failed to resubscrube to " << key);
+                }
             }
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
         }
@@ -313,8 +316,8 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
         return -1;
     }
 
-    sub_delegate->subscribe(client_session);
-    return 0;
+    const auto success = sub_delegate->subscribe(client_session);
+    return (success)? 0 : -1;
 }
 
 void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
@@ -360,8 +363,8 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     }
 
     // TODO: add more intent parameters - max queue size (in time), default ttl, priority
-    quicrPubDelegate->publishIntent(client_session, reliableTransport);
-    return 0;
+    const auto success = quicrPubDelegate->publishIntent(client_session, reliableTransport);
+    return (success)? 0 : -1;
 }
 
 void QController::processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions)

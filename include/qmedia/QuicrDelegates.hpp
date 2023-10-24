@@ -8,6 +8,7 @@
 #include <quicr/quicr_client.h>
 
 #include <string>
+#include <future>
 
 namespace qmedia
 {
@@ -38,7 +39,7 @@ public:
 
     std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
 
-    bool isActive() const { return canReceiveSubs; }
+    bool isActive() const { return canReceive; }
 
     /*===========================================================================*/
     // Events
@@ -62,11 +63,11 @@ public:
     // Actions
     /*===========================================================================*/
 
-    void subscribe(std::shared_ptr<quicr::Client> quicrClient);
+    [[nodiscard]] bool subscribe(std::shared_ptr<quicr::Client> quicrClient);
     void unsubscribe(std::shared_ptr<quicr::Client> quicrClient);
 
 private:
-    bool canReceiveSubs;
+    std::atomic_bool canReceive = false;
     std::string sourceId;
     quicr::Namespace quicrNamespace;
     quicr::SubscribeIntent intent;
@@ -76,6 +77,12 @@ private:
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
     const cantina::LoggerPointer logger;
+
+    // XXX(richbarn): This structure presumes that there is only ever one
+    // operation in flight at a time.  Otherwise they will interfere with one
+    // another.
+    std::mutex response_promise_mutex;
+    std::optional<std::promise<void>> response_promise;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
@@ -127,7 +134,7 @@ public:
     // Actions
     /*===========================================================================*/
 
-    void publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport = false);
+    [[nodiscard]] bool publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport = false);
 
     void publishIntentEnd(std::shared_ptr<quicr::Client> client);
 
@@ -137,7 +144,7 @@ public:
                             bool groupFlag);
 
 private:
-    // bool canPublish;
+    std::atomic_bool canPublish = false;
     std::string sourceId;
     const std::string& originUrl;
     const std::string& authToken;
@@ -149,6 +156,12 @@ private:
     bool reliableTransport;
     quicr::bytes&& payload;
     std::vector<std::uint8_t> priority;
+
+    // XXX(richbarn): This structure presumes that there is only ever one
+    // operation in flight at a time.  Otherwise they will interfere with one
+    // another.
+    std::mutex response_promise_mutex;
+    std::optional<std::promise<void>> response_promise;
 
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     const cantina::LoggerPointer logger;

@@ -96,16 +96,18 @@ public:
         logger->Log("QPublicationTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId,  const std::string& qualityProfile, bool& reliable)  {
+    int prepare(const std::string& sourceId,  const std::string& qualityProfile, bool& reliable) override  {
         logger->Log("QPublicationTestDelegate::prepare");
         std::cerr << "pub prepare " << std::endl;
         return 0;
     }
-    int update(const std::string& sourceId, const std::string& qualityProfile) {
+
+    int update(const std::string& sourceId, const std::string& qualityProfile) override {
         logger->Log("QPublicationTestDelegate::update");
         return 1; //1 = needs prepare
     }
-    void publish(bool pubFlag) {
+
+    void publish(bool pubFlag) override {
         logger->Log("QPublicationTestDelegate::publish");
     }
 
