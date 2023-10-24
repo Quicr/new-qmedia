@@ -8,6 +8,9 @@
 #include <iostream>
 #include <sstream>
 #include <ctime>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 constexpr quicr::Name Group_ID_Mask = ~(~0x0_name << 32) << 16;
 constexpr quicr::Name Object_ID_Mask = ~(~0x0_name << 16);
@@ -27,7 +30,6 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                                            const cantina::LoggerPointer& logger) :
-    canReceiveSubs(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
     intent(intent),
@@ -76,10 +78,20 @@ SubscriptionDelegate::create(const std::string& sourceId,
                                                                           logger));
 }
 
-void SubscriptionDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
-                                               const quicr::SubscribeResult& /* result */)
+void SubscriptionDelegate::onSubscribeResponse(const quicr::Namespace& quicr_namespace,
+                                               const quicr::SubscribeResult& result)
 {
-    // LOGGER_DEBUG(logger, __FUNCTION__);
+    LOGGER_INFO(logger,
+                "Received Subscribe response for " << quicr_namespace << ": " << static_cast<int>(result.status));
+
+    canReceive = result.status == quicr::SubscribeResult::SubscribeStatus::Ok;
+
+    const auto _ = std::lock_guard(response_promise_mutex);
+    if (response_promise.has_value())
+    {
+        response_promise->set_value();
+        response_promise.reset();
+    }
 }
 
 void SubscriptionDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_namespace */,
@@ -181,16 +193,27 @@ void SubscriptionDelegate::onSubscribedObjectFragment(const quicr::Name&,
 {
 }
 
-void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
+bool SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
 {
     if (!client)
     {
         LOGGER_ERROR(logger, "Subscribe - client doesn't exist");
-        return;
+        return false;
+    }
+
+    auto response_promise_local = std::promise<void>();
+    auto response_future = response_promise_local.get_future();
+    {
+        const auto _ = std::lock_guard(response_promise_mutex);
+        response_promise = std::move(response_promise_local);
     }
 
     client->subscribe(
         shared_from_this(), quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
+
+    // The response promise mutex needs to be unlocked between the ab
+    response_future.wait_for(1000ms);
+    return canReceive;
 }
 
 void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
@@ -220,7 +243,6 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                                          std::uint16_t expiry,
                                          bool reliableTransport,
                                          const cantina::LoggerPointer& logger) :
-    // canPublish(true),
     sourceId(sourceId),
     originUrl(originUrl),
     authToken(authToken),
@@ -275,14 +297,30 @@ void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_
 {
     LOGGER_INFO(logger,
                 "Received PublishIntent response for " << quicr_namespace << ": " << static_cast<int>(result.status));
+
+    canPublish = (result.status == quicr::messages::Response::Ok);
+
+    const auto _ = std::lock_guard(response_promise_mutex);
+    if (response_promise.has_value())
+    {
+        response_promise->set_value();
+        response_promise.reset();
+    }
 }
 
-void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport)
+bool PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport)
 {
     if (!client)
     {
         LOGGER_ERROR(logger, "Client was null, can't send PublishIntent");
-        return;
+        return false;
+    }
+
+    auto response_promise_local = std::promise<void>();
+    auto response_future = response_promise_local.get_future();
+    {
+        const auto _ = std::lock_guard(response_promise_mutex);
+        response_promise = std::move(response_promise_local);
     }
 
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
@@ -292,10 +330,15 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
     if (!success)
     {
         LOGGER_ERROR(logger, "Failed to send PublishIntent for " << quicrNamespace);
-        return;
+        const auto _ = std::lock_guard(response_promise_mutex);
+        response_promise.reset();
+        return false;
     }
 
     LOGGER_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
+
+    response_future.wait_for(1000ms);
+    return canPublish;
 }
 
 void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client)
