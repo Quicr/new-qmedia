@@ -287,7 +287,8 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
 
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     bool success = client->publishIntent(
-        shared_from_this(), quicrNamespace, originUrl, authToken, std::move(payload), reliableTransport);
+        shared_from_this(), quicrNamespace, originUrl,
+        authToken, std::move(payload), reliableTransport, priority[0]);
 
     if (!success)
     {
