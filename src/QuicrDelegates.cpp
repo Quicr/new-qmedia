@@ -245,6 +245,14 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
     sframe_context.addEpoch(Fixed_Epoch, epoch_key);
 
+    // Publish named object and intent require priorities. Set defaults if missing
+    if (this->priority.empty()) {
+        this->priority = { 10, 11 };
+
+    } else if (this->priority.size() == 1) {
+        this->priority.emplace_back(priority[0]);
+    }
+
     sframe_context.enableEpoch(Fixed_Epoch);
 }
 std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
