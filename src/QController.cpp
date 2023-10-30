@@ -234,7 +234,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                                                        originUrl,
                                                                        authToken,
                                                                        std::move(payload),
-                                                                       priority
+                                                                       priority,
                                                                        expiry,
                                                                        reliableTransport,
                                                                        logger);
