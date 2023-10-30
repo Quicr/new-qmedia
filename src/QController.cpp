@@ -228,13 +228,22 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
         return nullptr;
     }
 
+    // Publish named object and intent require priorities. Set defaults if missing
+    auto pri = priority;
+    if (pri.empty()) {
+        pri = { 10, 11 };
+
+    } else if (pri.size() == 1) {
+        pri.emplace_back(11);
+    }
+
     quicrPublicationsMap[quicrNamespace] = PublicationDelegate::create(std::move(qDelegate),
                                                                        sourceId,
                                                                        quicrNamespace,
                                                                        originUrl,
                                                                        authToken,
                                                                        std::move(payload),
-                                                                       priority,
+                                                                       pri,
                                                                        expiry,
                                                                        reliableTransport,
                                                                        logger);

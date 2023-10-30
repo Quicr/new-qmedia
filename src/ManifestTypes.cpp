@@ -20,15 +20,6 @@ void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profil
     if (j.contains("priorities"))
     {
         j.at("priorities").get_to(profile.priorities);
-
-        // Default if priorities empty
-        if (profile.priorities.empty()) {
-            profile.priorities = { 10, 11 };
-        }
-
-    } else {
-        // Set default if priorities are not set
-        profile.priorities = { 10, 11 };
     }
 
     if (j.contains("expiry"))
