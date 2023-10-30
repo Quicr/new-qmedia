@@ -43,7 +43,7 @@ struct SubscriptionCollector
 
         // The mutex must be unlocked here so that the transport thread can
         // add objects to the set.
-        const auto status = object_future.wait_for(3000ms);
+        const auto status = object_future.wait_for(1000ms);
         if (status != std::future_status::ready)
         {
             throw std::runtime_error("Object collection timed out");
@@ -259,6 +259,15 @@ TEST_CASE("Two-party session")
 
     const auto ns_a = media_a.profileSet.profiles[0].quicrNamespace;
     const auto ns_b = media_b.profileSet.profiles[0].quicrNamespace;
+
+    /* TODO: Add status to QController to return state of controller state with relay based on manifest config
+     * Pub/Sub clients are not synchronized, instead they are async between each other and wtih control messages
+     * This test counts messages sent to messages received. We need to wait till both clients have had a
+     * chance to establish (publish intent and subscribe) state with the relay.
+     * Both clients should finish publish intents and subscriptions within 1 second.
+     * Sleep for 1 sec before publishing.
+     */
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Send media from participant 1 and verify that it arrived at the other participants
     const auto sent_a = test_data(1);
