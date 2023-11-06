@@ -16,7 +16,7 @@ void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profil
 
     const auto namespace_url = j.at("quicrNamespaceUrl").get<std::string>();
     profile.quicrNamespace = ctx.url_encoder.EncodeUrl(namespace_url);
-
+    profile.url = namespace_url;
     if (j.contains("priorities"))
     {
         j.at("priorities").get_to(profile.priorities);
@@ -56,7 +56,8 @@ void from_json(const nlohmann::json& j, Manifest& manifest)
     const auto url_templates = j.at("urlTemplates").get<std::vector<std::string>>();
     for (const auto& url_template : url_templates)
     {
-        ctx.url_encoder.AddTemplate(url_template, true);
+        ctx.url_encoder.AddTemplate(url_template);
+        manifest.url_templates.push_back(url_template);
     }
 
     for (const auto& j : j.at("subscriptions"))

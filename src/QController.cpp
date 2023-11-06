@@ -48,7 +48,8 @@ int QController::connect(const std::string remoteAddress,
         .proto = protocol,
     };
 
-    client_session = std::make_unique<quicr::Client>(relayInfo, config, logger);
+    uri_convertor = std::make_shared<NumeroURIConvertor>();
+    client_session = std::make_unique<quicr::Client>(relayInfo, config, logger, uri_convertor);
 
     if (!client_session->connect()) return -1;
 
@@ -463,16 +464,42 @@ void QController::updateManifest(const std::string& manifest_json)
     const auto manifest_parsed = json::parse(manifest_json);
     const auto manifest_obj = manifest::Manifest(manifest_parsed);
     LOGGER_INFO(logger, "Finished parsing manifest!");
-
     updateManifest(manifest_obj);
 }
 
 void QController::updateManifest(const manifest::Manifest& manifest_obj)
 {
+    static auto templates_added = false;
+
     LOGGER_DEBUG(logger, "Importing manifest...");
+
+    if (!templates_added) {
+        LOGGER_INFO(logger, "Manifest has url_templates: " <<  manifest_obj.url_templates.size());
+        uri_convertor->add_uri_templates(manifest_obj.url_templates);
+
+        for(const auto& publication: manifest_obj.publications) {
+            for(const auto& profile: publication.profileSet.profiles) {
+                LOGGER_INFO(logger, "Adding PUB URL " << profile.url);
+                uri_convertor->to_quicr_namespace(profile.url);
+            }
+        }
+
+        for(const auto& sub: manifest_obj.subscriptions) {
+            for(const auto& profile: sub.profileSet.profiles) {
+                LOGGER_INFO(logger, "Adding SUB URL " << profile.url);
+                uri_convertor->to_quicr_namespace(profile.url);
+            }
+        }
+
+        templates_added = true;
+    }
 
     processSubscriptions(manifest_obj.subscriptions);
     processPublications(manifest_obj.publications);
+
+
+
+
 
     LOGGER_INFO(logger, "Finished importing manifest!");
 }

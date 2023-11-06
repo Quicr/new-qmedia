@@ -2,6 +2,7 @@
 
 #include "QuicrDelegates.hpp"
 #include "ManifestTypes.hpp"
+#include "uri_convertor.h"
 
 #include <nlohmann/json.hpp>
 #include <quicr/quicr_common.h>
@@ -139,7 +140,7 @@ private:
     quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
 
     std::shared_ptr<quicr::Client> client_session;
-
+    std::shared_ptr<NumeroURIConvertor> uri_convertor {nullptr};
     std::thread keepaliveThread;
     bool stop;
     bool closed;

@@ -16,10 +16,10 @@ struct Manifest;
 struct Profile
 {
     std::string qualityProfile;
+    std::string url;
     quicr::Namespace quicrNamespace;
     std::vector<uint8_t> priorities;
     std::optional<uint16_t> expiry = 0;
-
     friend bool operator==(const Profile& lhs, const Profile& rhs);
 };
 
@@ -46,6 +46,8 @@ struct Manifest
 {
     std::vector<MediaStream> subscriptions;
     std::vector<MediaStream> publications;
+    std::vector<std::string> url_templates; // hacking for moq
+    std::vector<std::string> urls; // hacking for moq
 
     friend bool operator==(const Manifest& lhs, const Manifest& rhs);
 };
