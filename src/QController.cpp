@@ -406,7 +406,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                               std::move(e2eToken));
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (subscription.profileSet.type == "singleordered") break;
+            if (is_singleordered_subscription) break;
         }
     }
 
@@ -450,7 +450,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (publication.profileSet.type == "singleordered") break;
+            if (is_singleordered_publication) break;
         }
     }
 

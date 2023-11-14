@@ -47,6 +47,9 @@ public:
                             bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
 
+    void setSubscriptionSingleOrdered(bool new_value) { is_singleordered_subscription = new_value; }
+    void setPublicationSingleOrdered(bool new_value) { is_singleordered_publication = new_value; }
+
 private:
     /**
      * @brief Periodic keep-alive method that sends a subscribe message.
@@ -143,6 +146,8 @@ private:
     std::thread keepaliveThread;
     bool stop;
     bool closed;
+    bool is_singleordered_subscription = true;
+    bool is_singleordered_publication = false;
 };
 
 }        // namespace qmedia
