@@ -131,7 +131,7 @@ void QController::removeSubscriptions()
 }
 
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
-                                     std::uint8_t* data,
+                                     const std::uint8_t* data,
                                      std::size_t len,
                                      bool groupFlag)
 {
@@ -364,16 +364,6 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     return 0;
 }
 
-void QController::processURLTemplates(const std::vector<std::string>& urlTemplates)
-{
-    LOGGER_DEBUG(logger, "Processing URL templates...");
-    for (auto& urlTemplate : urlTemplates)
-    {
-        encoder.AddTemplate(urlTemplate, true);
-    }
-    LOGGER_INFO(logger, "Finished processing templates!");
-}
-
 void QController::processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
@@ -403,11 +393,10 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
 
         for (const auto& profile : subscription.profileSet.profiles)
         {
-            quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
             quicr::bytes e2eToken;
             startSubscription(std::move(delegate),
                               subscription.sourceId,
-                              quicrNamespace,
+                              profile.quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
                               reliable,
@@ -415,7 +404,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                               std::move(e2eToken));
 
                 // If singleordered, and we've successfully processed 1 delegate, break.
-                if (subscription.profileSet.type == "singleordered") break;
+                if (is_singleordered_subscription) break;
         }
     }
 
@@ -429,12 +418,11 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
     {
         for (auto& profile : publication.profileSet.profiles)
         {
-            const auto& quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceUrl);
-
-            auto delegate = getPublicationDelegate(quicrNamespace, publication.sourceId, profile.qualityProfile);
+            auto delegate = getPublicationDelegate(
+                profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
             if (!delegate)
             {
-                LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
+                LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
                 continue;
             }
 
@@ -443,14 +431,15 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
-                LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepare_error);
+                LOGGER_WARNING(logger,
+                               "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
                 continue;
             }
 
             quicr::bytes payload;
             startPublication(delegate,
                              publication.sourceId,
-                             quicrNamespace,
+                             profile.quicrNamespace,
                              "",
                              "",
                              std::move(payload),
@@ -459,7 +448,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (publication.profileSet.type == "singleordered") break;
+            if (is_singleordered_publication) break;
         }
     }
 
@@ -468,19 +457,18 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
 
 void QController::updateManifest(const std::string& manifest_json)
 {
-  LOGGER_DEBUG(logger, "Parsing manifest...");
-  const auto manifest_parsed = json::parse(manifest_json);
-  const auto manifest_obj = manifest::Manifest(manifest_parsed);
-  LOGGER_INFO(logger, "Finished parsing manifest!");
+    LOGGER_DEBUG(logger, "Parsing manifest...");
+    const auto manifest_parsed = json::parse(manifest_json);
+    const auto manifest_obj = manifest::Manifest(manifest_parsed);
+    LOGGER_INFO(logger, "Finished parsing manifest!");
 
-  updateManifest(manifest_obj);
+    updateManifest(manifest_obj);
 }
 
 void QController::updateManifest(const manifest::Manifest& manifest_obj)
 {
     LOGGER_DEBUG(logger, "Importing manifest...");
 
-    processURLTemplates(manifest_obj.urlTemplates);
     processSubscriptions(manifest_obj.subscriptions);
     processPublications(manifest_obj.publications);
 

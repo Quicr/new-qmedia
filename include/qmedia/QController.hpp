@@ -7,7 +7,6 @@
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
 #include <cantina/logger.h>
-#include <UrlEncoder.h>
 #include <transport/transport.h>
 
 #include <mutex>
@@ -37,13 +36,20 @@ public:
 
     [[deprecated("Use QController::disconnect instead")]] void close();
 
-    [[deprecated("Use parsed Manifest object instead of string")]]
-    void updateManifest(const std::string& manifest_json);
+    [[deprecated("Use parsed Manifest object instead of string")]] void updateManifest(const std::string& manifest_json);
 
     void updateManifest(const manifest::Manifest& manifest_obj);
 
-    void publishNamedObject(const quicr::Namespace& quicrNamespace, std::uint8_t* data, std::size_t len, bool groupFlag);
+    // FIXME(richbarn): These methods should use std::range<const uint8_t>
+    // instead of naked pointers and lengths.
+    void publishNamedObject(const quicr::Namespace& quicrNamespace,
+                            const std::uint8_t* data,
+                            std::size_t len,
+                            bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
+
+    void setSubscriptionSingleOrdered(bool new_value) { is_singleordered_subscription = new_value; }
+    void setPublicationSingleOrdered(bool new_value) { is_singleordered_publication = new_value; }
 
 private:
     /**
@@ -126,7 +132,6 @@ private:
     std::mutex pubsMutex;
 
     const cantina::LoggerPointer logger;
-    UrlEncoder encoder;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
@@ -142,6 +147,8 @@ private:
     std::thread keepaliveThread;
     bool stop;
     bool closed;
+    bool is_singleordered_subscription = true;
+    bool is_singleordered_publication = false;
 };
 
 }        // namespace qmedia
