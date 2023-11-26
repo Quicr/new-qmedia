@@ -42,7 +42,7 @@ public:
         return 1; //1 = needs prepare
     }
 
-    int subscribedObject(const quicr::Name& name, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
+    int subscribedObject(const quicr::Namespace& quicrNamespace, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
         uint64_t now = timeSinceEpochMillisec();
         std::cerr << "groupId = " << groupId << std::endl;
         uint64_t then =  timeBuckets[groupId-1];

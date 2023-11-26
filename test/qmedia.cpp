@@ -115,7 +115,7 @@ public:
         return 1;
     }
 
-    int subscribedObject(const quicr::Name& /* name */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
+    int subscribedObject(const quicr::Namespace& /* namespace */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
     {
         collector->add_object(std::move(data));
         return 0;
