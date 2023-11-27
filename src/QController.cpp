@@ -291,7 +291,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
                                    const std::string& originUrl,
                                    const bool useReliableTransport,
                                    const std::string& authToken,
-                                   quicr::bytes&& e2eToken)
+                                   quicr::bytes& e2eToken)
 {
     // look to see if we already have a quicr delegate
     auto sub_delegate = findQuicrSubscriptionDelegate(quicrNamespace);
@@ -394,14 +394,14 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
         for (const auto& profile : subscription.profileSet.profiles)
         {
             quicr::bytes e2eToken;
-            startSubscription(std::move(delegate),
+            startSubscription(delegate,
                               subscription.sourceId,
                               profile.quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
                               reliable,
                               "",
-                              std::move(e2eToken));
+                              e2eToken);
 
                 // If singleordered, and we've successfully processed 1 delegate, break.
                 if (is_singleordered_subscription) break;

@@ -105,7 +105,7 @@ private:
                           const std::string& originUrl,
                           const bool useReliableTransport,
                           const std::string& authToken,
-                          quicr::bytes&& e2eToken);
+                          quicr::bytes& e2eToken);
 
     void stopSubscription(const quicr::Namespace& quicrNamespace);
 
