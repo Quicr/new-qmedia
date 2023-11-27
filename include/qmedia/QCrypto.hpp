@@ -36,6 +36,8 @@ protected:
 class QSFrameContext
 {
 public:
+    QSFrameContext(sframe::CipherSuite cipher_suite);
+
     void addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret);
     void enableEpoch(uint64_t epoch_id);
 
@@ -51,18 +53,13 @@ public:
                                    const sframe::input_bytes ciphertext);
 
 protected:
-    // Instances must be obtained via MLSClient::make_sframe_context()
-    friend class MLSClient;
-    QSFrameContext(sframe::CipherSuite cipher_suite);
-
     void ensure_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
     sframe::bytes derive_base_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
 
     sframe::CipherSuite cipher_suite;
     std::optional<uint64_t> current_epoch;
     std::map<uint64_t, quicr::bytes> epoch_secrets;
-    // namespace to sframe_base_context
-    std::map<quicr::Namespace, sframe::ContextBase> ns_contexts;
+    std::map<quicr::Namespace, sframe::ContextBase> ns_contexts;        // key_id=epoch
 
     std::mutex context_mutex;
 };

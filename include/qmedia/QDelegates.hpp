@@ -26,9 +26,6 @@ public:
 class QPublicationDelegate
 {
 public:
-    QPublicationDelegate() {}
-
-public:
     virtual int prepare(const std::string& sourceId, const std::string& qualityProfile, bool& reliable) = 0;
     virtual int update(const std::string& sourceId, const std::string& qualityProfile) = 0;
     virtual void publish(bool) = 0;

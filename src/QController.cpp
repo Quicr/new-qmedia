@@ -131,7 +131,7 @@ void QController::removeSubscriptions()
 }
 
 void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
-                                     std::uint8_t* data,
+                                     const std::uint8_t* data,
                                      std::size_t len,
                                      bool groupFlag)
 {
@@ -368,44 +368,30 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
     return 0;
 }
 
-int QController::processURLTemplates(json& urlTemplates)
-{
-    LOGGER_DEBUG(logger, "Processing URL templates...");
-    for (auto& urlTemplate : urlTemplates)
-    {
-        std::string temp = urlTemplate;
-        encoder.AddTemplate(temp, true);
-    }
-    LOGGER_INFO(logger, "Finished processing templates!");
-    return 0;
-}
-
-int QController::processSubscriptions(json& subscriptions)
+void QController::processSubscriptions(const std::vector<manifest::MediaStream>& subscriptions)
 {
     LOGGER_DEBUG(logger, "Processing subscriptions...");
     for (auto& subscription : subscriptions)
     {
-        manifest::Subscription s = subscription;
-        for (auto& profile : s.profileSet.profiles)
+        for (auto& profile : subscription.profileSet.profiles)
         {
-            quicr::Namespace quicrNamespace = encoder.EncodeUrl(profile.quicrNamespaceURL);
-
-            auto delegate = getSubscriptionDelegate(quicrNamespace, profile.qualityProfile);
+            auto delegate = getSubscriptionDelegate(profile.quicrNamespace, profile.qualityProfile);
             if (!delegate)
             {
                 LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
                 continue;
             }
 
-            int update_error = delegate->update(s.sourceID, s.label, profile.qualityProfile);
+            int update_error = delegate->update(subscription.sourceId, subscription.label, profile.qualityProfile);
             if (update_error == 0)
             {
-                LOGGER_INFO(logger, "Updated subscription " << quicrNamespace);
+                LOGGER_INFO(logger, "Updated subscription " << profile.quicrNamespace);
                 continue;
             }
 
             bool reliable = false;
-            int prepare_error = delegate->prepare(s.sourceID, s.label, profile.qualityProfile, reliable);
+            int prepare_error = delegate->prepare(
+                subscription.sourceId, subscription.label, profile.qualityProfile, reliable);
 
             if (prepare_error != 0)
             {
@@ -415,8 +401,8 @@ int QController::processSubscriptions(json& subscriptions)
 
             quicr::bytes e2eToken;
             startSubscription(std::move(delegate),
-                              s.sourceID,
-                              quicrNamespace,
+                              subscription.sourceId,
+                              profile.quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
                               reliable,
@@ -424,72 +410,75 @@ int QController::processSubscriptions(json& subscriptions)
                               std::move(e2eToken));
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (s.profileSet.type == "singleordered") break;
+            if (is_singleordered_subscription) break;
         }
     }
 
     LOGGER_INFO(logger, "Finished processing subscriptions!");
-    return 0;
 }
 
-int QController::processPublications(json& publications)
+void QController::processPublications(const std::vector<manifest::MediaStream>& publications)
 {
     LOGGER_DEBUG(logger, "Processing publications...");
     for (auto& publication : publications)
     {
-        for (auto& profile : publication["profileSet"]["profiles"])
+        for (auto& profile : publication.profileSet.profiles)
         {
-            const auto& quicrNamespace = encoder.EncodeUrl(profile["quicrNamespaceUrl"]);
-
-            auto delegate = getPublicationDelegate(quicrNamespace, publication["sourceId"], profile["qualityProfile"]);
+            auto delegate = getPublicationDelegate(
+                profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
             if (!delegate)
             {
-                LOGGER_ERROR(logger, "Failed to create publication delegate: " << quicrNamespace);
+                LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
                 continue;
             }
 
             // Notify client to prepare for incoming media
             bool reliable = false;
-            int prepare_error = delegate->prepare(publication["sourceId"], profile["qualityProfile"], reliable);
+            int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {
-                LOGGER_WARNING(logger, "Preparing publication \"" << quicrNamespace << "\" failed: " << prepare_error);
+                LOGGER_WARNING(logger,
+                               "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
                 continue;
             }
 
             quicr::bytes payload;
             startPublication(delegate,
-                             publication["sourceId"],
-                             quicrNamespace,
+                             publication.sourceId,
+                             profile.quicrNamespace,
                              "",
                              "",
                              std::move(payload),
-                             profile["priorities"],
-                             profile["expiry"],
+                             profile.priorities,
+                             profile.expiry.value(),
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
-            if (publication["profileSet"]["type"] == "singleordered") break;
+            if (is_singleordered_publication) break;
         }
     }
 
     LOGGER_INFO(logger, "Finished processing publications!");
-    return 0;
 }
 
-int QController::updateManifest(const std::string& manifest)
+void QController::updateManifest(const std::string& manifest_json)
 {
-    auto manifest_object = json::parse(manifest);
-
     LOGGER_DEBUG(logger, "Parsing manifest...");
-
-    processURLTemplates(manifest_object["urlTemplates"]);
-    processSubscriptions(manifest_object["subscriptions"]);
-    processPublications(manifest_object["publications"]);
-
+    const auto manifest_parsed = json::parse(manifest_json);
+    const auto manifest_obj = manifest::Manifest(manifest_parsed);
     LOGGER_INFO(logger, "Finished parsing manifest!");
 
-    return 0;
+    updateManifest(manifest_obj);
+}
+
+void QController::updateManifest(const manifest::Manifest& manifest_obj)
+{
+    LOGGER_DEBUG(logger, "Importing manifest...");
+
+    processSubscriptions(manifest_obj.subscriptions);
+    processPublications(manifest_obj.publications);
+
+    LOGGER_INFO(logger, "Finished importing manifest!");
 }
 
 }        // namespace qmedia

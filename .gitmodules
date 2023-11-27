@@ -1,16 +1,16 @@
 [submodule "dependencies/libquicr"]
 	path = dependencies/libquicr
-	url = git@github.com:Quicr/libquicr.git
+	url = https://github.com/Quicr/libquicr.git
 	branch = main
 [submodule "dependencies/doctest"]
 	path = dependencies/doctest
 	url = https://github.com/doctest/doctest.git
 [submodule "dependencies/numero-uri"]
 	path = dependencies/numero-uri
-	url = git@github.com:Quicr/numero-uri.git
+	url = https://github.com/Quicr/numero-uri.git
 [submodule "dependencies/json"]
 	path = dependencies/json
 	url = https://github.com/nlohmann/json
 [submodule "dependencies/sframe"]
 	path = dependencies/sframe
-	url = git@github.com:Quicr/sframe.git
+	url = https://github.com/Quicr/sframe.git

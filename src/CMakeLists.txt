@@ -5,10 +5,10 @@ add_library(${PROJECT_NAME}
     delivery.cpp
     mls_client.cpp
     mls_session.cpp
+    ManifestTypes.cpp
     QController.cpp
     QuicrDelegates.cpp
     QCrypto.cpp
-    ManifestTypes.cpp
 )
 
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)

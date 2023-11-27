@@ -227,8 +227,15 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
     sframe_context(std::move(sframe_context))
-{}
+{
+    // Publish named object and intent require priorities. Set defaults if missing
+    if (this->priority.empty()) {
+        this->priority = { 10, 11 };
 
+    } else if (this->priority.size() == 1) {
+        this->priority.emplace_back(priority[0]);
+    }
+}
 std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                                  std::shared_ptr<QSFrameContext> sframe_context,
                                                                  const std::string& sourceId,
@@ -271,7 +278,8 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
 
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     bool success = client->publishIntent(
-        shared_from_this(), quicrNamespace, originUrl, authToken, std::move(payload), reliableTransport);
+        shared_from_this(), quicrNamespace, originUrl,
+        authToken, std::move(payload), reliableTransport, priority[0]);
 
     if (!success)
     {
@@ -294,7 +302,7 @@ void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client
 }
 
 void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> client,
-                                             std::uint8_t* data,
+                                             const std::uint8_t* data,
                                              std::size_t len,
                                              bool groupFlag)
 {
