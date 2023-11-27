@@ -61,6 +61,7 @@ protected:
     sframe::CipherSuite cipher_suite;
     std::optional<uint64_t> current_epoch;
     std::map<uint64_t, quicr::bytes> epoch_secrets;
+    // namespace to sframe_base_context
     std::map<quicr::Namespace, sframe::ContextBase> ns_contexts;
 
     std::mutex context_mutex;

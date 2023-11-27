@@ -333,7 +333,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     {
         quicr::bytes output_buffer(len + 16);
         auto ciphertext = sframe_context->protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                  quicrName.bits<std::uint64_t>(0, 48),
+                                                  quicrName.bits<std::uint64_t>(Quicr_SFrame_Sig_Bits, 48),
                                                   output_buffer,
                                                   {data, len});
         output_buffer.resize(ciphertext.size());
