@@ -188,6 +188,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
         return nullptr;
     }
 
+    auto sframe_context = mls_client.make_sframe_context();
     quicrSubscriptionsMap[quicrNamespace] = SubscriptionDelegate::create(sourceId,
                                                                          quicrNamespace,
                                                                          intent,
@@ -196,6 +197,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                                                          authToken,
                                                                          std::move(e2eToken),
                                                                          std::move(qDelegate),
+                                                                         std::move(sframe_context),
                                                                          logger);
     return quicrSubscriptionsMap[quicrNamespace];
 }
@@ -228,7 +230,9 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
         return nullptr;
     }
 
+    auto sframe_context = mls_client.make_sframe_context();
     quicrPublicationsMap[quicrNamespace] = PublicationDelegate::create(std::move(qDelegate),
+                                                                       std::move(sframe_context),
                                                                        sourceId,
                                                                        quicrNamespace,
                                                                        originUrl,

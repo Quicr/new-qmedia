@@ -1,9 +1,14 @@
 add_library(${PROJECT_NAME}
     SHARED
+    namespace_config.cpp
+    counter.cpp
+    delivery.cpp
+    mls_client.cpp
+    mls_session.cpp
     ManifestTypes.cpp
     QController.cpp
     QuicrDelegates.cpp
-    QSFrameContext.cpp
+    QCrypto.cpp
 )
 
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
@@ -12,10 +17,15 @@ target_compile_options(picotls-openssl PRIVATE -w)
 target_compile_options(picoquic-core PRIVATE -w)
 target_compile_options(quicr-transport PRIVATE -w)
 
+set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+find_package(OpenSSL 1.1 REQUIRED)
+find_package(MLSPP REQUIRED)
+
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${LIBRARIES}
         quicr
+        MLSPP::mlspp
         cantina::logger
         numero_uri_lib
         sframe)

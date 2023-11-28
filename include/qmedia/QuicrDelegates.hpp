@@ -1,6 +1,6 @@
 #pragma once
 
-#include "QSFrameContext.hpp"
+#include "QCrypto.hpp"
 #include "qmedia/QDelegates.hpp"
 
 #include <cantina/logger.h>
@@ -22,6 +22,7 @@ class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enabl
                          const std::string& authToken,
                          quicr::bytes e2eToken,
                          std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+                         std::shared_ptr<QSFrameContext> sframe_context,
                          const cantina::LoggerPointer& logger);
 
 public:
@@ -34,6 +35,7 @@ public:
            const std::string& authToken,
            quicr::bytes e2eToken,
            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+           std::shared_ptr<QSFrameContext> sframe_context,
            const cantina::LoggerPointer& logger);
 
     std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
@@ -85,12 +87,13 @@ private:
     std::uint32_t currentGroupId;
     std::uint16_t currentObjectId;
 
-    QSFrameContext sframe_context;
+    std::shared_ptr<QSFrameContext> sframe_context;
 };
 
 class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_shared_from_this<PublicationDelegate>
 {
     PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+                        std::shared_ptr<QSFrameContext> sframe_context,
                         const std::string& sourceId,
                         const quicr::Namespace& quicrNamespace,
                         const std::string& originUrl,
@@ -104,6 +107,7 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
 public:
     [[nodiscard]] static std::shared_ptr<PublicationDelegate>
     create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
+           std::shared_ptr<QSFrameContext> sframe_context,
            const std::string& sourceId,
            const quicr::Namespace& quicrNamespace,
            const std::string& originUrl,
@@ -153,6 +157,6 @@ private:
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     const cantina::LoggerPointer logger;
 
-    QSFrameContext sframe_context;
+    std::shared_ptr<QSFrameContext> sframe_context;
 };
 }        // namespace qmedia

@@ -132,6 +132,8 @@ private:
 
     const cantina::LoggerPointer logger;
 
+    MLSClient mls_client;
+
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
 

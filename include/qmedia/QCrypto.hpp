@@ -4,12 +4,34 @@
 #include <map>
 #include <vector>
 #include <optional>
+#include <thread>
+#include <mutex>
 #include "sframe/sframe.h"
 #include "quicr/namespace.h"
 #include "quicr/quicr_common.h"
 
 namespace qmedia
 {
+
+class QSFrameContext;
+
+class MLSClient
+{
+public:
+    MLSClient();
+    ~MLSClient();
+
+    [[nodiscard]] std::shared_ptr<QSFrameContext> make_sframe_context();
+
+protected:
+    std::mutex sframe_context_mutex;
+    std::vector<std::weak_ptr<QSFrameContext>> sframe_contexts;
+
+    std::atomic_bool stop_thread = false;
+    std::optional<std::thread> key_rotation_thread;
+
+    static constexpr sframe::CipherSuite sframe_cipher_suite = sframe::CipherSuite::AES_GCM_128_SHA256;
+};
 
 class QSFrameContext
 {
