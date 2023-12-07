@@ -188,11 +188,13 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
         return nullptr;
     }
 
+    const quicr::TransportMode transport_mode = useReliableTransport ? quicr::TransportMode::ReliablePerGroup
+                                                                     : quicr::TransportMode::Unreliable;
     quicrSubscriptionsMap[quicrNamespace] = SubscriptionDelegate::create(sourceId,
                                                                          quicrNamespace,
                                                                          intent,
+                                                                         transport_mode,
                                                                          originUrl,
-                                                                         useReliableTransport,
                                                                          authToken,
                                                                          std::move(e2eToken),
                                                                          std::move(qDelegate),
@@ -221,6 +223,9 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                             std::uint16_t expiry,
                                             bool reliableTransport)
 {
+    const quicr::TransportMode transport_mode = reliableTransport ? quicr::TransportMode::ReliablePerGroup
+                                                                  : quicr::TransportMode::Unreliable;
+
     std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.contains(quicrNamespace))
     {
@@ -231,12 +236,12 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
     quicrPublicationsMap[quicrNamespace] = PublicationDelegate::create(std::move(qDelegate),
                                                                        sourceId,
                                                                        quicrNamespace,
+                                                                       transport_mode,
                                                                        originUrl,
                                                                        authToken,
                                                                        std::move(payload),
                                                                        priority,
                                                                        expiry,
-                                                                       reliableTransport,
                                                                        logger);
 
     return quicrPublicationsMap[quicrNamespace]->getptr();
@@ -359,8 +364,11 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
         return -1;
     }
 
-    // TODO: add more intent parameters - max queue size (in time), default ttl, priority
-    quicrPubDelegate->publishIntent(client_session, reliableTransport);
+    const quicr::TransportMode transport_mode = reliableTransport ? quicr::TransportMode::ReliablePerGroup
+                                                                  : quicr::TransportMode::Unreliable;
+
+     // TODO: add more intent parameters - max queue size (in time), default ttl, priority
+    quicrPubDelegate->publishIntent(client_session, transport_mode);
     return 0;
 }
 

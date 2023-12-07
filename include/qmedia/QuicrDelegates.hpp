@@ -17,8 +17,8 @@ class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enabl
     SubscriptionDelegate(const std::string& sourceId,
                          const quicr::Namespace& quicrNamespace,
                          const quicr::SubscribeIntent intent,
+                         const quicr::TransportMode transport_mode,
                          const std::string& originUrl,
-                         const bool useReliableTransport,
                          const std::string& authToken,
                          quicr::bytes e2eToken,
                          std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
@@ -29,8 +29,8 @@ public:
     create(const std::string& sourceId,
            const quicr::Namespace& quicrNamespace,
            const quicr::SubscribeIntent intent,
+           const quicr::TransportMode transport_mode,
            const std::string& originUrl,
-           const bool useReliableTransport,
            const std::string& authToken,
            quicr::bytes e2eToken,
            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
@@ -51,12 +51,10 @@ public:
 
     virtual void onSubscribedObject(const quicr::Name& quicrName,
                                     uint8_t priority,
-                                    uint16_t expiry_age_ms,
-                                    bool use_reliable_transport,
                                     quicr::bytes&& data);
 
     virtual void
-    onSubscribedObjectFragment(const quicr::Name&, uint8_t, uint16_t, bool, const uint64_t&, bool, quicr::bytes&&);
+    onSubscribedObjectFragment(const quicr::Name&, uint8_t, const uint64_t&, bool, quicr::bytes&&);
 
     /*===========================================================================*/
     // Actions
@@ -71,7 +69,7 @@ private:
     quicr::Namespace quicrNamespace;
     quicr::SubscribeIntent intent;
     std::string originUrl;
-    bool useReliableTransport;
+    quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
     std::string authToken;
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
@@ -93,12 +91,12 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
     PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                         const std::string& sourceId,
                         const quicr::Namespace& quicrNamespace,
+                        const quicr::TransportMode transport_mode,
                         const std::string& originUrl,
                         const std::string& authToken,
                         quicr::bytes&& payload,
                         const std::vector<std::uint8_t>& priority,
                         std::uint16_t expiry,
-                        bool reliableTransport,
                         const cantina::LoggerPointer& logger);
 
 public:
@@ -106,12 +104,12 @@ public:
     create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
            const std::string& sourceId,
            const quicr::Namespace& quicrNamespace,
+           const quicr::TransportMode transport_mode,
            const std::string& originUrl,
            const std::string& authToken,
            quicr::bytes&& payload,
            const std::vector<std::uint8_t>& priority,
            std::uint16_t expiry,
-           bool reliableTransport,
            const cantina::LoggerPointer& logger);
 
     std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
@@ -127,7 +125,8 @@ public:
     // Actions
     /*===========================================================================*/
 
-    void publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport = false);
+    void publishIntent(std::shared_ptr<quicr::Client> client,
+                       quicr::TransportMode transport_mode=quicr::TransportMode::Unreliable);
 
     void publishIntentEnd(std::shared_ptr<quicr::Client> client);
 
@@ -146,7 +145,7 @@ private:
     std::uint32_t groupId;
     std::uint16_t objectId;
     std::uint16_t expiry;
-    bool reliableTransport;
+    quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
     quicr::bytes&& payload;
     std::vector<std::uint8_t> priority;
 
