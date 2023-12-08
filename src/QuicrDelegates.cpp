@@ -21,7 +21,7 @@ namespace qmedia
 SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            const quicr::Namespace& quicrNamespace,
                                            const quicr::SubscribeIntent intent,
-                                           const quicr::TransportMode transport_mode,
+                                           [[maybe_unused]] const quicr::TransportMode transport_mode,
                                            const std::string& originUrl,
                                            const std::string& authToken,
                                            quicr::bytes e2eToken,
@@ -32,7 +32,6 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     quicrNamespace(quicrNamespace),
     intent(intent),
     originUrl(originUrl),
-    transport_mode(transport_mode),
     authToken(authToken),
     e2eToken(e2eToken),
     qDelegate(std::move(qDelegate)),
@@ -174,7 +173,7 @@ void SubscriptionDelegate::onSubscribedObjectFragment(const quicr::Name&, uint8_
 {
 }
 
-void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
+void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client, const quicr::TransportMode transport_mode)
 {
     if (!client)
     {

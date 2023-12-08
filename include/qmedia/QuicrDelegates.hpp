@@ -60,7 +60,7 @@ public:
     // Actions
     /*===========================================================================*/
 
-    void subscribe(std::shared_ptr<quicr::Client> quicrClient);
+    void subscribe(std::shared_ptr<quicr::Client> quicrClient, const quicr::TransportMode transport_mode);
     void unsubscribe(std::shared_ptr<quicr::Client> quicrClient);
 
 private:
@@ -69,7 +69,6 @@ private:
     quicr::Namespace quicrNamespace;
     quicr::SubscribeIntent intent;
     std::string originUrl;
-    quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
     std::string authToken;
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;

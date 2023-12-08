@@ -107,7 +107,8 @@ void QController::periodicResubscribe(const unsigned int seconds)
             const std::lock_guard<std::mutex> _(subsMutex);
             for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
             {
-                quicrSubDelegate->subscribe(client_session);
+                quicrSubDelegate->subscribe(client_session,
+                                            quicr::TransportMode::ReliablePerTrack /* this is ignored for dups */);
             }
             timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
         }
@@ -188,7 +189,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
         return nullptr;
     }
 
-    const quicr::TransportMode transport_mode = useReliableTransport ? quicr::TransportMode::ReliablePerGroup
+    const quicr::TransportMode transport_mode = useReliableTransport ? _def_reliable_mode
                                                                      : quicr::TransportMode::Unreliable;
     quicrSubscriptionsMap[quicrNamespace] = SubscriptionDelegate::create(sourceId,
                                                                          quicrNamespace,
@@ -223,7 +224,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                             std::uint16_t expiry,
                                             bool reliableTransport)
 {
-    const quicr::TransportMode transport_mode = reliableTransport ? quicr::TransportMode::ReliablePerGroup
+    const quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
                                                                   : quicr::TransportMode::Unreliable;
 
     std::lock_guard<std::mutex> _(pubsMutex);
@@ -318,7 +319,10 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
         return -1;
     }
 
-    sub_delegate->subscribe(client_session);
+    const quicr::TransportMode transport_mode = useReliableTransport ? _def_reliable_mode
+                                                                     : quicr::TransportMode::Unreliable;
+
+    sub_delegate->subscribe(client_session, transport_mode);
     return 0;
 }
 
@@ -364,7 +368,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
         return -1;
     }
 
-    const quicr::TransportMode transport_mode = reliableTransport ? quicr::TransportMode::ReliablePerGroup
+    const quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
                                                                   : quicr::TransportMode::Unreliable;
 
      // TODO: add more intent parameters - max queue size (in time), default ttl, priority
