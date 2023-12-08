@@ -18,7 +18,6 @@ public:
 
     void onPublishIntent(const quicr::Namespace& quicr_namespace,
                          const std::string& /* origin_url */,
-                         bool /* use_reliable_transport */,
                          const std::string& /* auth_token */,
                          quicr::bytes&& /* e2e_token */) override
     {
@@ -36,18 +35,17 @@ public:
 
     void onSubscribe(const quicr::Namespace& quicr_namespace,
                      const uint64_t& subscriber_id,
-                     const qtransport::TransportContextId& context_id,
-                     const qtransport::StreamId& /* stream_id */,
+                     const qtransport::TransportConnId& conn_id,
+                     const qtransport::DataContextId& /* data_ctx_id */,
                      const quicr::SubscribeIntent /* subscribe_intent */,
                      const std::string& /* origin_url */,
-                     bool /* use_reliable_transport */,
                      const std::string& /* auth_token */,
                      quicr::bytes&& /* data */) override
     {
         logger->info << "Subscribe namespace=" << quicr_namespace << " subscriber_id=" << subscriber_id << std::flush;
 
         subscriptions.try_emplace(quicr_namespace);
-        subscriptions.at(quicr_namespace).push_back({subscriber_id, context_id});
+        subscriptions.at(quicr_namespace).push_back({subscriber_id, conn_id});
 
         const auto status = quicr::SubscribeResult::SubscribeStatus::Ok;
         const auto result = quicr::SubscribeResult{status, "", {}, {}};
@@ -69,9 +67,8 @@ public:
         subs.erase(new_end, subs.end());
     }
 
-    void onPublisherObject(const qtransport::TransportContextId& context_id,
-                           const qtransport::StreamId& /* stream_id */,
-                           bool /* use_reliable_transport */,
+    void onPublisherObject(const qtransport::TransportConnId& conn_id,
+                           const qtransport::DataContextId& /* data_ctx_id */,
                            quicr::messages::PublishDatagram&& datagram) override
     {
         logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size()
@@ -87,7 +84,7 @@ public:
 
             for (const auto& sub : subs)
             {
-                if (sub.context_id == context_id)
+                if (sub.conn_id == conn_id)
                 {
                     // No loopback
                     logger->info << "  Skipping loopback to subscriber_id=" << sub.subscriber_id << std::flush;
@@ -95,7 +92,7 @@ public:
                 }
 
                 logger->info << "  Forwarding to subscriber_id=" << sub.subscriber_id << std::flush;
-                server->sendNamedObject(sub.subscriber_id, false, 1, 200, datagram);
+                server->sendNamedObject(sub.subscriber_id, 1, 200, datagram);
             }
         }
     }
@@ -107,7 +104,7 @@ private:
     struct Subscriber
     {
         uint64_t subscriber_id;
-        qtransport::TransportContextId context_id;
+        qtransport::TransportConnId conn_id;
     };
     std::map<quicr::Namespace, std::vector<Subscriber>> subscriptions;
 };
@@ -172,8 +169,6 @@ struct SubDelegate : quicr::SubscriberDelegate
 
     void onSubscribedObject(const quicr::Name& quicr_name,
                             uint8_t /* priority */,
-                            uint16_t /* expiry_age_ms */,
-                            bool /* use_reliable_transport */,
                             quicr::bytes&& data) override
     {
         recv_promise.set_value({quicr_name, std::move(data)});
@@ -181,8 +176,6 @@ struct SubDelegate : quicr::SubscriberDelegate
 
     void onSubscribedObjectFragment(const quicr::Name& /* quicr_name */,
                                     uint8_t /* priority */,
-                                    uint16_t /* expiry_age_ms */,
-                                    bool /* use_reliable_transport */,
                                     const uint64_t& /* offset */,
                                     bool /* is_last_fragment */,
                                     quicr::bytes&& /* data */) override
@@ -255,15 +248,21 @@ TEST_CASE("Localhost relay")
     const auto intent = quicr::SubscribeIntent::immediate;
 
     const auto sub_del_a = std::make_shared<SubDelegate>();
-    client_a.subscribe(sub_del_a, ns, intent, "origin_url", false, "auth_token", {});
+    client_a.subscribe(sub_del_a, ns, intent,
+                       quicr::TransportMode::ReliablePerTrack,
+                       "origin_url", "auth_token", {});
     sub_del_a->await_subscribe_response();
 
     const auto sub_del_b = std::make_shared<SubDelegate>();
-    client_b.subscribe(sub_del_b, ns, intent, "origin_url", false, "auth_token", {});
+    client_b.subscribe(sub_del_b, ns, intent,
+                       quicr::TransportMode::ReliablePerTrack,
+                       "origin_url", "auth_token", {});
     sub_del_b->await_subscribe_response();
 
     const auto sub_del_c = std::make_shared<SubDelegate>();
-    client_c.subscribe(sub_del_c, ns, intent, "origin_url", false, "auth_token", {});
+    client_c.subscribe(sub_del_c, ns, intent,
+                       quicr::TransportMode::ReliablePerTrack,
+                       "origin_url", "auth_token", {});
     sub_del_c->await_subscribe_response();
 
     // One client publishes on the namespace
@@ -273,10 +272,10 @@ TEST_CASE("Localhost relay")
     auto data = data_a;
 
     auto pub_del_a = std::make_shared<PubDelegate>();
-    client_a.publishIntent(pub_del_a, ns, {}, {}, {});
+    client_a.publishIntent(pub_del_a, ns, {}, {}, {}, quicr::TransportMode::ReliablePerTrack);
     pub_del_a->await_publish_intent_response();
 
-    client_a.publishNamedObject(name_a, 0, 1000, false, std::move(data));
+    client_a.publishNamedObject(name_a, 0, 1000, std::move(data));
 
     // Verify that both other clients received on the namespace
     logger->Log("Receiving...");
