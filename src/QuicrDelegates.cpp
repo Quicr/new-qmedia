@@ -21,8 +21,8 @@ namespace qmedia
 SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            const quicr::Namespace& quicrNamespace,
                                            const quicr::SubscribeIntent intent,
+                                           [[maybe_unused]] const quicr::TransportMode transport_mode,
                                            const std::string& originUrl,
-                                           const bool useReliableTransport,
                                            const std::string& authToken,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
@@ -32,7 +32,6 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     quicrNamespace(quicrNamespace),
     intent(intent),
     originUrl(originUrl),
-    useReliableTransport(useReliableTransport),
     authToken(authToken),
     e2eToken(e2eToken),
     qDelegate(std::move(qDelegate)),
@@ -58,18 +57,19 @@ std::shared_ptr<SubscriptionDelegate>
 SubscriptionDelegate::create(const std::string& sourceId,
                              const quicr::Namespace& quicrNamespace,
                              const quicr::SubscribeIntent intent,
+                             const quicr::TransportMode transport_mode,
                              const std::string& originUrl,
-                             const bool useReliableTransport,
                              const std::string& authToken,
                              quicr::bytes e2eToken,
                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                              const cantina::LoggerPointer& logger)
 {
+
     return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
                                                                           quicrNamespace,
                                                                           intent,
+                                                                          transport_mode,
                                                                           originUrl,
-                                                                          useReliableTransport,
                                                                           authToken,
                                                                           e2eToken,
                                                                           std::move(qDelegate),
@@ -97,8 +97,6 @@ void SubscriptionDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_
  */
 void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
                                               uint8_t /*priority*/,
-                                              uint16_t /*expiry_age_ms*/,
-                                              bool /*use_reliable_transport*/,
                                               quicr::bytes&& data)
 {
     // LOGGER_DEBUG(logger, __FUNCTION__);
@@ -171,17 +169,11 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
     }
 }
 
-void SubscriptionDelegate::onSubscribedObjectFragment(const quicr::Name&,
-                                                      uint8_t,
-                                                      uint16_t,
-                                                      bool,
-                                                      const uint64_t&,
-                                                      bool,
-                                                      quicr::bytes&&)
+void SubscriptionDelegate::onSubscribedObjectFragment(const quicr::Name&, uint8_t, const uint64_t&, bool, quicr::bytes&&)
 {
 }
 
-void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
+void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client, const quicr::TransportMode transport_mode)
 {
     if (!client)
     {
@@ -190,7 +182,8 @@ void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client)
     }
 
     client->subscribe(
-        shared_from_this(), quicrNamespace, intent, originUrl, useReliableTransport, authToken, std::move(e2eToken));
+        shared_from_this(), quicrNamespace, intent, transport_mode,
+        originUrl, authToken, std::move(e2eToken));
 }
 
 void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
@@ -213,12 +206,12 @@ void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
 PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                          const std::string& sourceId,
                                          const quicr::Namespace& quicrNamespace,
+                                         const quicr::TransportMode transport_mode,
                                          const std::string& originUrl,
                                          const std::string& authToken,
                                          quicr::bytes&& payload,
                                          const std::vector<std::uint8_t>& priority,
                                          std::uint16_t expiry,
-                                         bool reliableTransport,
                                          const cantina::LoggerPointer& logger) :
     // canPublish(true),
     sourceId(sourceId),
@@ -228,7 +221,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
     expiry(expiry),
-    reliableTransport(reliableTransport),
+    transport_mode(transport_mode),
     payload(std::move(payload)),
     priority(priority),
     qDelegate(std::move(qDelegate)),
@@ -258,23 +251,23 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
 std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                                  const std::string& sourceId,
                                                                  const quicr::Namespace& quicrNamespace,
+                                                                 const quicr::TransportMode transport_mode,
                                                                  const std::string& originUrl,
                                                                  const std::string& authToken,
                                                                  quicr::bytes&& payload,
                                                                  const std::vector<std::uint8_t>& priority,
                                                                  std::uint16_t expiry,
-                                                                 bool reliableTransport,
                                                                  const cantina::LoggerPointer& logger)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
                                                                         sourceId,
                                                                         quicrNamespace,
+                                                                        transport_mode,
                                                                         originUrl,
                                                                         authToken,
                                                                         std::move(payload),
                                                                         priority,
                                                                         expiry,
-                                                                        reliableTransport,
                                                                         logger));
 }
 
@@ -285,7 +278,8 @@ void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_
                 "Received PublishIntent response for " << quicr_namespace << ": " << static_cast<int>(result.status));
 }
 
-void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, bool reliableTransport)
+void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client,
+                                        const quicr::TransportMode transport_mode)
 {
     if (!client)
     {
@@ -296,7 +290,7 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client, b
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     bool success = client->publishIntent(
         shared_from_this(), quicrNamespace, originUrl,
-        authToken, std::move(payload), reliableTransport, priority[0]);
+        authToken, std::move(payload), transport_mode, priority[0]);
 
     if (!success)
     {
@@ -366,7 +360,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         buf << quicr::uintVar_t(Fixed_Epoch);
         buf.push(std::move(output_buffer));
 
-        client->publishNamedObject(quicrName, pri, expiry, reliableTransport, buf.take());
+        client->publishNamedObject(quicrName, pri, expiry, buf.take());
     }
     catch (const std::exception& e)
     {

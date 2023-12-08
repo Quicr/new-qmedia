@@ -132,6 +132,7 @@ private:
     std::mutex pubsMutex;
 
     const cantina::LoggerPointer logger;
+    const quicr::TransportMode _def_reliable_mode = quicr::TransportMode::ReliablePerGroup;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
