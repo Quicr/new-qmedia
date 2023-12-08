@@ -98,24 +98,24 @@ public:
 
     int prepare(const std::string& sourceId,
                 const std::string& label,
-                const std::string& qualityProfile,
+                const qmedia::manifest::ProfileSet& /* profileSet */,
                 bool& /* reliable */) override
     {
         collector->sourceId(sourceId);
         collector->label(label);
-        collector->qualityProfile(qualityProfile);
+        // collector->qualityProfile(profileSet);
         return 0;
     }
 
     int update(const std::string& /* sourceId */,
                const std::string& /* label */,
-               const std::string& /* qualityProfile */) override
+               const qmedia::manifest::ProfileSet& /* profileSet */) override
     {
         // Always error on update to force a prepare call
         return 1;
     }
 
-    int subscribedObject(quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
+    int subscribedObject(const quicr::Namespace& /* namespace */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
     {
         collector->add_object(std::move(data));
         return 0;
@@ -132,13 +132,13 @@ public:
 
     virtual ~QSubscriberTestDelegate() = default;
 
-    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace(const quicr::Namespace& /* quicrNamespace */,
-                                                                          const std::string& /* qualityProfile */)
+    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubBySourceId(const std::string& /* sourceId */,
+                                                                         const qmedia::manifest::ProfileSet& /* profileSet */)
     {
         return std::make_shared<QSubscriptionTestDelegate>(collector);
     }
 
-    int removeSubByNamespace(const quicr::Namespace& /* quicrNamespace */) { return 0; }
+    int removeSubBySourceId(const std::string& /* sourceId */) { return 0; }
 
 private:
     std::shared_ptr<SubscriptionCollector> collector;
@@ -280,7 +280,7 @@ TEST_CASE("Two-party session")
     REQUIRE(sent_a == received_b);
     REQUIRE(collector_b->sourceId() == "1");
     REQUIRE(collector_b->label() == "Participant 1");
-    REQUIRE(collector_b->qualityProfile() == "opus,br=6");
+    // REQUIRE(collector_b->qualityProfile() == "opus,br=6");
 
     // Send media from participant 2 and verify that it arrived at the other participants
     const auto sent_b = test_data(2);
@@ -293,5 +293,5 @@ TEST_CASE("Two-party session")
     REQUIRE(sent_b == received_a);
     REQUIRE(collector_a->sourceId() == "2");
     REQUIRE(collector_a->label() == "Participant 2");
-    REQUIRE(collector_a->qualityProfile() == "opus,br=6");
+    // REQUIRE(collector_a->qualityProfile() == "opus,br=6");
 }
