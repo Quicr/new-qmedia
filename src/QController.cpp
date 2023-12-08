@@ -368,8 +368,13 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
         return -1;
     }
 
-    const quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
-                                                                  : quicr::TransportMode::Unreliable;
+    // TODO: hack till we update the manifest to provide transport mode
+    quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
+                                                            : quicr::TransportMode::Unreliable;
+
+    if (priority[0] < 2) {
+        transport_mode = quicr::TransportMode::ReliablePerTrack;
+    }
 
      // TODO: add more intent parameters - max queue size (in time), default ttl, priority
     quicrPubDelegate->publishIntent(client_session, transport_mode);
