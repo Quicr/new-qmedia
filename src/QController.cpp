@@ -59,7 +59,7 @@ int QController::connect(const std::string remoteAddress,
 
 bool QController::connected() const
 {
-    return client_session->connected();
+    return client_session && client_session->connected();
 }
 
 int QController::disconnect()
