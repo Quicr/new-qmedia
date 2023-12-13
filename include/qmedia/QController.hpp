@@ -33,6 +33,8 @@ public:
                 const qtransport::TransportConfig& config);
 
     int disconnect();
+    
+    bool connected() const;
 
     [[deprecated("Use QController::disconnect instead")]] void close();
 
