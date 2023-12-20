@@ -14,3 +14,9 @@
 [submodule "dependencies/sframe"]
 	path = dependencies/sframe
 	url = https://github.com/Quicr/sframe.git
+[submodule "dependencies/redis/hiredis"]
+	path = dependencies/redis/hiredis
+	url = https://github.com/redis/hiredis.git
+[submodule "dependencies/redis/redis-plus-plus"]
+	path = dependencies/redis/redis-plus-plus
+	url = https://github.com/sewenew/redis-plus-plus.git

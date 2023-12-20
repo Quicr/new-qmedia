@@ -1,7 +1,7 @@
 add_library(${PROJECT_NAME}
     SHARED
     namespace_config.cpp
-    counter.cpp
+    counter_service.cpp
     delivery.cpp
     mls_client.cpp
     mls_session.cpp
@@ -28,7 +28,8 @@ target_link_libraries(${PROJECT_NAME}
         MLSPP::mlspp
         cantina::logger
         numero_uri_lib
-        sframe)
+        sframe
+        redis++)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC

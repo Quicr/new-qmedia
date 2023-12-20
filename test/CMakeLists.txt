@@ -2,9 +2,11 @@
 
 add_executable(qmedia_test
                main.cpp
+               counter_service.cpp
                manifest.cpp
                qmedia.cpp
                relay.cpp)
+
 target_include_directories(qmedia_test PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(qmedia_test PRIVATE qmedia doctest::doctest)
