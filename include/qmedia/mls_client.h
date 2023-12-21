@@ -1,7 +1,7 @@
 #pragma once
 
 #include "channel.h"
-#include "counter.h"
+#include "counter_service.h"
 #include "delivery.h"
 #include "mls_session.h"
 

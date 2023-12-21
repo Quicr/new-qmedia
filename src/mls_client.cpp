@@ -1,4 +1,4 @@
-#include "../include/qmedia/mls_client.h"
+#include <qmedia/mls_client.h>
 
 #include <transport/transport.h>
 
@@ -6,8 +6,6 @@ using namespace mls;
 using namespace std::chrono_literals;
 
 static const size_t epochs_capacity = 100;
-static const auto create_lock_duration = 500ms;
-static const auto commit_lock_duration = 500ms;
 
 MLSClient::MLSClient(const Config& config)
   : logger(config.logger)
@@ -25,54 +23,21 @@ MLSClient::~MLSClient()
   disconnect();
 }
 
-counter::CounterID
-make_counter_id(uint64_t group_id)
-{
-  return tls::marshal(group_id);
-}
-
 bool
 MLSClient::maybe_create_session()
 {
-  // Attempt to acquire the lock for this group at epoch 0
-  const auto counter_id = make_counter_id(group_id);
-  const auto lock_resp =
-    counter_service->lock(counter_id, 0, create_lock_duration);
-
-  // If the counter has already advanced, someone else has already created the
-  // group.
-  if (std::holds_alternative<counter::OutOfSync>(lock_resp)) {
+  // Attempt to update the epoch where the initial value is zero
+  if (counter_service->UpdateEpoch(0) != counter::Result::Success) {
     return false;
   }
 
-  // If the counter is locked, someone else is in the process of creating the
-  // group, and we should retry once the lock releases.
-  if (std::holds_alternative<counter::Locked>(lock_resp)) {
-    const auto& locked = std::get<counter::Locked>(lock_resp);
-    std::this_thread::sleep_until(locked.expiry);
-    return maybe_create_session();
-  }
+  // Create the group and report that the group has been created
+  const MLSInitInfo init_info = std::get<MLSInitInfo>(mls_session);
+  const MLSSession session = MLSSession::create(init_info, group_id);
 
-  // Otherwise, the response should be OK
-  if (!std::holds_alternative<counter::LockOK>(lock_resp)) {
-    // Unspecified failure
-    return false;
-  }
-
-  // Otherwise, create the group and report that the group has been created
-  const auto init_info = std::get<MLSInitInfo>(mls_session);
-  const auto session = MLSSession::create(init_info, group_id);
-
-  // Destroy the epoch 0 lock to signal that the group has been created
-  const auto& lock_id = std::get<counter::LockOK>(lock_resp).lock_id;
-  const auto increment_resp = counter_service->increment(lock_id);
-  if (!std::holds_alternative<counter::IncrementOK>(increment_resp)) {
-    // Unspecified failure
-    return false;
-  }
-
-  // Now that everything has gone well, install the session locally
+  // Install the session locally
   mls_session = session;
+
   return true;
 }
 
@@ -396,37 +361,23 @@ MLSClient::make_commit()
   logger->info << "]" << std::flush;
   auto [commit, welcome] = session.commit(self_update, joins, leaves);
 
-  // Get permission to send a commit
-  const auto next_epoch = session.epoch() + 1;
-  const auto counter_id = make_counter_id(group_id);
-  const auto lock_resp =
-    counter_service->lock(counter_id, next_epoch, commit_lock_duration);
+  // Attempt to update the session epoch
+  const counter::GroupID next_epoch = session.epoch() + 1;
+  const counter::Result update_result =
+      counter_service->UpdateEpoch(next_epoch);
 
-  if (std::holds_alternative<counter::OutOfSync>(lock_resp)) {
+  if (update_result == counter::Result::OutOfSync) {
     logger->info << "Failed to commit: MLS state is behind" << std::flush;
-  }
-
-  if (std::holds_alternative<counter::Locked>(lock_resp)) {
-    logger->info << "Failed to commit: Conflict" << std::flush;
     return;
   }
 
-  // Otherwise, the response should be OK
-  if (!std::holds_alternative<counter::LockOK>(lock_resp)) {
-    logger->info << "Failed to commit: Failed to acquire lock" << std::flush;
+  if (update_result != counter::Result::Success) {
+    logger->info << "Failed to commit: Conflict" << std::flush;
     return;
   }
 
   // Publish the commit
   delivery_service->send(delivery::Commit{ commit });
-
-  // Report that the commit has been sent
-  const auto& lock_id = std::get<counter::LockOK>(lock_resp).lock_id;
-  const auto increment_resp = counter_service->increment(lock_id);
-  if (!std::holds_alternative<counter::IncrementOK>(increment_resp)) {
-    logger->info << "Failed to commit: Failed to destroy lock" << std::flush;
-    return;
-  }
 
   // Publish the Welcome and update our own state now that everything is OK
   advance(commit);
@@ -445,7 +396,7 @@ MLSClient::advance(const mls::MLSMessage& commit)
   logger->Log("Attempting to advance the MLS state...");
 
   // Apply the commit
-  auto& session = std::get<MLSSession>(mls_session);
+  MLSSession& session = std::get<MLSSession>(mls_session);
   switch (session.handle(commit)) {
     case MLSSession::HandleResult::ok:
       epochs.send({ session.epoch(),
