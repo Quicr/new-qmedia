@@ -1,3 +1,19 @@
+/*
+ *  counter_service.cpp
+ *
+ *  Copyright (C) 2023
+ *  Cisco Systems, Inc.
+ *  All Rights Reserved
+ *
+ *  Description:
+ *      This module implements tests for the in-memory counter service.  The
+ *      in-memory counter service would generally be employed when running
+ *      build tests.
+ *
+ *  Portability Issues:
+ *      None.
+ */
+
 #include <qmedia/counter_service.h>
 #include <cstdint>
 #include <string>
