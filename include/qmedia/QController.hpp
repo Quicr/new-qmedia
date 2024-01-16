@@ -142,8 +142,8 @@ private:
     std::map<SourceId, std::shared_ptr<QSubscriptionDelegate>> qSubscriptionsMap;
     std::map<SourceId, std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
 
-    std::map<SourceId, std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
-    std::map<SourceId, std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
+    quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
+    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
 
     std::shared_ptr<quicr::Client> client_session;
 
