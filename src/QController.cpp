@@ -5,6 +5,7 @@
 #include <quicr/hex_endec.h>
 
 #include <iostream>
+#include <ranges>
 #include <sstream>
 
 namespace qmedia
@@ -333,11 +334,18 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
 
 void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
 {
-    if (!quicrSubscriptionsMap.contains(quicrNamespace)) return;
-
-    auto& sub_delegate = quicrSubscriptionsMap[quicrNamespace];
+    std::lock_guard<std::mutex> _(subsMutex);
+    const auto& it = quicrSubscriptionsMap.find(quicrNamespace);
+    if (it == quicrSubscriptionsMap.end()) {
+        LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
+        return;
+    }
+    auto& sub_delegate = it->second;
     sub_delegate->unsubscribe(client_session);
+    quicrSubscriptionsMap.erase(it);
 
+    // TODO: Remove from qSubscriptionsMap if no more subscriptions
+    // left in the switching set.
     LOGGER_INFO(logger, "Unsubscribed " << quicrNamespace);
 }
 
@@ -491,6 +499,25 @@ void QController::updateManifest(const manifest::Manifest& manifest_obj)
     processPublications(manifest_obj.publications);
 
     LOGGER_INFO(logger, "Finished importing manifest!");
+}
+
+std::vector<std::string> QController::getSwitchingSets()
+{
+    std::lock_guard<std::mutex> _(qSubsMutex);
+    auto keys = std::views::keys(qSubscriptionsMap);
+    return { keys.begin(), keys.end() };
+}
+
+std::vector<quicr::Namespace> QController::getSubscriptions(const std::string& sourceId)
+{
+    std::lock_guard<std::mutex> _(subsMutex);
+    std::vector<quicr::Namespace> namespaces;
+    for (const auto& subscription : quicrSubscriptionsMap) {
+        if (subscription.second->getSourceId() == sourceId) {
+            namespaces.push_back(subscription.first);
+        }
+    }
+    return namespaces;
 }
 
 }        // namespace qmedia
