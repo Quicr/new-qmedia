@@ -18,7 +18,8 @@ struct Profile
     std::string qualityProfile;
     quicr::Namespace quicrNamespace;
     std::vector<uint8_t> priorities;
-    std::optional<uint16_t> expiry = 0;
+    std::vector<uint16_t> expiry;
+    std::string appTag;
 
     friend bool operator==(const Profile& lhs, const Profile& rhs);
 };

@@ -24,9 +24,12 @@ void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profil
 
     if (j.contains("expiry"))
     {
-        auto expiry = uint16_t(0);
-        j.at("expiry").get_to(expiry);
-        profile.expiry = expiry;
+        j.at("expiry").get_to(profile.expiry);
+    }
+
+    if (j.contains("appTag"))
+    {
+        j.at("appTag").get_to(profile.appTag);
     }
 }
 

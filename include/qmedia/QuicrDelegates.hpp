@@ -95,7 +95,7 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
                         const std::string& authToken,
                         quicr::bytes&& payload,
                         const std::vector<std::uint8_t>& priority,
-                        std::uint16_t expiry,
+                        const std::vector<std::uint16_t>& expiry,
                         const cantina::LoggerPointer& logger);
 
 public:
@@ -108,7 +108,7 @@ public:
            const std::string& authToken,
            quicr::bytes&& payload,
            const std::vector<std::uint8_t>& priority,
-           std::uint16_t expiry,
+           const std::vector<std::uint16_t>& expiry,
            const cantina::LoggerPointer& logger);
 
     std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
@@ -143,10 +143,10 @@ private:
     quicr::Namespace quicrNamespace;
     std::uint32_t groupId;
     std::uint16_t objectId;
-    std::uint16_t expiry;
     quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
     quicr::bytes&& payload;
     std::vector<std::uint8_t> priority;
+    std::vector<std::uint16_t> expiry;
 
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     const cantina::LoggerPointer logger;
