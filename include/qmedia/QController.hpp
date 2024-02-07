@@ -95,14 +95,15 @@ private:
                                                                         const std::string& authToken,
                                                                         quicr::bytes&& payload,
                                                                         const std::vector<std::uint8_t>& priority,
-                                                                        std::uint16_t expiry,
+                                                                        const std::vector<std::uint16_t>& expiry,
                                                                         bool reliableTransport);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const SourceId& sourceId,
                                                                    const manifest::ProfileSet& profileSet);
     std::shared_ptr<QPublicationDelegate> getPublicationDelegate(const quicr::Namespace& quicrNamespace,
                                                                  const std::string& sourceID,
-                                                                 const std::string& qualityProfile);
+                                                                 const std::string& qualityProfile,
+                                                                 const std::string& appTag);
 
     int startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                           const std::string& sourceId,
@@ -120,7 +121,7 @@ private:
                          const std::string& auth_token,
                          quicr::bytes&& payload,
                          const std::vector<std::uint8_t>& priority,
-                         std::uint16_t expiry,
+                         const std::vector<std::uint16_t>& expiry,
                          bool reliableTransport);
 
     void stopPublication(const quicr::Namespace& quicrNamespace);

@@ -122,7 +122,7 @@ public:
         logger->Log("QPubisherTestDelegate constructed");
     }
 
-    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile)
+    std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile, const std::string& appTag)
     {
        logger->Log("QPubisherTestDelegate::allocatePubByNamespace");
        std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;

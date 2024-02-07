@@ -166,7 +166,8 @@ public:
 
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& /* quicrNamespace */,
                                                                          const std::string& /* sourceID */,
-                                                                         const std::string& /* qualityProfile */)
+                                                                         const std::string& /* qualityProfile */,
+                                                                         const std::string& /* appTag */)
     {
         return std::make_shared<QPublicationTestDelegate>();
     }
@@ -208,7 +209,8 @@ static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
                             .qualityProfile = "opus,br=6",
                             .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
                             .priorities = {1},
-                            .expiry = 500,
+                            .expiry = {500,500},
+                            .appTag = "primaryV"
                         },
                     },
             },

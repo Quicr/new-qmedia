@@ -227,7 +227,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                             const std::string& authToken,
                                             quicr::bytes&& payload,
                                             const std::vector<std::uint8_t>& priority,
-                                            std::uint16_t expiry,
+                                            const std::vector<std::uint16_t>& expiry,
                                             bool reliableTransport)
 {
     const quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
@@ -278,7 +278,8 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
 
 std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const quicr::Namespace& quicrNamespace,
                                                                           const std::string& sourceID,
-                                                                          const std::string& qualityProfile)
+                                                                          const std::string& qualityProfile,
+                                                                          const std::string& appTag)
 {
     if (!qPublisherDelegate)
     {
@@ -290,7 +291,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
     if (!qPublicationsMap.contains(quicrNamespace))
     {
         qPublicationsMap[quicrNamespace] = qPublisherDelegate->allocatePubByNamespace(
-            quicrNamespace, sourceID, qualityProfile);
+            quicrNamespace, sourceID, qualityProfile, appTag);
     }
 
     return qPublicationsMap[quicrNamespace];
@@ -356,7 +357,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                   const std::string& authToken,
                                   quicr::bytes&& payload,
                                   const std::vector<std::uint8_t>& priority,
-                                  std::uint16_t expiry,
+                                  const std::vector<std::uint16_t>& expiry,
                                   bool reliableTransport)
 
 {
@@ -445,7 +446,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
         for (auto& profile : publication.profileSet.profiles)
         {
             auto delegate = getPublicationDelegate(
-                profile.quicrNamespace, publication.sourceId, profile.qualityProfile);
+                profile.quicrNamespace, publication.sourceId, profile.qualityProfile, profile.appTag);
             if (!delegate)
             {
                 LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
@@ -470,7 +471,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
                              "",
                              std::move(payload),
                              profile.priorities,
-                             profile.expiry.value(),
+                             profile.expiry,
                              reliable);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
