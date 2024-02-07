@@ -211,7 +211,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                                          const std::string& authToken,
                                          quicr::bytes&& payload,
                                          const std::vector<std::uint8_t>& priority,
-                                         std::uint16_t expiry,
+                                         const std::vector<std::uint16_t>& expiry,
                                          const cantina::LoggerPointer& logger) :
     // canPublish(true),
     sourceId(sourceId),
@@ -220,10 +220,10 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     quicrNamespace(quicrNamespace),
     groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
-    expiry(expiry),
     transport_mode(transport_mode),
     payload(std::move(payload)),
     priority(priority),
+    expiry(expiry),
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
     sframe_context(Default_Cipher_Suite)
@@ -256,7 +256,7 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                  const std::string& authToken,
                                                                  quicr::bytes&& payload,
                                                                  const std::vector<std::uint8_t>& priority,
-                                                                 std::uint16_t expiry,
+                                                                 const std::vector<std::uint16_t>& expiry,
                                                                  const cantina::LoggerPointer& logger)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
@@ -331,6 +331,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     }
 
     std::uint8_t pri = priority[0];
+    std::uint16_t exp = expiry[0];
     quicr::Name quicrName(quicrNamespace.name());
 
     if (groupFlag)
@@ -342,6 +343,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     else
     {
         if (priority.size() > 1) pri = priority[1];
+        if (expiry.size() > 1) exp = expiry[1];
 
         quicrName = (0x0_name | groupId) << 16 | (quicrName & ~Group_ID_Mask);
         quicrName = (0x0_name | ++objectId) | (quicrName & ~Object_ID_Mask);
@@ -360,7 +362,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         buf << quicr::uintVar_t(Fixed_Epoch);
         buf.push(std::move(output_buffer));
 
-        client->publishNamedObject(quicrName, pri, expiry, buf.take());
+        client->publishNamedObject(quicrName, pri, exp, buf.take());
     }
     catch (const std::exception& e)
     {

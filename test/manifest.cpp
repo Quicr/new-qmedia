@@ -16,13 +16,16 @@ static const auto manifest_json = std::string(R"(
       "type": "singleordered",
       "profiles": [{
         "qualityProfile": "h264,width=1920,height=1080,fps=30,br=2000",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/192/endpoint/1"
+        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/192/endpoint/1",
+        "appTag" : "primaryV"
       }, {
         "qualityProfile": "h264,width=1280,height=720,fps=30,br=1000",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/193/endpoint/1"
+        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/193/endpoint/1",
+        "appTag": "secondaryV"
       }, {
         "qualityProfile": "h264,width=640,height=360,fps=20,br=500",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/194/endpoint/1"
+        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/194/endpoint/1",
+        "appTag": "baselineV"
       }]
     }
   }, {
@@ -47,17 +50,17 @@ static const auto manifest_json = std::string(R"(
       "type": "simulcast",
       "profiles": [{
         "qualityProfile": "h264,width=1920,height=1080,fps=30,br=2000",
-        "expiry": 500,
+        "expiry": [500,500],
         "priorities": [6, 7],
         "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/192/endpoint/1"
       }, {
         "qualityProfile": "h264,width=1280,height=720,fps=30,br=1000",
-        "expiry": 500,
+       "expiry": [500,500],
         "priorities": [4, 5],
         "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/193/endpoint/1"
       }, {
         "qualityProfile": "h264,width=640,height=360,fps=20,br=500",
-        "expiry": 500,
+       "expiry": [500,500],
         "priorities": [2, 3],
         "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/194/endpoint/1"
       }]
@@ -71,7 +74,7 @@ static const auto manifest_json = std::string(R"(
       "type": "simulcast",
       "profiles": [{
         "qualityProfile": "opus,br=6",
-        "expiry": 500,
+       "expiry": [500,500],
         "priorities": [1],
         "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/1/endpoint/1"
       }]
@@ -105,14 +108,17 @@ static const auto expected_manifest_obj = Manifest{
                                           {
                                               .qualityProfile = "h264,width=1920,height=1080,fps=30,br=2000",
                                               .quicrNamespace = ns_vid_a_1,
+                                              .appTag = "primaryV"
                                           },
                                           {
                                               .qualityProfile = "h264,width=1280,height=720,fps=30,br=1000",
                                               .quicrNamespace = ns_vid_a_2,
+                                              .appTag = "secondaryV"
                                           },
                                           {
                                               .qualityProfile = "h264,width=640,height=360,fps=20,br=500",
                                               .quicrNamespace = ns_vid_a_3,
+                                              .appTag = "baselineV"
                                           },
                                       },
                               },
@@ -150,19 +156,19 @@ static const auto expected_manifest_obj = Manifest{
                                     .qualityProfile = "h264,width=1920,height=1080,fps=30,br=2000",
                                     .quicrNamespace = ns_vid_a_1,
                                     .priorities = {6, 7},
-                                    .expiry = 500,
+                                    .expiry = {500,500},
                                 },
                                 {
                                     .qualityProfile = "h264,width=1280,height=720,fps=30,br=1000",
                                     .quicrNamespace = ns_vid_a_2,
                                     .priorities = {4, 5},
-                                    .expiry = 500,
+                                    .expiry = {500,500},
                                 },
                                 {
                                     .qualityProfile = "h264,width=640,height=360,fps=20,br=500",
                                     .quicrNamespace = ns_vid_a_3,
                                     .priorities = {2, 3},
-                                    .expiry = 500,
+                                    .expiry = {500,500},
                                 },
                             },
                     },
@@ -181,7 +187,7 @@ static const auto expected_manifest_obj = Manifest{
                                     .qualityProfile = "opus,br=6",
                                     .quicrNamespace = ns_aud_a_1,
                                     .priorities = {1},
-                                    .expiry = 500,
+                                    .expiry = {500,500},
                                 },
                             },
                     },
