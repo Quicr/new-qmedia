@@ -40,6 +40,8 @@ public:
 
     bool isActive() const { return canReceiveSubs; }
 
+    std::string getSourceId() const { return sourceId; }
+
     /*===========================================================================*/
     // Events
     /*===========================================================================*/
