@@ -502,11 +502,14 @@ void QController::updateManifest(const manifest::Manifest& manifest_obj)
     LOGGER_INFO(logger, "Finished importing manifest!");
 }
 
-std::vector<std::string> QController::getSwitchingSets()
+std::vector<SourceId> QController::getSwitchingSets()
 {
     std::lock_guard<std::mutex> _(qSubsMutex);
-    auto keys = std::views::keys(qSubscriptionsMap);
-    return { keys.begin(), keys.end() };
+    std::vector<SourceId> sourceIds;
+    for (const auto& switchingSet : qSubscriptionsMap) {
+        sourceIds.push_back(switchingSet.first);
+    }
+    return sourceIds;
 }
 
 std::vector<quicr::Namespace> QController::getSubscriptions(const std::string& sourceId)

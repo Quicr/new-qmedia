@@ -55,7 +55,7 @@ public:
 
     void stopSubscription(const quicr::Namespace& quicrNamespace);
 
-    std::vector<std::string> getSwitchingSets();
+    std::vector<SourceId> getSwitchingSets();
     std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
 private:
     /**
