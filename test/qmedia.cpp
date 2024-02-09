@@ -349,7 +349,7 @@ TEST_CASE("Fetch Publications")
     controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // No manifest, no result.
-    const std::vector<quicr::Namespace>& empty = controller.getPublications();
+    const std::vector<qmedia::QController::PublicationReport>& empty = controller.getPublications();
     REQUIRE(empty.empty());
 
     // Manifest with publications, expect the publications.
@@ -359,9 +359,9 @@ TEST_CASE("Fetch Publications")
     controller.updateManifest(manifest);
 
     // Expect the manifest's data to be present.
-    const std::vector<quicr::Namespace>& pubs = controller.getPublications();
+    const std::vector<qmedia::QController::PublicationReport>& pubs = controller.getPublications();
     REQUIRE(pubs.size() == 1);
-    const quicr::Namespace retrievedNamespace = pubs[0];
+    const quicr::Namespace retrievedNamespace = pubs[0].quicrNamespace;
     REQUIRE(retrievedNamespace == expectedNamespace);
 }
 

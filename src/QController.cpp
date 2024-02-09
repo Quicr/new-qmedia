@@ -534,14 +534,17 @@ std::vector<quicr::Namespace> QController::getSubscriptions(const std::string& s
     return namespaces;
 }
 
-std::vector<quicr::Namespace> QController::getPublications()
+std::vector<QController::PublicationReport> QController::getPublications()
 {
     std::lock_guard<std::mutex> _(pubsMutex);
-    std::vector<quicr::Namespace> namespaces;
+    std::vector<PublicationReport> publications;
     for (const auto& publication : quicrPublicationsMap) {
-        namespaces.push_back(publication.first);
+        publications.push_back({
+            .state = publication.second.state,
+            .quicrNamespace = publication.first,
+        });
     }
-    return namespaces;
+    return publications;
 }
 
 void QController::setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState state)

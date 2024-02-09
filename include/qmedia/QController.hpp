@@ -22,6 +22,10 @@ class QController
 {
 public:
     enum class PublicationState { active, paused };
+    struct PublicationReport {
+        PublicationState state;
+        quicr::Namespace quicrNamespace;
+    };
 
     QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
                 std::shared_ptr<QPublisherDelegate> publisherDelegate,
@@ -59,7 +63,7 @@ public:
 
     std::vector<SourceId> getSwitchingSets();
     std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
-    std::vector<quicr::Namespace> getPublications();
+    std::vector<PublicationReport> getPublications();
     void setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState);
 private:
     struct PublicationDetails
