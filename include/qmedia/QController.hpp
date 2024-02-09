@@ -57,6 +57,7 @@ public:
 
     std::vector<SourceId> getSwitchingSets();
     std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
+    std::vector<quicr::Namespace> getPublications();
 private:
     /**
      * @brief Periodic keep-alive method that sends a subscribe message.
