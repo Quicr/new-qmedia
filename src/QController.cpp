@@ -143,12 +143,16 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
                                      bool groupFlag)
 {
     const std::lock_guard<std::mutex> _(pubsMutex);
-
-    if (!quicrPublicationsMap.contains(quicrNamespace)) return;
-
-    if (auto publicationDelegate = quicrPublicationsMap.at(quicrNamespace))
+    const auto& it = quicrPublicationsMap.find(quicrNamespace);
+    if (it == quicrPublicationsMap.end())
     {
-        publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
+        LOGGER_WARNING(logger, "Publication not found for " << quicrNamespace);
+        return;
+    }
+    const auto& publication = it->second;
+    if (publication.state != PublicationState::paused)
+    {
+        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag);
     }
 }
 
@@ -160,8 +164,11 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
     const std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.empty()) return;
 
-    auto publicationDelegate = quicrPublicationsMap.begin()->second;
-    publicationDelegate->publishNamedObject(this->client_session, data, len, groupFlag);
+    const auto& publication = quicrPublicationsMap.begin()->second;
+    if (publication.state != PublicationState::paused)
+    {
+        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag);
+    }
 }
 
 /*===========================================================================*/
@@ -214,7 +221,7 @@ std::shared_ptr<PublicationDelegate> QController::findQuicrPublicationDelegate(c
     std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.contains(quicrNamespace))
     {
-        return quicrPublicationsMap[quicrNamespace]->getptr();
+        return quicrPublicationsMap[quicrNamespace].delegate->getptr();
     }
     return nullptr;
 }
@@ -240,18 +247,21 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
         return nullptr;
     }
 
-    quicrPublicationsMap[quicrNamespace] = PublicationDelegate::create(std::move(qDelegate),
-                                                                       sourceId,
-                                                                       quicrNamespace,
-                                                                       transport_mode,
-                                                                       originUrl,
-                                                                       authToken,
-                                                                       std::move(payload),
-                                                                       priority,
-                                                                       expiry,
-                                                                       logger);
+    quicrPublicationsMap[quicrNamespace] = {
+        .state = PublicationState::active,
+        .delegate = PublicationDelegate::create(std::move(qDelegate),
+                                                sourceId,
+                                                quicrNamespace,
+                                                transport_mode,
+                                                originUrl,
+                                                authToken,
+                                                std::move(payload),
+                                                priority,
+                                                expiry,
+                                                logger)
+    };
 
-    return quicrPublicationsMap[quicrNamespace]->getptr();
+    return quicrPublicationsMap[quicrNamespace].delegate->getptr();
 }
 
 /*===========================================================================*/
@@ -532,6 +542,18 @@ std::vector<quicr::Namespace> QController::getPublications()
         namespaces.push_back(publication.first);
     }
     return namespaces;
+}
+
+void QController::setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState state)
+{
+    std::lock_guard<std::mutex> _(pubsMutex);
+    const auto& it = quicrPublicationsMap.find(quicrNamespace);
+    if (it == quicrPublicationsMap.end())
+    {
+        LOGGER_WARNING(logger, "Publication not found for " << quicrNamespace);
+        return;
+    }
+    it->second.state = state;
 }
 
 }        // namespace qmedia
