@@ -297,3 +297,34 @@ TEST_CASE("Two-party session")
     REQUIRE(collector_a->label() == "Participant 2");
     // REQUIRE(collector_a->qualityProfile() == "opus,br=6");
 }
+
+TEST_CASE("Fetch Switching Sets & Subscriptions")
+{
+    // Setup.
+    const SourceId expectedSourceId = "1";
+    auto collector = std::make_shared<SubscriptionCollector>();
+    auto controller = make_controller(collector);
+
+    // No manifest, no result.
+    const std::vector<SourceId>& empty = controller.getSwitchingSets();
+    REQUIRE(empty.empty());
+    const std::vector<quicr::Namespace>& emptySubs = controller.getSubscriptions(expectedSourceId);
+    REQUIRE(emptySubs.empty());
+
+    // Manifest with sets, expect the sets.
+    const auto media = make_media_stream(stoi(expectedSourceId));
+    const auto& expectedNamespace = media.profileSet.profiles[0].quicrNamespace;
+    const auto manifest = qmedia::manifest::Manifest{.subscriptions = {media}, .publications = {}};
+    controller.updateManifest(manifest);
+
+    // Expect the manifest's data to be present.
+    const std::vector<SourceId>& sets = controller.getSwitchingSets();
+    REQUIRE(sets.size() == 1);
+    const SourceId retrievedSourceId = sets[0];
+    REQUIRE(retrievedSourceId == expectedSourceId);
+
+    const std::vector<quicr::Namespace>& subs = controller.getSubscriptions(expectedSourceId);
+    REQUIRE(subs.size() == 1);
+    const quicr::Namespace retrievedNamespace = subs[0];
+    REQUIRE(retrievedNamespace == expectedNamespace);
+}
