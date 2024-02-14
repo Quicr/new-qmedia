@@ -53,6 +53,10 @@ public:
     void setSubscriptionSingleOrdered(bool new_value) { is_singleordered_subscription = new_value; }
     void setPublicationSingleOrdered(bool new_value) { is_singleordered_publication = new_value; }
 
+    void stopSubscription(const quicr::Namespace& quicrNamespace);
+
+    std::vector<SourceId> getSwitchingSets();
+    std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
 private:
     /**
      * @brief Periodic keep-alive method that sends a subscribe message.
@@ -109,8 +113,6 @@ private:
                           const bool useReliableTransport,
                           const std::string& authToken,
                           quicr::bytes& e2eToken);
-
-    void stopSubscription(const quicr::Namespace& quicrNamespace);
 
     int startPublication(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                          const std::string sourceId,
