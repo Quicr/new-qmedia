@@ -21,6 +21,12 @@ namespace qmedia
 class QController
 {
 public:
+    enum class PublicationState { active, paused };
+    struct PublicationReport {
+        PublicationState state;
+        quicr::Namespace quicrNamespace;
+    };
+
     QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
                 std::shared_ptr<QPublisherDelegate> publisherDelegate,
                 const cantina::LoggerPointer& logger);
@@ -57,8 +63,15 @@ public:
 
     std::vector<SourceId> getSwitchingSets();
     std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
-    std::vector<quicr::Namespace> getPublications();
+    std::vector<PublicationReport> getPublications();
+    void setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState);
 private:
+    struct PublicationDetails
+    {
+        PublicationState state;
+        std::shared_ptr<PublicationDelegate> delegate;
+    };
+
     /**
      * @brief Periodic keep-alive method that sends a subscribe message.
      * @param seconds The repeating interval in seconds
@@ -147,7 +160,7 @@ private:
     std::map<SourceId, std::shared_ptr<QPublicationDelegate>> qPublicationsMap;
 
     quicr::namespace_map<std::shared_ptr<SubscriptionDelegate>> quicrSubscriptionsMap;
-    quicr::namespace_map<std::shared_ptr<PublicationDelegate>> quicrPublicationsMap;
+    quicr::namespace_map<PublicationDetails> quicrPublicationsMap;
 
     std::shared_ptr<quicr::Client> client_session;
 

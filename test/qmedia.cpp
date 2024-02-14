@@ -52,6 +52,12 @@ struct SubscriptionCollector
         return _objects;
     }
 
+    void clear()
+    {
+        const auto _ = std::lock_guard(object_mutex);
+        _objects.clear();
+    }
+
     // Thread-safe, unwrapping accessors
 #define STRING_ACCESSOR(field_name) \
     void field_name(std::string field_name) { \
@@ -343,7 +349,7 @@ TEST_CASE("Fetch Publications")
     controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // No manifest, no result.
-    const std::vector<quicr::Namespace>& empty = controller.getPublications();
+    const std::vector<qmedia::QController::PublicationReport>& empty = controller.getPublications();
     REQUIRE(empty.empty());
 
     // Manifest with publications, expect the publications.
@@ -353,8 +359,82 @@ TEST_CASE("Fetch Publications")
     controller.updateManifest(manifest);
 
     // Expect the manifest's data to be present.
-    const std::vector<quicr::Namespace>& pubs = controller.getPublications();
+    const std::vector<qmedia::QController::PublicationReport>& pubs = controller.getPublications();
     REQUIRE(pubs.size() == 1);
-    const quicr::Namespace retrievedNamespace = pubs[0];
+    const quicr::Namespace retrievedNamespace = pubs[0].quicrNamespace;
     REQUIRE(retrievedNamespace == expectedNamespace);
+}
+
+TEST_CASE("Test Publication States")
+{
+    // Start up a local relay
+    const auto relay = LocalhostRelay();
+    relay.run();
+
+    // Instantiate two QControllers
+    auto controller_a = make_controller(std::make_shared<SubscriptionCollector>());
+    auto collector = std::make_shared<SubscriptionCollector>();
+    auto controller_b = make_controller(collector);
+
+    // Connect to the relay
+    qtransport::TransportConfig config{
+        .tls_cert_filename = nullptr,
+        .tls_key_filename = nullptr,
+    };
+    controller_a.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_b.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+
+    // Create and configure manifests
+    const auto media = make_media_stream(1);
+
+    const auto manifest_a = qmedia::manifest::Manifest{.subscriptions = {}, .publications = {media}};
+    controller_a.updateManifest(manifest_a);
+
+    const auto manifest_b = qmedia::manifest::Manifest{.subscriptions = {media}, .publications = {}};
+    controller_b.updateManifest(manifest_b);
+
+    const quicr::Namespace& quicrNamespace = media.profileSet.profiles[0].quicrNamespace;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    // Send media from participant 1 and verify that it arrived at the other participants
+    {
+        const auto sent = test_data(1);
+        for (const auto& obj : sent)
+        {
+            controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
+        }
+
+        const auto received = collector->await(sent.size());
+        REQUIRE(sent == received);
+        REQUIRE(collector->sourceId() == "1");
+        REQUIRE(collector->label() == "Participant 1");
+    }
+
+    // Set pause state, and retest, verify no media is received.
+    {
+        collector->clear();
+        const auto sent_paused = test_data(2);
+        controller_a.setPublicationState(quicrNamespace, qmedia::QController::PublicationState::paused);
+        for (const auto& obj : sent_paused)
+        {
+            controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // Set active, retest, verify media flows again.
+    {
+        const auto sent_resumed = test_data(3);
+        controller_a.setPublicationState(quicrNamespace, qmedia::QController::PublicationState::active);
+        for (const auto& obj : sent_resumed)
+        {
+            controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        const auto& received_resumed = collector->await(sent_resumed.size());
+        REQUIRE(sent_resumed == received_resumed);
+    }
 }
