@@ -523,4 +523,14 @@ std::vector<quicr::Namespace> QController::getSubscriptions(const std::string& s
     return namespaces;
 }
 
+std::vector<quicr::Namespace> QController::getPublications()
+{
+    std::lock_guard<std::mutex> _(pubsMutex);
+    std::vector<quicr::Namespace> namespaces;
+    for (const auto& publication : quicrPublicationsMap) {
+        namespaces.push_back(publication.first);
+    }
+    return namespaces;
+}
+
 }        // namespace qmedia

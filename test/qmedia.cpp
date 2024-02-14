@@ -328,3 +328,33 @@ TEST_CASE("Fetch Switching Sets & Subscriptions")
     const quicr::Namespace retrievedNamespace = subs[0];
     REQUIRE(retrievedNamespace == expectedNamespace);
 }
+
+TEST_CASE("Fetch Publications")
+{
+    // Setup.
+    auto collector = std::make_shared<SubscriptionCollector>();
+    auto controller = make_controller(collector);
+    const auto relay = LocalhostRelay();
+    relay.run();
+    qtransport::TransportConfig config{
+        .tls_cert_filename = nullptr,
+        .tls_key_filename = nullptr,
+    };
+    controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+
+    // No manifest, no result.
+    const std::vector<quicr::Namespace>& empty = controller.getPublications();
+    REQUIRE(empty.empty());
+
+    // Manifest with publications, expect the publications.
+    const auto media = make_media_stream(1);
+    const auto& expectedNamespace = media.profileSet.profiles[0].quicrNamespace;
+    const auto manifest = qmedia::manifest::Manifest{.subscriptions = {}, .publications = {media}};
+    controller.updateManifest(manifest);
+
+    // Expect the manifest's data to be present.
+    const std::vector<quicr::Namespace>& pubs = controller.getPublications();
+    REQUIRE(pubs.size() == 1);
+    const quicr::Namespace retrievedNamespace = pubs[0];
+    REQUIRE(retrievedNamespace == expectedNamespace);
+}
