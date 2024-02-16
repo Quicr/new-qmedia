@@ -189,7 +189,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                              const quicr::Namespace& quicrNamespace,
                                              const quicr::SubscribeIntent intent,
                                              const std::string& originUrl,
-                                             const bool useReliableTransport,
+                                             const quicr::TransportMode transportMode,
                                              const std::string& authToken,
                                              quicr::bytes&& e2eToken,
                                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate)
@@ -201,12 +201,10 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
         return nullptr;
     }
 
-    const quicr::TransportMode transport_mode = useReliableTransport ? _def_reliable_mode
-                                                                     : quicr::TransportMode::Unreliable;
     quicrSubscriptionsMap[quicrNamespace] = SubscriptionDelegate::create(sourceId,
                                                                          quicrNamespace,
                                                                          intent,
-                                                                         transport_mode,
+                                                                         transportMode,
                                                                          originUrl,
                                                                          authToken,
                                                                          std::move(e2eToken),
@@ -234,11 +232,8 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                             quicr::bytes&& payload,
                                             const std::vector<std::uint8_t>& priority,
                                             const std::vector<std::uint16_t>& expiry,
-                                            bool reliableTransport)
+                                            const quicr::TransportMode transportMode)
 {
-    const quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
-                                                                  : quicr::TransportMode::Unreliable;
-
     std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.contains(quicrNamespace))
     {
@@ -251,7 +246,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
         .delegate = PublicationDelegate::create(std::move(qDelegate),
                                                 sourceId,
                                                 quicrNamespace,
-                                                transport_mode,
+                                                transportMode,
                                                 originUrl,
                                                 authToken,
                                                 std::move(payload),
@@ -311,7 +306,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
                                    const quicr::Namespace& quicrNamespace,
                                    const quicr::SubscribeIntent intent,
                                    const std::string& originUrl,
-                                   const bool useReliableTransport,
+                                   const quicr::TransportMode transportMode,
                                    const std::string& authToken,
                                    quicr::bytes& e2eToken)
 {
@@ -323,7 +318,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
                                                        quicrNamespace,
                                                        intent,
                                                        originUrl,
-                                                       useReliableTransport,
+                                                       transportMode,
                                                        authToken,
                                                        std::move(e2eToken),
                                                        std::move(qDelegate));
@@ -335,10 +330,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
         return -1;
     }
 
-    const quicr::TransportMode transport_mode = useReliableTransport ? _def_reliable_mode
-                                                                     : quicr::TransportMode::Unreliable;
-
-    sub_delegate->subscribe(client_session, transport_mode);
+    sub_delegate->subscribe(client_session, transportMode);
     return 0;
 }
 
@@ -367,7 +359,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                   quicr::bytes&& payload,
                                   const std::vector<std::uint8_t>& priority,
                                   const std::vector<std::uint16_t>& expiry,
-                                  bool reliableTransport)
+                                  const quicr::TransportMode transportMode)
 
 {
     if (!client_session)
@@ -384,19 +376,15 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                                            std::move(payload),
                                                            priority,
                                                            expiry,
-                                                           reliableTransport);
+                                                           transportMode);
     if (!quicrPubDelegate)
     {
         LOGGER_ERROR(logger, "Failed to start publication for " << quicrNamespace << ": Delegate was null");
         return -1;
     }
 
-    // TODO: hack till we update the manifest to provide transport mode
-    quicr::TransportMode transport_mode = reliableTransport ? _def_reliable_mode
-                                                            : quicr::TransportMode::Unreliable;
-
      // TODO: add more intent parameters - max queue size (in time), default ttl, priority
-    quicrPubDelegate->publishIntent(client_session, transport_mode);
+    quicrPubDelegate->publishIntent(client_session, transportMode);
     return 0;
 }
 
@@ -419,7 +407,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             continue;
         }
         
-        bool reliable = false;
+        auto reliable = quicr::TransportMode::Unreliable;
         int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, reliable);
         if (prepare_error != 0)
         {
@@ -463,7 +451,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             }
 
             // Notify client to prepare for incoming media
-            bool reliable = false;
+            quicr::TransportMode reliable = quicr::TransportMode::Unreliable;
             int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
             if (prepare_error != 0)
             {

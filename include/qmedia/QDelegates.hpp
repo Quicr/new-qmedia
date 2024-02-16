@@ -19,7 +19,7 @@ public:
     virtual int prepare(const std::string& sourceId,
                         const std::string& label,
                         const manifest::ProfileSet& profiles,
-                        bool& reliable) = 0;
+                        quicr::TransportMode& transportMode) = 0;
     virtual int update(const std::string& sourceId, const std::string& label, const manifest::ProfileSet& profiles) = 0;
     virtual int subscribedObject(const quicr::Namespace& quicrNamespace, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
 };
@@ -27,7 +27,7 @@ public:
 class QPublicationDelegate
 {
 public:
-    virtual int prepare(const std::string& sourceId, const std::string& qualityProfile, bool& reliable) = 0;
+    virtual int prepare(const std::string& sourceId, const std::string& qualityProfile, quicr::TransportMode& reliable) = 0;
     virtual int update(const std::string& sourceId, const std::string& qualityProfile) = 0;
     virtual void publish(bool) = 0;
 };
