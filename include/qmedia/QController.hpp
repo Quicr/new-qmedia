@@ -73,12 +73,6 @@ private:
     };
 
     /**
-     * @brief Periodic keep-alive method that sends a subscribe message.
-     * @param seconds The repeating interval in seconds
-     */
-    void periodicResubscribe(const unsigned int seconds);
-
-    /**
      * @brief Unsubscribe from all subscriptions.
      */
     void removeSubscriptions();
@@ -164,7 +158,6 @@ private:
 
     std::shared_ptr<quicr::Client> client_session;
 
-    std::thread keepaliveThread;
     bool stop;
     bool closed;
     bool is_singleordered_subscription = true;

@@ -52,8 +52,6 @@ int QController::connect(const std::string remoteAddress,
 
     if (!client_session->connect()) return -1;
 
-    // check to see if there is a timer thread...
-    keepaliveThread = std::thread(&QController::periodicResubscribe, this, 5);
     return 0;
 }
 
@@ -73,11 +71,6 @@ int QController::disconnect()
 
     stop = true;
 
-    if (keepaliveThread.joinable())
-    {
-        keepaliveThread.join();
-    }
-
     if (client_session)
     {
         client_session->disconnect();
@@ -93,33 +86,6 @@ int QController::disconnect()
 void QController::close()
 {
     disconnect();
-}
-
-void QController::periodicResubscribe(const unsigned int seconds)
-{
-    LOGGER_INFO(logger, "Started keep-alive thread");
-
-    std::chrono::system_clock::time_point timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
-    while (!stop)
-    {
-        std::chrono::duration<int, std::milli> timespan(100);        // sleep duration in mills
-        std::this_thread::sleep_for(timespan);
-        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-        if (now >= timeout && !stop)
-        {
-            LOGGER_DEBUG(logger, "Resubscribing...");
-            const std::lock_guard<std::mutex> _(subsMutex);
-            for (auto const& [key, quicrSubDelegate] : quicrSubscriptionsMap)
-            {
-                quicrSubDelegate->subscribe(client_session,
-                                            quicr::TransportMode::ReliablePerTrack /* this is ignored for dups */);
-            }
-            timeout = std::chrono::system_clock::now() + std::chrono::seconds(seconds);
-        }
-    }
-
-    LOGGER_INFO(logger, "Closed keep-alive thread");
 }
 
 void QController::removeSubscriptions()
