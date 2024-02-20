@@ -3,6 +3,8 @@
 #include "QSFrameContext.hpp"
 #include "qmedia/QDelegates.hpp"
 
+#include <transport/transport.h>
+
 #include <cantina/logger.h>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
@@ -134,7 +136,8 @@ public:
     void publishNamedObject(std::shared_ptr<quicr::Client> client,
                             const std::uint8_t* data,
                             std::size_t len,
-                            bool groupFlag);
+                            bool groupFlag,
+                            std::vector<qtransport::MethodTraceItem> &&trace);
 
 private:
     // bool canPublish;

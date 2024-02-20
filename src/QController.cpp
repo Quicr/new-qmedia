@@ -13,7 +13,7 @@ namespace qmedia
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
                          const cantina::LoggerPointer& logger) :
-    logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
+    logger(std::make_shared<cantina::Logger>("QCTRL")),
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
@@ -151,7 +151,13 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
     const auto& publication = it->second;
     if (publication.state != PublicationState::paused)
     {
-        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag);
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+
+        std::vector<qtransport::MethodTraceItem> trace;
+        trace.reserve(10);
+        trace.push_back({"qController:publishNamedObject", start_time});
+
+        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag, std::move(trace));
     }
 }
 
@@ -166,7 +172,11 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
     const auto& publication = quicrPublicationsMap.begin()->second;
     if (publication.state != PublicationState::paused)
     {
-        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag);
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+
+        std::vector<qtransport::MethodTraceItem> trace;
+        trace.push_back({"qController:publishNamedObject", start_time});
+        publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag, std::move(trace));
     }
 }
 
