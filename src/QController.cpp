@@ -546,4 +546,16 @@ void QController::setPublicationState(const quicr::Namespace& quicrNamespace, co
     it->second.state = state;
 }
 
+void QController::setSubscriptionState(const quicr::Namespace& quicrNamespace, const quicr::TransportMode state)
+{
+    std::lock_guard<std::mutex> _(pubsMutex);
+    const auto& it = quicrSubscriptionsMap.find(quicrNamespace);
+    if (it == quicrSubscriptionsMap.end())
+    {
+        LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
+        return;
+    }
+    it->second->subscribe(client_session, state);
+}
+
 }        // namespace qmedia
