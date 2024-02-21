@@ -109,9 +109,9 @@ public:
                 const qmedia::manifest::ProfileSet& /* profileSet */,
                 quicr::TransportMode& transportMode) override
     {
-        transportMode = quicr::TransportMode::ReliablePerGroup;
         collector->sourceId(sourceId);
         collector->label(label);
+        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
         // collector->qualityProfile(profileSet);
         return 0;
     }
@@ -160,7 +160,7 @@ public:
 
     int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, quicr::TransportMode& transportMode)
     {
-        transportMode = quicr::TransportMode::ReliablePerGroup;
+        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
         return 0;
     }
 
