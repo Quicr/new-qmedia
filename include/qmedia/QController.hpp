@@ -65,6 +65,8 @@ public:
     std::vector<quicr::Namespace> getSubscriptions(const std::string& sourceId);
     std::vector<PublicationReport> getPublications();
     void setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState);
+    void setSubscriptionState(const quicr::Namespace& quicrNamespace, const quicr::TransportMode);
+    quicr::SubscriptionState getSubscriptionState(const quicr::Namespace& quicrNamespace);
 private:
     struct PublicationDetails
     {
