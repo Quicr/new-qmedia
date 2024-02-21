@@ -128,6 +128,7 @@ LocalhostRelay::LocalhostRelay()
     const auto tcfg = qtransport::TransportConfig{
         .tls_cert_filename = cert_file,
         .tls_key_filename = key_file,
+        .time_queue_rx_size = 2000
     };
 
     const auto logger = std::make_shared<cantina::Logger>("LocalhostRelay");
@@ -283,7 +284,12 @@ TEST_CASE("Localhost relay")
     client_a.publishIntent(pub_del_a, ns, {}, {}, {}, quicr::TransportMode::ReliablePerTrack);
     pub_del_a->await_publish_intent_response();
 
-    client_a.publishNamedObject(name_a, 0, 1000, std::move(data));
+    std::vector<qtransport::MethodTraceItem> trace;
+    const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+
+    trace.push_back({"client:publish", start_time});
+
+    client_a.publishNamedObject(name_a, 0, 1000, std::move(data), std::move(trace));
 
     // Verify that both other clients received on the namespace
     logger->Log("Receiving...");
