@@ -107,8 +107,9 @@ public:
     int prepare(const std::string& sourceId,
                 const std::string& label,
                 const qmedia::manifest::ProfileSet& /* profileSet */,
-                bool& /* reliable */) override
+                quicr::TransportMode& transportMode) override
     {
+        transportMode = quicr::TransportMode::ReliablePerGroup;
         collector->sourceId(sourceId);
         collector->label(label);
         // collector->qualityProfile(profileSet);
@@ -157,8 +158,9 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     virtual ~QPublicationTestDelegate() = default;
 
-    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, bool& /* reliable */)
+    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, quicr::TransportMode& transportMode)
     {
+        transportMode = quicr::TransportMode::ReliablePerGroup;
         return 0;
     }
 

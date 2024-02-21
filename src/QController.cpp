@@ -383,8 +383,8 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             continue;
         }
         
-        auto reliable = quicr::TransportMode::Unreliable;
-        int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, reliable);
+        auto transportMode = quicr::TransportMode::Unreliable;
+        int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, transportMode);
         if (prepare_error != 0)
         {
             LOGGER_ERROR(logger, "Error preparing subscription: " << prepare_error);
@@ -399,7 +399,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                               profile.quicrNamespace,
                               quicr::SubscribeIntent::sync_up,
                               "",
-                              reliable,
+                              transportMode,
                               "",
                               e2eToken);
 
@@ -427,8 +427,8 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             }
 
             // Notify client to prepare for incoming media
-            quicr::TransportMode reliable = quicr::TransportMode::Unreliable;
-            int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, reliable);
+            auto transportMode = quicr::TransportMode::Unreliable;
+            int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, transportMode);
             if (prepare_error != 0)
             {
                 LOGGER_WARNING(logger,
@@ -445,7 +445,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
                              std::move(payload),
                              profile.priorities,
                              profile.expiry,
-                             reliable);
+                             transportMode);
 
             // If singleordered, and we've successfully processed 1 delegate, break.
             if (is_singleordered_publication) break;
