@@ -315,7 +315,8 @@ void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client
 void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> client,
                                              const std::uint8_t* data,
                                              std::size_t len,
-                                             bool groupFlag)
+                                             bool groupFlag,
+                                             std::vector<qtransport::MethodTraceItem> &&trace)
 {
     // If the object data isn't present, return
     if (len == 0)
@@ -352,6 +353,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     // Encrypt using sframe
     try
     {
+        trace.push_back({"qMediaDelegate:publishNamedObject:beforeEncrypt", trace.front().start_time});
         quicr::bytes output_buffer(len + 16);
         auto ciphertext = sframe_context.protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
                                                  quicrName.bits<std::uint64_t>(0, 48),
@@ -362,7 +364,9 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         buf << quicr::uintVar_t(Fixed_Epoch);
         buf.push(std::move(output_buffer));
 
-        client->publishNamedObject(quicrName, pri, exp, buf.take());
+        trace.push_back({"qMediaDelegate:publishNamedObject:afterEncrypt", trace.front().start_time});
+
+        client->publishNamedObject(quicrName, pri, exp, buf.take(), std::move(trace));
     }
     catch (const std::exception& e)
     {
