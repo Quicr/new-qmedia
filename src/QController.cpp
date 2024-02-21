@@ -531,7 +531,6 @@ void QController::setSubscriptionState(const quicr::Namespace& quicrNamespace, c
         LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
         return;
     }
-    assert(client_session);
     it->second->subscribe(client_session, transportMode);
 }
 
