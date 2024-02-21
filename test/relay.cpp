@@ -128,6 +128,7 @@ LocalhostRelay::LocalhostRelay()
     const auto tcfg = qtransport::TransportConfig{
         .tls_cert_filename = cert_file,
         .tls_key_filename = key_file,
+        .time_queue_rx_size = 2000
     };
 
     const auto logger = std::make_shared<cantina::Logger>("LocalhostRelay");

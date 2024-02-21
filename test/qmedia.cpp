@@ -46,7 +46,9 @@ struct SubscriptionCollector
         const auto status = object_future.wait_for(1000ms);
         if (status != std::future_status::ready)
         {
-            throw std::runtime_error("Object collection timed out");
+            throw std::runtime_error("Object collection timed out "
+                                     + std::to_string(expected_object_count)
+                                     + " != " + std::to_string(_objects.size()));
         }
 
         return _objects;
@@ -105,10 +107,11 @@ public:
     int prepare(const std::string& sourceId,
                 const std::string& label,
                 const qmedia::manifest::ProfileSet& /* profileSet */,
-                bool& /* reliable */) override
+                bool& reliable) override
     {
         collector->sourceId(sourceId);
         collector->label(label);
+        reliable = true;                // Testing microbursts data, which often results in drops.  Use reliable for tests.
         // collector->qualityProfile(profileSet);
         return 0;
     }
@@ -155,8 +158,9 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     virtual ~QPublicationTestDelegate() = default;
 
-    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, bool& /* reliable */)
+    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, bool& reliable)
     {
+        reliable = true;                // Testing microbursts data, which often results in drops.  Use reliable for tests.
         return 0;
     }
 
@@ -285,6 +289,7 @@ TEST_CASE("Two-party session")
     }
 
     const auto received_b = collector_b->await(sent_a.size());
+
     REQUIRE(sent_a == received_b);
     REQUIRE(collector_b->sourceId() == "1");
     REQUIRE(collector_b->label() == "Participant 1");
