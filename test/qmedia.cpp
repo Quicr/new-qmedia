@@ -443,3 +443,32 @@ TEST_CASE("Test Publication States")
         REQUIRE(sent_resumed == received_resumed);
     }
 }
+
+TEST_CASE("Subscription set/get state")
+{
+    // Setup.
+    auto collector = std::make_shared<SubscriptionCollector>();
+    auto controller = make_controller(collector);
+    const auto media = make_media_stream(1);
+    const auto manifest = qmedia::manifest::Manifest{.subscriptions = {media}, .publications = {}};
+    const auto relay = LocalhostRelay();
+    relay.run();
+    qtransport::TransportConfig config{
+        .tls_cert_filename = nullptr,
+        .tls_key_filename = nullptr,
+    };
+    controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller.updateManifest(manifest);
+
+    // Wait for subscriptions to propagate.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    // Active state.
+    const quicr::SubscriptionState& state = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
+    REQUIRE(state == quicr::SubscriptionState::Ready);
+
+    // Set to paused.
+    controller.setSubscriptionState(media.profileSet.profiles[0].quicrNamespace, quicr::TransportMode::Pause);
+    const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
+    REQUIRE(pausedState == quicr::SubscriptionState::Paused);
+}
