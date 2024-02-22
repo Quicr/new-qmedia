@@ -107,11 +107,11 @@ public:
     int prepare(const std::string& sourceId,
                 const std::string& label,
                 const qmedia::manifest::ProfileSet& /* profileSet */,
-                bool& reliable) override
+                quicr::TransportMode& transportMode) override
     {
         collector->sourceId(sourceId);
         collector->label(label);
-        reliable = true;                // Testing microbursts data, which often results in drops.  Use reliable for tests.
+        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
         // collector->qualityProfile(profileSet);
         return 0;
     }
@@ -158,9 +158,9 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     virtual ~QPublicationTestDelegate() = default;
 
-    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, bool& reliable)
+    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, quicr::TransportMode& transportMode)
     {
-        reliable = true;                // Testing microbursts data, which often results in drops.  Use reliable for tests.
+        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
         return 0;
     }
 

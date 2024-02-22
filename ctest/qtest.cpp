@@ -33,7 +33,8 @@ public:
         logger->Log("QSubscriptionTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet, bool& reliable) override {
+    int prepare(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet, quicr::TransportMode& transportMode) override {
+        transportMode = quicr::TransportMode::ReliablePerGroup;
         logger->Log("QSubscriptionTestDelegate::prepare");
         return 0;
     }
@@ -96,7 +97,8 @@ public:
         logger->Log("QPublicationTestDelegate constructed");
     }
 public:
-    int prepare(const std::string& sourceId,  const std::string& qualityProfile, bool& reliable)  {
+    int prepare(const std::string& sourceId,  const std::string& qualityProfile, quicr::TransportMode& transportMode)  {
+        transportMode = quicr::TransportMode::ReliablePerGroup;
         logger->Log("QPublicationTestDelegate::prepare");
         std::cerr << "pub prepare " << std::endl;
         return 0;

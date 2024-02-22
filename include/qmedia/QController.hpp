@@ -89,7 +89,7 @@ private:
                                     const quicr::Namespace& quicrNamespace,
                                     const quicr::SubscribeIntent intent,
                                     const std::string& originUrl,
-                                    const bool useReliableTransport,
+                                    const quicr::TransportMode transportMode,
                                     const std::string& authToken,
                                     quicr::bytes&& e2eToken,
                                     std::shared_ptr<qmedia::QSubscriptionDelegate> delegate);
@@ -104,7 +104,7 @@ private:
                                                                         quicr::bytes&& payload,
                                                                         const std::vector<std::uint8_t>& priority,
                                                                         const std::vector<std::uint16_t>& expiry,
-                                                                        bool reliableTransport);
+                                                                        const quicr::TransportMode transportMode);
 
     std::shared_ptr<QSubscriptionDelegate> getSubscriptionDelegate(const SourceId& sourceId,
                                                                    const manifest::ProfileSet& profileSet);
@@ -118,7 +118,7 @@ private:
                           const quicr::Namespace& quicrNamespace,
                           const quicr::SubscribeIntent intent,
                           const std::string& originUrl,
-                          const bool useReliableTransport,
+                          const quicr::TransportMode transportMode,
                           const std::string& authToken,
                           quicr::bytes& e2eToken);
 
@@ -130,7 +130,7 @@ private:
                          quicr::bytes&& payload,
                          const std::vector<std::uint8_t>& priority,
                          const std::vector<std::uint16_t>& expiry,
-                         bool reliableTransport);
+                         const quicr::TransportMode transportMode);
 
     void stopPublication(const quicr::Namespace& quicrNamespace);
 
@@ -145,7 +145,6 @@ private:
     std::mutex pubsMutex;
 
     const cantina::LoggerPointer logger;
-    const quicr::TransportMode _def_reliable_mode = quicr::TransportMode::ReliablePerGroup;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;
