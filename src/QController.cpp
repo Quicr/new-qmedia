@@ -117,7 +117,7 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
     const auto& publication = it->second;
     if (publication.state != PublicationState::paused)
     {
-        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
 
         std::vector<qtransport::MethodTraceItem> trace;
         trace.reserve(10);
@@ -138,7 +138,7 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
     const auto& publication = quicrPublicationsMap.begin()->second;
     if (publication.state != PublicationState::paused)
     {
-        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
 
         std::vector<qtransport::MethodTraceItem> trace;
         trace.push_back({"qController:publishNamedObject", start_time});
