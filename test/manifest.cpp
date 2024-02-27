@@ -16,15 +16,15 @@ static const auto manifest_json = std::string(R"(
       "type": "singleordered",
       "profiles": [{
         "qualityProfile": "h264,width=1920,height=1080,fps=30,br=2000",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/192/endpoint/1",
+        "quicrNamespace": "0x0000010100000dc00001000000000000/80",
         "appTag" : "primaryV"
       }, {
         "qualityProfile": "h264,width=1280,height=720,fps=30,br=1000",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/193/endpoint/1",
+        "quicrNamespace": "0x0000010100000dc10001000000000000/80",
         "appTag": "secondaryV"
       }, {
         "qualityProfile": "h264,width=640,height=360,fps=20,br=500",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/194/endpoint/1",
+        "quicrNamespace": "0x0000010100000dc20001000000000000/80",
         "appTag": "baselineV"
       }]
     }
@@ -37,7 +37,7 @@ static const auto manifest_json = std::string(R"(
       "type": "singleordered",
       "profiles": [{
         "qualityProfile": "opus,br=6",
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/1/endpoint/1"
+        "quicrNamespace": "0x0000010100000d010001000000000000/80"
       }]
     }
   }],
@@ -52,17 +52,17 @@ static const auto manifest_json = std::string(R"(
         "qualityProfile": "h264,width=1920,height=1080,fps=30,br=2000",
         "expiry": [500,500],
         "priorities": [6, 7],
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/192/endpoint/1"
+        "quicrNamespace": "0x0000010100000dC00001000000000000/80"
       }, {
         "qualityProfile": "h264,width=1280,height=720,fps=30,br=1000",
        "expiry": [500,500],
         "priorities": [4, 5],
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/193/endpoint/1"
+        "quicrNamespace": "0x0000010100000dC10001000000000000/80"
       }, {
         "qualityProfile": "h264,width=640,height=360,fps=20,br=500",
        "expiry": [500,500],
         "priorities": [2, 3],
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/194/endpoint/1"
+        "quicrNamespace": "0x0000010100000dC20001000000000000/80"
       }]
     }
   }, {
@@ -76,13 +76,10 @@ static const auto manifest_json = std::string(R"(
         "qualityProfile": "opus,br=6",
        "expiry": [500,500],
         "priorities": [1],
-        "quicrNamespaceUrl": "quicr://webex.cisco.com/conferences/13/mediatype/1/endpoint/1"
+        "quicrNamespace": "0x0000010100000d010001000000000000/80"
       }]
     }
-  }],
-  "urlTemplates": [
-    "quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/endpoint/<int16>"
-  ]
+  }]
 })");
 
 // Quicr namespaces encoded according to the URL template in the manifest
