@@ -19,6 +19,12 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     stop(false),
     closed(false)
 {
+
+    if (logger->IsDebugging())
+    {
+        this->logger->SetLogLevel("DEBUG");
+    }
+    
     LOGGER_DEBUG(logger, "QController started...");
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
