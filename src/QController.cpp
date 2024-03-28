@@ -43,7 +43,8 @@ QController::~QController()
     disconnect();
 }
 
-int QController::connect(const std::string remoteAddress,
+int QController::connect(const std::string endpointID,
+                         const std::string remoteAddress,
                          std::uint16_t remotePort,
                          quicr::RelayInfo::Protocol protocol,
                          const qtransport::TransportConfig& config)
@@ -54,6 +55,7 @@ int QController::connect(const std::string remoteAddress,
         .proto = protocol,
     };
 
+    // SAH - add const std::string endpointId to the constructor
     client_session = std::make_unique<quicr::Client>(relayInfo, config, logger);
 
     if (!client_session->connect()) return -1;
