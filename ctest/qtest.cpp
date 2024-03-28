@@ -158,8 +158,8 @@ int test()
         .tls_key_filename = NULL,
         .time_queue_init_queue_size = 200,
     };
-    qController->connect("127.0.0.1", 33435, quicr::RelayInfo::Protocol::QUIC, config);
-    //qController->connect("relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
+    qController->connect("a@cisco.com", "127.0.0.1", 33435, quicr::RelayInfo::Protocol::QUIC, config);
+    //qController->connect("a@cisco.com", "relay.us-west-2.quicr.ctgpoc.com", 33437, quicr::RelayInfo::Protocol::QUIC);
     std::uint64_t now = timeSinceEpochMillisec();
     std::cerr << "connect duration " << now - then << std::endl;
 

@@ -33,7 +33,8 @@ public:
 
     ~QController();
 
-    int connect(const std::string remoteAddress,
+    int connect(const std::string endpointID,
+                const std::string remoteAddress,
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
                 const qtransport::TransportConfig& config);
