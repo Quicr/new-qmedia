@@ -56,7 +56,7 @@ int QController::connect(const std::string endpointID,
     };
 
     // SAH - add const std::string endpointId to the constructor
-    client_session = std::make_unique<quicr::Client>(relayInfo, config, logger);
+    client_session = std::make_unique<quicr::Client>(relayInfo, endpointID, config, logger);
 
     if (!client_session->connect()) return -1;
 
