@@ -58,6 +58,8 @@ struct SubscriptionCollector
     {
         const auto _ = std::lock_guard(object_mutex);
         _objects.clear();
+        object_promise = {};
+        object_future = object_promise.get_future();
     }
 
     // Thread-safe, unwrapping accessors
@@ -437,9 +439,10 @@ TEST_CASE("Test Publication States")
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         const auto& received_resumed = collector->await(sent_resumed.size());
+
         REQUIRE(sent_resumed == received_resumed);
     }
 }
