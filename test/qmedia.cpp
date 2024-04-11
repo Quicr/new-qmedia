@@ -21,6 +21,10 @@ struct SubscriptionCollector
     void add_object(quicr::bytes&& data)
     {
         const auto _ = std::lock_guard(object_mutex);
+
+        std::cerr << "recv (" << std::hex << static_cast<int>(data[2]) << ")"
+                  << " [ " << static_cast<int>(data[3]) << " ]"
+                  << std::endl;
         _objects.insert(std::move(data));
 
         if (_objects.size() >= expected_object_count)
