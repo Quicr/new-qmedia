@@ -43,7 +43,7 @@ struct SubscriptionCollector
 
         // The mutex must be unlocked here so that the transport thread can
         // add objects to the set.
-        const auto status = object_future.wait_for(1000ms);
+        const auto status = object_future.wait_for(2000ms);
         if (status != std::future_status::ready)
         {
             throw std::runtime_error("Object collection timed out "
