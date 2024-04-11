@@ -435,15 +435,8 @@ TEST_CASE("Test Publication States")
     {
         const auto sent_resumed = test_data(3);
         controller_a.setPublicationState(quicrNamespace, qmedia::QController::PublicationState::active);
-        int i = 0;
         for (const auto& obj : sent_resumed)
         {
-            // Inject a little delay
-            if (i % 30 == 0) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            }
-            ++i;
-
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
 
