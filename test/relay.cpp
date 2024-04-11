@@ -92,7 +92,7 @@ public:
                 }
 
                 logger->info << "  Forwarding to subscriber_id=" << sub.subscriber_id << std::flush;
-                server->sendNamedObject(sub.subscriber_id, 1, 200, datagram);
+                server->sendNamedObject(sub.subscriber_id, 1, 500, datagram);
             }
         }
     }

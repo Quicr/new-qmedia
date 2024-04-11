@@ -427,7 +427,7 @@ TEST_CASE("Test Publication States")
         {
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // Set active, retest, verify media flows again.
@@ -439,7 +439,7 @@ TEST_CASE("Test Publication States")
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         const auto& received_resumed = collector->await(sent_resumed.size());
 
