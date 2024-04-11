@@ -387,7 +387,7 @@ TEST_CASE("Test Publication States")
         .tls_key_filename = nullptr,
     };
     controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
-    controller_b.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_b.connect("b@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // Create and configure manifests
     const auto media = make_media_stream(1);
@@ -437,7 +437,7 @@ TEST_CASE("Test Publication States")
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         const auto& received_resumed = collector->await(sent_resumed.size());
         REQUIRE(sent_resumed == received_resumed);
