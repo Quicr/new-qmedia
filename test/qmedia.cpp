@@ -43,7 +43,7 @@ struct SubscriptionCollector
 
         // The mutex must be unlocked here so that the transport thread can
         // add objects to the set.
-        const auto status = object_future.wait_for(1000ms);
+        const auto status = object_future.wait_for(1500ms);
         if (status != std::future_status::ready)
         {
             throw std::runtime_error("Object collection timed out "
@@ -58,6 +58,8 @@ struct SubscriptionCollector
     {
         const auto _ = std::lock_guard(object_mutex);
         _objects.clear();
+        object_promise = {};
+        object_future = object_promise.get_future();
     }
 
     // Thread-safe, unwrapping accessors
@@ -190,6 +192,7 @@ static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector
     const auto sub = std::make_shared<QSubscriberTestDelegate>(std::move(collector));
     const auto pub = std::make_shared<QPublisherTestDelegate>();
     const auto logger = std::make_shared<cantina::Logger>("QTest", "QTEST");
+    logger->SetLogLevel("DEBUG");
     return {sub, pub, logger};
 }
 
@@ -256,8 +259,8 @@ TEST_CASE("Two-party session")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller_a.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
-    controller_b.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_b.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // Create and configure manifests
     const auto media_a = make_media_stream(1);
@@ -351,7 +354,7 @@ TEST_CASE("Fetch Publications")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // No manifest, no result.
     const std::vector<qmedia::QController::PublicationReport>& empty = controller.getPublications();
@@ -385,9 +388,10 @@ TEST_CASE("Test Publication States")
     qtransport::TransportConfig config{
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
+        .debug = true,
     };
-    controller_a.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
-    controller_b.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_b.connect("b@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
 
     // Create and configure manifests
     const auto media = make_media_stream(1);
@@ -425,21 +429,26 @@ TEST_CASE("Test Publication States")
         {
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // Set active, retest, verify media flows again.
     {
         const auto sent_resumed = test_data(3);
         controller_a.setPublicationState(quicrNamespace, qmedia::QController::PublicationState::active);
+        int i = 0;
         for (const auto& obj : sent_resumed)
         {
+            // Inject a little delay
+            if (i % 30 == 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            }
+            ++i;
+
             controller_a.publishNamedObject(quicrNamespace, obj.data(), obj.size(), false);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
         const auto& received_resumed = collector->await(sent_resumed.size());
+
         REQUIRE(sent_resumed == received_resumed);
     }
 }
@@ -457,7 +466,7 @@ TEST_CASE("Subscription set/get state")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller.connect("127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
     controller.updateManifest(manifest);
 
     // Wait for subscriptions to propagate.

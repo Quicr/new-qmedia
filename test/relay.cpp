@@ -92,7 +92,7 @@ public:
                 }
 
                 logger->info << "  Forwarding to subscriber_id=" << sub.subscriber_id << std::flush;
-                server->sendNamedObject(sub.subscriber_id, 1, 200, datagram);
+                server->sendNamedObject(sub.subscriber_id, 1, 500, datagram);
             }
         }
     }
@@ -239,9 +239,9 @@ TEST_CASE("Localhost relay")
     using namespace std::chrono_literals;
 
     logger->Log("Connecting...");
-    auto client_a = quicr::Client(relayInfo, tcfg, logger);
-    auto client_b = quicr::Client(relayInfo, tcfg, logger);
-    auto client_c = quicr::Client(relayInfo, tcfg, logger);
+    auto client_a = quicr::Client(relayInfo, "test-client-1", tcfg, logger);
+    auto client_b = quicr::Client(relayInfo, "test-client-2", tcfg, logger);
+    auto client_c = quicr::Client(relayInfo, "test-client-3", tcfg, logger);
 
     client_a.connect();
     client_b.connect();

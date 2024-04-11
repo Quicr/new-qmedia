@@ -15,7 +15,7 @@ all: ${BUILD_DIR} src/* test/*
 	cmake --build build
 
 ${BUILD_DIR}: CMakeLists.txt
-	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON  .
+	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON .
 
 ${TEST_BIN}: test/*
 	cmake --build build --target qmedia_test
