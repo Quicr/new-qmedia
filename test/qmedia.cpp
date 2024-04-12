@@ -113,7 +113,7 @@ public:
     {
         collector->sourceId(sourceId);
         collector->label(label);
-        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
+        transportMode = quicr::TransportMode::ReliablePerTrack; // Testing microbursts data, which often results in drops. Use reliable for tests.
         // collector->qualityProfile(profileSet);
         return 0;
     }
