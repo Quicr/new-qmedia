@@ -12,19 +12,20 @@ namespace qmedia
 
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
-                         const cantina::LoggerPointer& logger) :
-    logger(std::make_shared<cantina::Logger>("QCTRL")),
+                         const cantina::LoggerPointer& logger,
+                         const bool debugging) :
+    logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
     closed(false)
 {
-
-    if (logger->IsDebugging())
+    // If there's a parent logger, its log level will be used.
+    // Otherwise, query the debugging flag.
+    if (logger == nullptr && debugging)
     {
-        this->logger->SetLogLevel("DEBUG");
+        this->logger->SetLogLevel(cantina::LogLevel::Debug);
     }
-    
     LOGGER_DEBUG(logger, "QController started...");
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
