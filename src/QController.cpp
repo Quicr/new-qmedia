@@ -14,7 +14,7 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
                          const cantina::LoggerPointer& logger,
                          const bool debugging) :
-    logger(std::make_shared<cantina::Logger>("QCTRL")),
+    logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
