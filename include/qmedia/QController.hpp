@@ -29,7 +29,8 @@ public:
 
     QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
                 std::shared_ptr<QPublisherDelegate> publisherDelegate,
-                const cantina::LoggerPointer& logger);
+                const cantina::LoggerPointer& logger,
+                const bool debugging = false);
 
     ~QController();
 
