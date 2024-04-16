@@ -481,3 +481,14 @@ TEST_CASE("Subscription set/get state")
     const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
     REQUIRE(pausedState == quicr::SubscriptionState::Paused);
 }
+
+TEST_CASE("Parent logger")
+{
+    bool messageReceived = false;
+    auto parent = std::make_shared<cantina::CustomLogger>([&messageReceived](auto level, const std::string& msg, bool) {
+        messageReceived |= (msg == "QController started..." && level == cantina::LogLevel::Debug);
+    });
+    parent->SetLogLevel(cantina::LogLevel::Debug);
+    auto controller = qmedia::QController(nullptr, nullptr, parent);
+    REQUIRE(messageReceived);
+}
