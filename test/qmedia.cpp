@@ -484,11 +484,15 @@ TEST_CASE("Subscription set/get state")
 
 TEST_CASE("Parent logger")
 {
+    // Parent logger gets log messages.
     bool messageReceived = false;
     auto parent = std::make_shared<cantina::CustomLogger>([&messageReceived](auto level, const std::string& msg, bool) {
-        messageReceived |= (msg == "QController started..." && level == cantina::LogLevel::Debug);
+        messageReceived |= (msg.find("QController started...") != std::string::npos && level == cantina::LogLevel::Debug);
     });
     parent->SetLogLevel(cantina::LogLevel::Debug);
     auto controller = qmedia::QController(nullptr, nullptr, parent);
     REQUIRE(messageReceived);
+
+    // Non-parent construction still should work.
+    qmedia::QController(nullptr, nullptr, nullptr);
 }
