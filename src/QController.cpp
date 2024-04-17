@@ -27,7 +27,7 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
         this->logger->SetLogLevel(cantina::LogLevel::Debug);
     }
 
-    this->logger->debug << "QController started..." << std::flush;
+    LOGGER_DEBUG(this->logger, "QController started...");
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
     //   org, app,   conf, media, endpoint,     group, object
