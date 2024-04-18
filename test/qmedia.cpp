@@ -259,8 +259,8 @@ TEST_CASE("Two-party session")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
-    controller_b.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
+    controller_b.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
 
     // Create and configure manifests
     const auto media_a = make_media_stream(1);
@@ -354,7 +354,7 @@ TEST_CASE("Fetch Publications")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
 
     // No manifest, no result.
     const std::vector<qmedia::QController::PublicationReport>& empty = controller.getPublications();
@@ -390,8 +390,8 @@ TEST_CASE("Test Publication States")
         .tls_key_filename = nullptr,
         .debug = true,
     };
-    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
-    controller_b.connect("b@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
+    controller_b.connect("b@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
 
     // Create and configure manifests
     const auto media = make_media_stream(1);
@@ -466,7 +466,7 @@ TEST_CASE("Subscription set/get state")
         .tls_cert_filename = nullptr,
         .tls_key_filename = nullptr,
     };
-    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, config);
+    controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
     controller.updateManifest(manifest);
 
     // Wait for subscriptions to propagate.
