@@ -480,6 +480,7 @@ TEST_CASE("Subscription set/get state")
     controller.setSubscriptionState(media.profileSet.profiles[0].quicrNamespace, quicr::TransportMode::Pause);
     const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
     REQUIRE(pausedState == quicr::SubscriptionState::Paused);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 TEST_CASE("Parent logger")
