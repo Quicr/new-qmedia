@@ -38,6 +38,7 @@ public:
                 const std::string remoteAddress,
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
+                size_t chunkSize,
                 const qtransport::TransportConfig& config);
 
     int disconnect();
