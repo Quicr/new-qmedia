@@ -12,7 +12,7 @@ TEST_BIN=${BUILD_DIR}/${TEST_DIR}/qmedia_test
 .PHONY: all test clean cclean format
 
 all: ${BUILD_DIR} src/* test/*
-	cmake --build build
+	cmake --build build --parallel 8
 
 ${BUILD_DIR}: CMakeLists.txt
 	cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -DQMEDIA_BUILD_TESTS=ON -DBUILD_TESTING=ON .
