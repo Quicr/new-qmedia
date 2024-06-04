@@ -69,6 +69,7 @@ public:
 
     void onPublisherObject(const qtransport::TransportConnId& conn_id,
                            const qtransport::DataContextId& /* data_ctx_id */,
+                           [[maybe_unused]] bool reliable,
                            quicr::messages::PublishDatagram&& datagram) override
     {
         logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size()
