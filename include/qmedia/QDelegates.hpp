@@ -21,7 +21,8 @@ public:
                         const manifest::ProfileSet& profiles,
                         quicr::TransportMode& transportMode) = 0;
     virtual int update(const std::string& sourceId, const std::string& label, const manifest::ProfileSet& profiles) = 0;
-    virtual int subscribedObject(const quicr::Namespace& quicrNamespace, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
+    //virtual int subscribedObject(const quicr::Namespace& quicrNamespace, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
+    virtual int subscribedObject(const quicr::Name& quicrName, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) = 0;
 };
 
 class QPublicationDelegate

@@ -27,6 +27,8 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
         this->logger->SetLogLevel(cantina::LogLevel::Debug);
     }
 
+        this->logger->SetLogLevel(cantina::LogLevel::Debug);    
+
     LOGGER_DEBUG(this->logger, "QController started...");
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
@@ -58,8 +60,12 @@ int QController::connect(const std::string endpointID,
         .proto = protocol,
     };
 
+    qtransport::TransportConfig newConfig = config;
+
+    newConfig.debug = true;
+
     // SAH - add const std::string endpointId to the constructor
-    client_session = std::make_unique<quicr::Client>(relayInfo, endpointID, chunkSize, config, logger);
+    client_session = std::make_unique<quicr::Client>(relayInfo, endpointID, chunkSize, newConfig, logger);
 
     if (!client_session->connect()) return -1;
 
