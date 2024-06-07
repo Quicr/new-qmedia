@@ -107,6 +107,7 @@ public:
     virtual ~QSubscriptionTestDelegate() = default;
 
     int prepare(const std::string& sourceId,
+                const quicr::Namespace& namespace,
                 const std::string& label,
                 const qmedia::manifest::ProfileSet& /* profileSet */,
                 quicr::TransportMode& transportMode) override
@@ -126,7 +127,7 @@ public:
         return 1;
     }
 
-    int subscribedObject(const quicr::Namespace& /* namespace */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
+    int subscribedObject(const quicr::Name& /* name */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
     {
         collector->add_object(std::move(data));
         return 0;

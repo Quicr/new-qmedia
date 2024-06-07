@@ -56,6 +56,7 @@ int QController::connect(const std::string endpointID,
         .hostname = remoteAddress.c_str(),
         .port = remotePort,
         .proto = protocol,
+        .relay_id = ""
     };
 
     // SAH - add const std::string endpointId to the constructor

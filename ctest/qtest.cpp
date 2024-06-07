@@ -43,7 +43,7 @@ public:
         return 1; //1 = needs prepare
     }
 
-    int subscribedObject(const quicr::Namespace& quicrNamespace, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
+    int subscribedObject(const quicr::Name& quicrName, quicr::bytes&& data, std::uint32_t groupId, std::uint16_t objectId) override {
         uint64_t now = timeSinceEpochMillisec();
         std::cerr << "groupId = " << groupId << std::endl;
         uint64_t then =  timeBuckets[groupId-1];
@@ -73,6 +73,13 @@ public:
        logger->Log("QSubscriberTestDelegate::allocateSubBySourceId");
        return std::make_shared<QSubscriptionTestDelegate>(sourceId);
     }
+
+    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubByNamespace()
+    {
+       logger->Log("QSubscriberTestDelegate::allocateSubBySourceId");
+       return std::make_shared<QSubscriptionTestDelegate>(sourceId);
+    }
+
 
     int removeSubBySourceId(const SourceId& sourceId)
     {
