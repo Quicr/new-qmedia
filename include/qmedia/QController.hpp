@@ -47,7 +47,7 @@ public:
                 const qtransport::TransportConfig& config);
 
     int disconnect();
-    
+
     bool connected() const;
 
     [[deprecated("Use QController::disconnect instead")]] void close();
@@ -63,6 +63,9 @@ public:
                             std::size_t len,
                             bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
+
+    void publishMeasurement(const quicr::Measurement& m);
+    void publishMeasurement(const json& j);
 
     void setSubscriptionSingleOrdered(bool new_value) { is_singleordered_subscription = new_value; }
     void setPublicationSingleOrdered(bool new_value) { is_singleordered_publication = new_value; }

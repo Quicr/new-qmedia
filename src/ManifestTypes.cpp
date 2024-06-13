@@ -1,4 +1,4 @@
-#include <qmedia/ManifestTypes.hpp>
+#include "qmedia/ManifestTypes.hpp"
 
 namespace qmedia::manifest
 {
@@ -7,7 +7,7 @@ struct ParseContext
 {
 };
 
-void from_json(const ParseContext& ctx, const nlohmann::json& j, Profile& profile)
+void from_json(const ParseContext&, const nlohmann::json& j, Profile& profile)
 {
     j.at("qualityProfile").get_to(profile.qualityProfile);
 

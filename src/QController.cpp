@@ -3,6 +3,7 @@
 #include "qmedia/ManifestTypes.hpp"
 
 #include <quicr/hex_endec.h>
+#include <quicr/measurement.h>
 
 #include <iostream>
 #include <sstream>
@@ -157,6 +158,22 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
         trace.push_back({"qController:publishNamedObject", start_time});
         publication.delegate->publishNamedObject(this->client_session, data, len, groupFlag, std::move(trace));
     }
+}
+
+void QController::publishMeasurement(const quicr::Measurement& m)
+{
+    if (!client_session)
+    {
+        LOGGER_ERROR(logger, "Failed to publish measurement: No Quicr session established");
+        return;
+    }
+
+    client_session->publishMeasurement(m);
+}
+
+void QController::publishMeasurement(const json& j)
+{
+    publishMeasurement(j.template get<quicr::Measurement>());
 }
 
 /*===========================================================================*/
@@ -399,7 +416,7 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             LOGGER_INFO(logger, "Updated subscription " << subscription.sourceId);
             continue;
         }
-        
+
         auto transportMode = quicr::TransportMode::Unreliable;
         int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, transportMode);
         if (prepare_error != 0)

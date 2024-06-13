@@ -1,6 +1,5 @@
 #include <doctest/doctest.h>
 
-#include <UrlEncoder.h>
 #include <cantina/logger.h>
 #include <qmedia/QController.hpp>
 #include <qmedia/QDelegates.hpp>
@@ -202,12 +201,6 @@ static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
     const auto source_base = "source "s;
     const auto label_base = "Participant "s;
 
-    const auto url_template =
-        "quicr://webex.cisco.com<pen=1><sub_pen=1>/conferences/<int24>/mediatype/<int8>/endpoint/<int16>"s;
-    const auto url_base = "quicr://webex.cisco.com/conferences/34/mediatype/1/endpoint/"s;
-    auto encoder = UrlEncoder{};
-    encoder.AddTemplate(url_template);
-
     const auto endpoint_id_string = std::to_string(endpoint_id);
     return {
         .mediaType = "audio",
@@ -221,7 +214,7 @@ static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
                     {
                         {
                             .qualityProfile = "opus,br=6",
-                            .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
+                            .quicrNamespace = std::string_view("0x000001010003EBA30001000000000000/80"),
                             .priorities = {1},
                             .expiry = {500,500},
                             .appTag = "primaryV"
