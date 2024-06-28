@@ -13,12 +13,14 @@ namespace qmedia
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
                          const cantina::LoggerPointer& logger,
-                         const bool debugging) :
+                         const bool debugging,
+                         const std::optional<sframe::CipherSuite> cipher_suite) :
     logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
-    closed(false)
+    closed(false),
+    cipher_suite(cipher_suite)
 {
     // If there's a parent logger, its log level will be used.
     // Otherwise, query the debugging flag.
@@ -179,7 +181,8 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                              const quicr::TransportMode transportMode,
                                              const std::string& authToken,
                                              quicr::bytes&& e2eToken,
-                                             std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate)
+                                             std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
+                                             const std::optional<sframe::CipherSuite> cipherSuite)
 {
     std::lock_guard<std::mutex> _(subsMutex);
     if (quicrSubscriptionsMap.contains(quicrNamespace))
@@ -196,7 +199,8 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                                                          authToken,
                                                                          std::move(e2eToken),
                                                                          std::move(qDelegate),
-                                                                         logger);
+                                                                         logger,
+                                                                         cipherSuite);
     return quicrSubscriptionsMap[quicrNamespace];
 }
 
@@ -239,7 +243,8 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
                                                 std::move(payload),
                                                 priority,
                                                 expiry,
-                                                logger)
+                                                logger,
+                                                cipher_suite)
     };
 
     return quicrPublicationsMap[quicrNamespace].delegate->getptr();
@@ -308,7 +313,8 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
                                                        transportMode,
                                                        authToken,
                                                        std::move(e2eToken),
-                                                       std::move(qDelegate));
+                                                       std::move(qDelegate),
+                                                       cipher_suite);
     }
 
     if (!sub_delegate)

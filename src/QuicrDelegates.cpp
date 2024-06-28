@@ -14,7 +14,6 @@ constexpr quicr::Name Object_ID_Mask = ~(~0x0_name << 16);
 
 constexpr uint64_t Fixed_Epoch = 1;
 constexpr uint8_t Quicr_SFrame_Sig_Bits = 80;
-constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GCM_128_SHA256;
 
 namespace qmedia
 {
@@ -26,7 +25,8 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            const std::string& authToken,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                                           const cantina::LoggerPointer& logger) :
+                                           const cantina::LoggerPointer& logger,
+                                           std::optional<sframe::CipherSuite> cipherSuite) :
     canReceiveSubs(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
@@ -36,21 +36,28 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     e2eToken(e2eToken),
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TSDEL", logger)),
-    sframe_context(Default_Cipher_Suite)
+    sframe_context(cipherSuite ? std::optional<QSFrameContext>(*cipherSuite) : std::nullopt)
 {
     currentGroupId = 0;
     currentObjectId = -1;
 
-    // TODO: This needs to be replaced with valid keying material
-    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
-    sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(
-        Default_Cipher_Suite,
-        salt,
-        {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
-
-    sframe_context.enableEpoch(Fixed_Epoch);
+    if (sframe_context)
+    {
+        // TODO: This needs to be replaced with valid keying material
+        sframe::CipherSuite suite = *cipherSuite;
+        std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
+        sframe::bytes salt(salt_string.begin(), salt_string.end());
+        auto epoch_key = hkdf_extract(
+            suite,
+            salt,
+            {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+        sframe_context->addEpoch(Fixed_Epoch, epoch_key);
+        sframe_context->enableEpoch(Fixed_Epoch);
+    }
+    else
+    {
+        LOGGER_WARNING(logger, "[" << quicrNamespace << "] This subscription will not attempt to encrypt data");
+    }
 }
 
 std::shared_ptr<SubscriptionDelegate>
@@ -62,7 +69,8 @@ SubscriptionDelegate::create(const std::string& sourceId,
                              const std::string& authToken,
                              quicr::bytes e2eToken,
                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                             const cantina::LoggerPointer& logger)
+                             const cantina::LoggerPointer& logger,
+                             std::optional<sframe::CipherSuite> cipherSuite)
 {
 
     return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
@@ -73,7 +81,8 @@ SubscriptionDelegate::create(const std::string& sourceId,
                                                                           authToken,
                                                                           e2eToken,
                                                                           std::move(qDelegate),
-                                                                          logger));
+                                                                          logger,
+                                                                          cipherSuite));
 }
 
 void SubscriptionDelegate::onSubscribeResponse(const quicr::Namespace& /* quicr_namespace */,
@@ -138,34 +147,61 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
     currentGroupId = groupId;
     currentObjectId = objectId;
 
-    // Decrypt the received data using sframe
+    quicr::bytes output_buffer;
+    if (sframe_context)
+    {
+        // Decrypt the received data using sframe
+        try
+        {
+            auto buf = quicr::messages::MessageBuffer(data);
+            quicr::uintVar_t epoch;
+            buf >> epoch;
+            const auto ciphertext = buf.take();
+            output_buffer = quicr::bytes(ciphertext.size());
+            auto cleartext = sframe_context->unprotect(epoch,
+                                                       quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                        quicrName.bits<std::uint64_t>(0, 48),
+                                                        output_buffer,
+                                                        ciphertext);
+            output_buffer.resize(cleartext.size());
+        }
+        catch (const std::exception& e)
+        {
+            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: " << e.what());
+            return;
+        }
+        catch (const std::string& s)
+        {
+            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: " << s);
+            return;
+        }
+        catch (...)
+        {
+            LOGGER_ERROR(logger, "Unknown error trying to decrypt sframe");
+            return;
+        }
+    }
+    else
+    {
+        output_buffer = std::move(data);
+    }
+
+    // Forward the object on.
     try
     {
-        auto buf = quicr::messages::MessageBuffer(data);
-        quicr::uintVar_t epoch;
-        buf >> epoch;
-        const auto ciphertext = buf.take();
-        quicr::bytes output_buffer(ciphertext.size());
-        auto cleartext = sframe_context.unprotect(epoch,
-                                                  quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                  quicrName.bits<std::uint64_t>(0, 48),
-                                                  output_buffer,
-                                                  ciphertext);
-        output_buffer.resize(cleartext.size());
-
         qDelegate->subscribedObject(this->quicrNamespace, std::move(output_buffer), groupId, objectId);
     }
     catch (const std::exception& e)
     {
-        LOGGER_ERROR(logger, "Exception trying to decrypt with sframe and forward object: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to forward object: " << e.what());
     }
     catch (const std::string& s)
     {
-        LOGGER_ERROR(logger, "Exception trying to decrypt sframe and forward object: " << s);
+        LOGGER_ERROR(logger, "Exception trying to forward object: " << s);
     }
     catch (...)
     {
-        LOGGER_ERROR(logger, "Unknown error trying to decrypt sframe and forward object");
+        LOGGER_ERROR(logger, "Unknown error trying to forward object");
     }
 }
 
@@ -212,7 +248,8 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                                          quicr::bytes&& payload,
                                          const std::vector<std::uint8_t>& priority,
                                          const std::vector<std::uint16_t>& expiry,
-                                         const cantina::LoggerPointer& logger) :
+                                         const cantina::LoggerPointer& logger,
+                                         const std::optional<sframe::CipherSuite> cipherSuite) :
     // canPublish(true),
     sourceId(sourceId),
     originUrl(originUrl),
@@ -226,17 +263,22 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     expiry(expiry),
     qDelegate(std::move(qDelegate)),
     logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
-    sframe_context(Default_Cipher_Suite)
+    sframe_context(cipherSuite ? std::optional<QSFrameContext>(*cipherSuite) : std::nullopt)
 {
-    // TODO: This needs to be replaced with valid keying material
-    std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
-    sframe::bytes salt(salt_string.begin(), salt_string.end());
-    auto epoch_key = hkdf_extract(
-        Default_Cipher_Suite,
-        salt,
-        std::vector<std::uint8_t>{
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
-    sframe_context.addEpoch(Fixed_Epoch, epoch_key);
+    if (sframe_context) {
+        // TODO: This needs to be replaced with valid keying material
+        std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
+        sframe::bytes salt(salt_string.begin(), salt_string.end());
+        auto epoch_key = hkdf_extract(
+            *cipherSuite,
+            salt,
+            std::vector<std::uint8_t>{
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
+        sframe_context->addEpoch(Fixed_Epoch, epoch_key);
+        sframe_context->enableEpoch(Fixed_Epoch);
+    } else {
+        LOGGER_WARNING(logger, "[" << quicrNamespace << "] This publication will not attempt to encrypt data");
+    }
 
     // Publish named object and intent require priorities. Set defaults if missing
     if (this->priority.empty()) {
@@ -245,8 +287,6 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     } else if (this->priority.size() == 1) {
         this->priority.emplace_back(priority[0]);
     }
-
-    sframe_context.enableEpoch(Fixed_Epoch);
 }
 std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                                                  const std::string& sourceId,
@@ -257,7 +297,8 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                  quicr::bytes&& payload,
                                                                  const std::vector<std::uint8_t>& priority,
                                                                  const std::vector<std::uint16_t>& expiry,
-                                                                 const cantina::LoggerPointer& logger)
+                                                                 const cantina::LoggerPointer& logger,
+                                                                 const std::optional<sframe::CipherSuite> cipherSuite)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
                                                                         sourceId,
@@ -268,7 +309,8 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                         std::move(payload),
                                                                         priority,
                                                                         expiry,
-                                                                        logger));
+                                                                        logger,
+                                                                        cipherSuite));
 }
 
 void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
@@ -350,37 +392,63 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         quicrName = (0x0_name | ++objectId) | (quicrName & ~Object_ID_Mask);
     }
 
-    // Encrypt using sframe
+    quicr::bytes to_publish;
+    if (sframe_context)
+    {
+        // Encrypt using sframe
+        try
+        {
+            trace.push_back({"qMediaDelegate:publishNamedObject:beforeEncrypt", trace.front().start_time});
+            quicr::bytes output_buffer(len + 16);
+            auto ciphertext = sframe_context->protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
+                                                      quicrName.bits<std::uint64_t>(0, 48),
+                                                      output_buffer,
+                                                      {data, len});
+            output_buffer.resize(ciphertext.size());
+            auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
+            buf << quicr::uintVar_t(Fixed_Epoch);
+            buf.push(std::move(output_buffer));
+            trace.push_back({"qMediaDelegate:publishNamedObject:afterEncrypt", trace.front().start_time});
+            to_publish = buf.take();
+        }
+        catch (const std::exception& e)
+        {
+            LOGGER_ERROR(logger, "Exception trying to encrypt: " << e.what());
+            return;
+        }
+        catch (const std::string& s)
+        {
+            LOGGER_ERROR(logger, "Exception trying to encrypt: " << s);
+            return;
+        }
+        catch (...)
+        {
+            LOGGER_ERROR(logger, "Unknown error trying to encrypt");
+            return;
+        }
+    }
+    else
+    {
+        to_publish = quicr::bytes(data, data + len);
+    }
+
     try
     {
-        trace.push_back({"qMediaDelegate:publishNamedObject:beforeEncrypt", trace.front().start_time});
-        quicr::bytes output_buffer(len + 16);
-        auto ciphertext = sframe_context.protect(quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                 quicrName.bits<std::uint64_t>(0, 48),
-                                                 output_buffer,
-                                                 {data, len});
-        output_buffer.resize(ciphertext.size());
-        auto buf = quicr::messages::MessageBuffer(output_buffer.size() + 8);
-        buf << quicr::uintVar_t(Fixed_Epoch);
-        buf.push(std::move(output_buffer));
-
-        trace.push_back({"qMediaDelegate:publishNamedObject:afterEncrypt", trace.front().start_time});
-
-        client->publishNamedObject(quicrName, pri, exp, buf.take(), std::move(trace));
+        client->publishNamedObject(quicrName, pri, exp, std::move(to_publish), std::move(trace));
     }
     catch (const std::exception& e)
     {
-        LOGGER_ERROR(logger, "Exception trying to encrypt sframe and publish: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to publish: " << e.what());
         return;
     }
     catch (const std::string& s)
     {
-        LOGGER_ERROR(logger, "Exception trying to encrypt sframe and publish: " << s);
+        LOGGER_ERROR(logger, "Exception trying to publish: " << s);
         return;
     }
     catch (...)
     {
-        LOGGER_ERROR(logger, "Unknown error trying to encrypt sframe and publish");
+        LOGGER_ERROR(logger, "Unknown error trying publish");
         return;
     }
 }

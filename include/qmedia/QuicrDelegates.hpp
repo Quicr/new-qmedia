@@ -9,6 +9,7 @@
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
 
+#include <optional>
 #include <string>
 
 namespace qmedia
@@ -24,7 +25,8 @@ class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enabl
                          const std::string& authToken,
                          quicr::bytes e2eToken,
                          std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                         const cantina::LoggerPointer& logger);
+                         const cantina::LoggerPointer& logger,
+                         const std::optional<sframe::CipherSuite> cipherSuite);
 
 public:
     [[nodiscard]] static std::shared_ptr<SubscriptionDelegate>
@@ -36,7 +38,8 @@ public:
            const std::string& authToken,
            quicr::bytes e2eToken,
            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-           const cantina::LoggerPointer& logger);
+           const cantina::LoggerPointer& logger,
+           const std::optional<sframe::CipherSuite> cipherSuite);
 
     std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
 
@@ -86,7 +89,7 @@ private:
     std::uint32_t currentGroupId;
     std::uint16_t currentObjectId;
 
-    QSFrameContext sframe_context;
+    std::optional<QSFrameContext> sframe_context;
 };
 
 class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_shared_from_this<PublicationDelegate>
@@ -100,7 +103,8 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
                         quicr::bytes&& payload,
                         const std::vector<std::uint8_t>& priority,
                         const std::vector<std::uint16_t>& expiry,
-                        const cantina::LoggerPointer& logger);
+                        const cantina::LoggerPointer& logger,
+                        const std::optional<sframe::CipherSuite> cipherSuite);
 
 public:
     [[nodiscard]] static std::shared_ptr<PublicationDelegate>
@@ -113,7 +117,8 @@ public:
            quicr::bytes&& payload,
            const std::vector<std::uint8_t>& priority,
            const std::vector<std::uint16_t>& expiry,
-           const cantina::LoggerPointer& logger);
+           const cantina::LoggerPointer& logger,
+           const std::optional<sframe::CipherSuite> cipherSuite);
 
     std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
 
@@ -156,6 +161,6 @@ private:
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
     const cantina::LoggerPointer logger;
 
-    QSFrameContext sframe_context;
+    std::optional<QSFrameContext> sframe_context;
 };
 }        // namespace qmedia

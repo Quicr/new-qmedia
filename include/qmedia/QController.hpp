@@ -11,12 +11,16 @@
 
 #include <mutex>
 #include <thread>
+#include <optional>
+#include <sframe/sframe.h>
 
 using json = nlohmann::json;
 using SourceId = std::string;
 
 namespace qmedia
 {
+
+constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GCM_128_SHA256;
 
 class QController
 {
@@ -30,7 +34,8 @@ public:
     QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
                 std::shared_ptr<QPublisherDelegate> publisherDelegate,
                 const cantina::LoggerPointer& logger,
-                const bool debugging = false);
+                const bool debugging = false,
+                const std::optional<sframe::CipherSuite> cipherSuite = Default_Cipher_Suite);
 
     ~QController();
 
@@ -97,7 +102,8 @@ private:
                                     const quicr::TransportMode transportMode,
                                     const std::string& authToken,
                                     quicr::bytes&& e2eToken,
-                                    std::shared_ptr<qmedia::QSubscriptionDelegate> delegate);
+                                    std::shared_ptr<qmedia::QSubscriptionDelegate> delegate,
+                                    const std::optional<sframe::CipherSuite> cipherSuite);
 
     std::shared_ptr<PublicationDelegate> findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace);
 
@@ -166,6 +172,7 @@ private:
     bool closed;
     bool is_singleordered_subscription = true;
     bool is_singleordered_publication = false;
+    std::optional<sframe::CipherSuite> cipher_suite;
 };
 
 }        // namespace qmedia
