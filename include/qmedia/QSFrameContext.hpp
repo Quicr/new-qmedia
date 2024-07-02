@@ -15,6 +15,7 @@ class QSFrameContext
 {
 public:
     QSFrameContext(sframe::CipherSuite cipher_suite);
+    QSFrameContext(QSFrameContext& other);
 
     void addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret);
     void enableEpoch(uint64_t epoch_id);

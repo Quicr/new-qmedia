@@ -187,13 +187,14 @@ public:
     int removePubByNamespace(const quicr::Namespace& /* quicrNamespace */) { return 0; }
 };
 
-static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector> collector)
+static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector> collector, bool encrypt = true)
 {
     const auto sub = std::make_shared<QSubscriberTestDelegate>(std::move(collector));
     const auto pub = std::make_shared<QPublisherTestDelegate>();
     const auto logger = std::make_shared<cantina::Logger>("QTest", "QTEST");
     logger->SetLogLevel("DEBUG");
-    return {sub, pub, logger};
+    const auto suite = encrypt ? std::optional<sframe::CipherSuite>(qmedia::Default_Cipher_Suite) : std::nullopt;
+    return qmedia::QController(sub, pub, logger, true, suite);
 }
 
 static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
@@ -241,7 +242,7 @@ static std::set<quicr::bytes> test_data(uint8_t label)
     return out;
 }
 
-TEST_CASE("Two-party session")
+static void two_party_session(bool encrypt)
 {
     // Start up a local relay
     const auto relay = LocalhostRelay();
@@ -249,10 +250,10 @@ TEST_CASE("Two-party session")
 
     // Instantiate two QControllers
     auto collector_a = std::make_shared<SubscriptionCollector>();
-    auto controller_a = make_controller(collector_a);
+    auto controller_a = make_controller(collector_a, encrypt);
 
     auto collector_b = std::make_shared<SubscriptionCollector>();
-    auto controller_b = make_controller(collector_b);
+    auto controller_b = make_controller(collector_b, encrypt);
 
     // Connect to the relay
     qtransport::TransportConfig config{
@@ -310,6 +311,12 @@ TEST_CASE("Two-party session")
     REQUIRE(collector_a->sourceId() == "2");
     REQUIRE(collector_a->label() == "Participant 2");
     // REQUIRE(collector_a->qualityProfile() == "opus,br=6");
+}
+
+TEST_CASE("Two-party session")
+{
+    two_party_session(true);
+    two_party_session(false);
 }
 
 TEST_CASE("Fetch Switching Sets & Subscriptions")
