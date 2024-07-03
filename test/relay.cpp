@@ -127,8 +127,8 @@ LocalhostRelay::LocalhostRelay()
     };
 
     const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = cert_file,
-        .tls_key_filename = key_file,
+        .tls_cert_filename = const_cast<char *>(cert_file),
+        .tls_key_filename = const_cast<char *>(key_file),
         .time_queue_rx_size = 2000
     };
 
