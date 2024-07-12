@@ -3,8 +3,9 @@ qmedia
 
 [![CMake](https://github.com/Quicr/new-qmedia/actions/workflows/cmake.yml/badge.svg?branch=main)](https://github.com/Quicr/new-qmedia/actions/workflows/cmake.yml)
 
-Implementation of realtime audio/video library and experimental
-MacOs client on top of [libquicr](https://github.com/Quicr/libquicr)
+QMedia is a data driven interface to the QUIC media transmission library [libquicr](https://github.com/Quicr/libquicr). 
+
+A JSON "manifest" drives QMedia to automatically create delegates for `libquicr` subscriptions and publications.
 
 ## Build
 

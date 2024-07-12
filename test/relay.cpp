@@ -126,11 +126,9 @@ LocalhostRelay::LocalhostRelay()
         .proto = quicr::RelayInfo::Protocol::QUIC,
     };
 
-    const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = const_cast<char *>(cert_file),
-        .tls_key_filename = const_cast<char *>(key_file),
-        .time_queue_rx_size = 2000
-    };
+    const auto tcfg = qtransport::TransportConfig{.tls_cert_filename = const_cast<char*>(cert_file),
+                                                  .tls_key_filename = const_cast<char*>(key_file),
+                                                  .time_queue_rx_size = 2000};
 
     const auto logger = std::make_shared<cantina::Logger>("LocalhostRelay");
     const auto delegate = std::make_shared<LocalhostServerDelegate>(logger);
@@ -177,9 +175,7 @@ struct SubDelegate : quicr::SubscriberDelegate
     {
     }
 
-    void onSubscribedObject(const quicr::Name& quicr_name,
-                            uint8_t /* priority */,
-                            quicr::bytes&& data) override
+    void onSubscribedObject(const quicr::Name& quicr_name, uint8_t /* priority */, quicr::bytes&& data) override
     {
         recv_promise.set_value({quicr_name, std::move(data)});
     }
@@ -258,21 +254,15 @@ TEST_CASE("Localhost relay")
     const auto intent = quicr::SubscribeIntent::immediate;
 
     const auto sub_del_a = std::make_shared<SubDelegate>();
-    client_a.subscribe(sub_del_a, ns, intent,
-                       quicr::TransportMode::ReliablePerTrack,
-                       "origin_url", "auth_token", {});
+    client_a.subscribe(sub_del_a, ns, intent, quicr::TransportMode::ReliablePerTrack, "origin_url", "auth_token", {});
     sub_del_a->await_subscribe_response();
 
     const auto sub_del_b = std::make_shared<SubDelegate>();
-    client_b.subscribe(sub_del_b, ns, intent,
-                       quicr::TransportMode::ReliablePerTrack,
-                       "origin_url", "auth_token", {});
+    client_b.subscribe(sub_del_b, ns, intent, quicr::TransportMode::ReliablePerTrack, "origin_url", "auth_token", {});
     sub_del_b->await_subscribe_response();
 
     const auto sub_del_c = std::make_shared<SubDelegate>();
-    client_c.subscribe(sub_del_c, ns, intent,
-                       quicr::TransportMode::ReliablePerTrack,
-                       "origin_url", "auth_token", {});
+    client_c.subscribe(sub_del_c, ns, intent, quicr::TransportMode::ReliablePerTrack, "origin_url", "auth_token", {});
     sub_del_c->await_subscribe_response();
 
     // One client publishes on the namespace

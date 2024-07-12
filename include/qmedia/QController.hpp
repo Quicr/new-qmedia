@@ -25,8 +25,13 @@ constexpr sframe::CipherSuite Default_Cipher_Suite = sframe::CipherSuite::AES_GC
 class QController
 {
 public:
-    enum class PublicationState { active, paused };
-    struct PublicationReport {
+    enum class PublicationState
+    {
+        active,
+        paused
+    };
+    struct PublicationReport
+    {
         PublicationState state;
         quicr::Namespace quicrNamespace;
     };
@@ -47,7 +52,7 @@ public:
                 const qtransport::TransportConfig& config);
 
     int disconnect();
-    
+
     bool connected() const;
 
     [[deprecated("Use QController::disconnect instead")]] void close();
@@ -75,6 +80,7 @@ public:
     void setPublicationState(const quicr::Namespace& quicrNamespace, const PublicationState);
     void setSubscriptionState(const quicr::Namespace& quicrNamespace, const quicr::TransportMode);
     quicr::SubscriptionState getSubscriptionState(const quicr::Namespace& quicrNamespace);
+
 private:
     struct PublicationDetails
     {

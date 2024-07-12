@@ -15,7 +15,6 @@ using namespace std::chrono_literals;
 
 struct SubscriptionCollector
 {
-
     SubscriptionCollector() : object_future(object_promise.get_future()) {}
 
     void add_object(quicr::bytes&& data)
@@ -46,9 +45,8 @@ struct SubscriptionCollector
         const auto status = object_future.wait_for(1500ms);
         if (status != std::future_status::ready)
         {
-            throw std::runtime_error("Object collection timed out "
-                                     + std::to_string(expected_object_count)
-                                     + " != " + std::to_string(_objects.size()));
+            throw std::runtime_error("Object collection timed out " + std::to_string(expected_object_count) +
+                                     " != " + std::to_string(_objects.size()));
         }
 
         return _objects;
@@ -63,15 +61,17 @@ struct SubscriptionCollector
     }
 
     // Thread-safe, unwrapping accessors
-#define STRING_ACCESSOR(field_name) \
-    void field_name(std::string field_name) { \
-      const auto _ = std::lock_guard(object_mutex); \
-      _##field_name = std::move(field_name); \
-    } \
-    \
-    std::string field_name() { \
-      const auto _ = std::lock_guard(object_mutex); \
-      return _##field_name.value(); \
+#define STRING_ACCESSOR(field_name)                   \
+    void field_name(std::string field_name)           \
+    {                                                 \
+        const auto _ = std::lock_guard(object_mutex); \
+        _##field_name = std::move(field_name);        \
+    }                                                 \
+                                                      \
+    std::string field_name()                          \
+    {                                                 \
+        const auto _ = std::lock_guard(object_mutex); \
+        return _##field_name.value();                 \
     }
 
     STRING_ACCESSOR(sourceId)
@@ -113,7 +113,8 @@ public:
     {
         collector->sourceId(sourceId);
         collector->label(label);
-        transportMode = quicr::TransportMode::ReliablePerTrack; // Testing microbursts data, which often results in drops. Use reliable for tests.
+        transportMode = quicr::TransportMode::ReliablePerTrack;        // Testing microbursts data, which often results
+                                                                       // in drops. Use reliable for tests.
         // collector->qualityProfile(profileSet);
         return 0;
     }
@@ -126,7 +127,10 @@ public:
         return 1;
     }
 
-    int subscribedObject(const quicr::Namespace& /* namespace */, quicr::bytes&& data, std::uint32_t /* groupId */, std::uint16_t /* objectId */) override
+    int subscribedObject(const quicr::Namespace& /* namespace */,
+                         quicr::bytes&& data,
+                         std::uint32_t /* groupId */,
+                         std::uint16_t /* objectId */) override
     {
         collector->add_object(std::move(data));
         return 0;
@@ -143,8 +147,8 @@ public:
 
     virtual ~QSubscriberTestDelegate() = default;
 
-    std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubBySourceId(const std::string& /* sourceId */,
-                                                                         const qmedia::manifest::ProfileSet& /* profileSet */)
+    std::shared_ptr<qmedia::QSubscriptionDelegate>
+    allocateSubBySourceId(const std::string& /* sourceId */, const qmedia::manifest::ProfileSet& /* profileSet */)
     {
         return std::make_shared<QSubscriptionTestDelegate>(collector);
     }
@@ -160,9 +164,12 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     virtual ~QPublicationTestDelegate() = default;
 
-    int prepare(const std::string& /* sourceId */, const std::string& /* qualityProfile */, quicr::TransportMode& transportMode)
+    int prepare(const std::string& /* sourceId */,
+                const std::string& /* qualityProfile */,
+                quicr::TransportMode& transportMode)
     {
-        transportMode = quicr::TransportMode::ReliablePerGroup; // Testing microbursts data, which often results in drops. Use reliable for tests.
+        transportMode = quicr::TransportMode::ReliablePerGroup;        // Testing microbursts data, which often results
+                                                                       // in drops. Use reliable for tests.
         return 0;
     }
 
@@ -219,13 +226,11 @@ static qmedia::manifest::MediaStream make_media_stream(uint32_t endpoint_id)
                 .type = "singleordered",
                 .profiles =
                     {
-                        {
-                            .qualityProfile = "opus,br=6",
-                            .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
-                            .priorities = {1},
-                            .expiry = {500,500},
-                            .appTag = "primaryV"
-                        },
+                        {.qualityProfile = "opus,br=6",
+                         .quicrNamespace = encoder.EncodeUrl(url_base + endpoint_id_string),
+                         .priorities = {1},
+                         .expiry = {500, 500},
+                         .appTag = "primaryV"},
                     },
             },
     };
@@ -446,7 +451,8 @@ TEST_CASE("Test Publication States")
         for (const auto& obj : sent_resumed)
         {
             // Inject a little delay
-            if (i % 30 == 0) {
+            if (i % 30 == 0)
+            {
                 std::this_thread::sleep_for(std::chrono::milliseconds(2));
             }
             ++i;
@@ -480,12 +486,14 @@ TEST_CASE("Subscription set/get state")
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     // Active state.
-    const quicr::SubscriptionState& state = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
+    const quicr::SubscriptionState& state = controller.getSubscriptionState(
+        media.profileSet.profiles[0].quicrNamespace);
     REQUIRE(state == quicr::SubscriptionState::Ready);
 
     // Set to paused.
     controller.setSubscriptionState(media.profileSet.profiles[0].quicrNamespace, quicr::TransportMode::Pause);
-    const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
+    const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(
+        media.profileSet.profiles[0].quicrNamespace);
     REQUIRE(pausedState == quicr::SubscriptionState::Paused);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
@@ -494,9 +502,11 @@ TEST_CASE("Parent logger")
 {
     // Parent logger gets log messages.
     bool messageReceived = false;
-    auto parent = std::make_shared<cantina::CustomLogger>([&messageReceived](auto level, const std::string& msg, bool) {
-        messageReceived |= (msg.find("QController started...") != std::string::npos && level == cantina::LogLevel::Debug);
-    });
+    auto parent = std::make_shared<cantina::CustomLogger>(
+        [&messageReceived](auto level, const std::string& msg, bool) {
+            messageReceived |= (msg.find("QController started...") != std::string::npos &&
+                                level == cantina::LogLevel::Debug);
+        });
     parent->SetLogLevel(cantina::LogLevel::Debug);
     auto controller = qmedia::QController(nullptr, nullptr, parent);
     REQUIRE(messageReceived);

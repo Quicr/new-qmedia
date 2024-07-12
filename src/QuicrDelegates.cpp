@@ -72,7 +72,6 @@ SubscriptionDelegate::create(const std::string& sourceId,
                              const cantina::LoggerPointer& logger,
                              std::optional<sframe::CipherSuite> cipherSuite)
 {
-
     return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
                                                                           quicrNamespace,
                                                                           intent,
@@ -104,9 +103,7 @@ void SubscriptionDelegate::onSubscriptionEnded(const quicr::Namespace& /* quicr_
  * from the quicr::name. These fields along with the notificaiton
  * data are passed to the client callback.
  */
-void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
-                                              uint8_t /*priority*/,
-                                              quicr::bytes&& data)
+void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName, uint8_t /*priority*/, quicr::bytes&& data)
 {
     // LOGGER_DEBUG(logger, __FUNCTION__);
     if (data.empty())
@@ -160,9 +157,9 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
             output_buffer = quicr::bytes(ciphertext.size());
             auto cleartext = sframe_context->unprotect(epoch,
                                                        quicr::Namespace(quicrName, Quicr_SFrame_Sig_Bits),
-                                                        quicrName.bits<std::uint64_t>(0, 48),
-                                                        output_buffer,
-                                                        ciphertext);
+                                                       quicrName.bits<std::uint64_t>(0, 48),
+                                                       output_buffer,
+                                                       ciphertext);
             output_buffer.resize(cleartext.size());
         }
         catch (const std::exception& e)
@@ -218,8 +215,7 @@ void SubscriptionDelegate::subscribe(std::shared_ptr<quicr::Client> client, cons
     }
 
     client->subscribe(
-        shared_from_this(), quicrNamespace, intent, transport_mode,
-        originUrl, authToken, std::move(e2eToken));
+        shared_from_this(), quicrNamespace, intent, transport_mode, originUrl, authToken, std::move(e2eToken));
 }
 
 void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
@@ -265,7 +261,8 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
     sframe_context(cipherSuite ? std::optional<QSFrameContext>(*cipherSuite) : std::nullopt)
 {
-    if (sframe_context) {
+    if (sframe_context)
+    {
         // TODO: This needs to be replaced with valid keying material
         std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
         sframe::bytes salt(salt_string.begin(), salt_string.end());
@@ -276,15 +273,19 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
         sframe_context->addEpoch(Fixed_Epoch, epoch_key);
         sframe_context->enableEpoch(Fixed_Epoch);
-    } else {
+    }
+    else
+    {
         LOGGER_WARNING(logger, "[" << quicrNamespace << "] This publication will not attempt to encrypt data");
     }
 
     // Publish named object and intent require priorities. Set defaults if missing
-    if (this->priority.empty()) {
-        this->priority = { 10, 11 };
-
-    } else if (this->priority.size() == 1) {
+    if (this->priority.empty())
+    {
+        this->priority = {10, 11};
+    }
+    else if (this->priority.size() == 1)
+    {
         this->priority.emplace_back(priority[0]);
     }
 }
@@ -331,8 +332,7 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client,
 
     LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
     bool success = client->publishIntent(
-        shared_from_this(), quicrNamespace, originUrl,
-        authToken, std::move(payload), transport_mode, priority[0]);
+        shared_from_this(), quicrNamespace, originUrl, authToken, std::move(payload), transport_mode, priority[0]);
 
     if (!success)
     {
@@ -358,7 +358,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
                                              const std::uint8_t* data,
                                              std::size_t len,
                                              bool groupFlag,
-                                             std::vector<qtransport::MethodTraceItem> &&trace)
+                                             std::vector<qtransport::MethodTraceItem>&& trace)
 {
     // If the object data isn't present, return
     if (len == 0)

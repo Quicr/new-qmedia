@@ -56,12 +56,9 @@ public:
     virtual void onSubscriptionEnded(const quicr::Namespace& quicrNamespace,
                                      const quicr::SubscribeResult::SubscribeStatus& result);
 
-    virtual void onSubscribedObject(const quicr::Name& quicrName,
-                                    uint8_t priority,
-                                    quicr::bytes&& data);
+    virtual void onSubscribedObject(const quicr::Name& quicrName, uint8_t priority, quicr::bytes&& data);
 
-    virtual void
-    onSubscribedObjectFragment(const quicr::Name&, uint8_t, const uint64_t&, bool, quicr::bytes&&);
+    virtual void onSubscribedObjectFragment(const quicr::Name&, uint8_t, const uint64_t&, bool, quicr::bytes&&);
 
     /*===========================================================================*/
     // Actions
@@ -134,7 +131,7 @@ public:
     /*===========================================================================*/
 
     void publishIntent(std::shared_ptr<quicr::Client> client,
-                       quicr::TransportMode transport_mode=quicr::TransportMode::Unreliable);
+                       quicr::TransportMode transport_mode = quicr::TransportMode::Unreliable);
 
     void publishIntentEnd(std::shared_ptr<quicr::Client> client);
 
@@ -142,7 +139,7 @@ public:
                             const std::uint8_t* data,
                             std::size_t len,
                             bool groupFlag,
-                            std::vector<qtransport::MethodTraceItem> &&trace);
+                            std::vector<qtransport::MethodTraceItem>&& trace);
 
 private:
     // bool canPublish;
@@ -153,7 +150,7 @@ private:
     quicr::Namespace quicrNamespace;
     std::uint32_t groupId;
     std::uint16_t objectId;
-    quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
+    quicr::TransportMode transport_mode{quicr::TransportMode::ReliablePerTrack};
     quicr::bytes&& payload;
     std::vector<std::uint8_t> priority;
     std::vector<std::uint16_t> expiry;

@@ -130,7 +130,8 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
     const auto& publication = it->second;
     if (publication.state != PublicationState::paused)
     {
-        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now());
 
         std::vector<qtransport::MethodTraceItem> trace;
         trace.reserve(10);
@@ -151,7 +152,8 @@ void QController::publishNamedObjectTest(std::uint8_t* data, std::size_t len, bo
     const auto& publication = quicrPublicationsMap.begin()->second;
     if (publication.state != PublicationState::paused)
     {
-        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now());
+        const auto start_time = std::chrono::time_point_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now());
 
         std::vector<qtransport::MethodTraceItem> trace;
         trace.push_back({"qController:publishNamedObject", start_time});
@@ -232,20 +234,18 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
         return nullptr;
     }
 
-    quicrPublicationsMap[quicrNamespace] = {
-        .state = PublicationState::active,
-        .delegate = PublicationDelegate::create(std::move(qDelegate),
-                                                sourceId,
-                                                quicrNamespace,
-                                                transportMode,
-                                                originUrl,
-                                                authToken,
-                                                std::move(payload),
-                                                priority,
-                                                expiry,
-                                                logger,
-                                                cipher_suite)
-    };
+    quicrPublicationsMap[quicrNamespace] = {.state = PublicationState::active,
+                                            .delegate = PublicationDelegate::create(std::move(qDelegate),
+                                                                                    sourceId,
+                                                                                    quicrNamespace,
+                                                                                    transportMode,
+                                                                                    originUrl,
+                                                                                    authToken,
+                                                                                    std::move(payload),
+                                                                                    priority,
+                                                                                    expiry,
+                                                                                    logger,
+                                                                                    cipher_suite)};
 
     return quicrPublicationsMap[quicrNamespace].delegate->getptr();
 }
@@ -331,7 +331,8 @@ void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
 {
     std::lock_guard<std::mutex> _(subsMutex);
     const auto& it = quicrSubscriptionsMap.find(quicrNamespace);
-    if (it == quicrSubscriptionsMap.end()) {
+    if (it == quicrSubscriptionsMap.end())
+    {
         LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
         return;
     }
@@ -376,7 +377,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
         return -1;
     }
 
-     // TODO: add more intent parameters - max queue size (in time), default ttl, priority
+    // TODO: add more intent parameters - max queue size (in time), default ttl, priority
     quicrPubDelegate->publishIntent(client_session, transportMode);
     return 0;
 }
@@ -399,9 +400,10 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
             LOGGER_INFO(logger, "Updated subscription " << subscription.sourceId);
             continue;
         }
-        
+
         auto transportMode = quicr::TransportMode::Unreliable;
-        int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, transportMode);
+        int prepare_error = delegate->prepare(
+            subscription.sourceId, subscription.label, subscription.profileSet, transportMode);
         if (prepare_error != 0)
         {
             LOGGER_ERROR(logger, "Error preparing subscription: " << prepare_error);
@@ -420,8 +422,8 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
                               "",
                               e2eToken);
 
-                // If singleordered, and we've successfully processed 1 delegate, break.
-                if (is_singleordered_subscription) break;
+            // If singleordered, and we've successfully processed 1 delegate, break.
+            if (is_singleordered_subscription) break;
         }
     }
 
@@ -496,7 +498,8 @@ std::vector<SourceId> QController::getSwitchingSets()
 {
     std::lock_guard<std::mutex> _(qSubsMutex);
     std::vector<SourceId> sourceIds;
-    for (const auto& switchingSet : qSubscriptionsMap) {
+    for (const auto& switchingSet : qSubscriptionsMap)
+    {
         sourceIds.push_back(switchingSet.first);
     }
     return sourceIds;
@@ -506,8 +509,10 @@ std::vector<quicr::Namespace> QController::getSubscriptions(const std::string& s
 {
     std::lock_guard<std::mutex> _(subsMutex);
     std::vector<quicr::Namespace> namespaces;
-    for (const auto& subscription : quicrSubscriptionsMap) {
-        if (subscription.second->getSourceId() == sourceId) {
+    for (const auto& subscription : quicrSubscriptionsMap)
+    {
+        if (subscription.second->getSourceId() == sourceId)
+        {
             namespaces.push_back(subscription.first);
         }
     }
@@ -518,7 +523,8 @@ std::vector<QController::PublicationReport> QController::getPublications()
 {
     std::lock_guard<std::mutex> _(pubsMutex);
     std::vector<PublicationReport> publications;
-    for (const auto& publication : quicrPublicationsMap) {
+    for (const auto& publication : quicrPublicationsMap)
+    {
         publications.push_back({
             .state = publication.second.state,
             .quicrNamespace = publication.first,

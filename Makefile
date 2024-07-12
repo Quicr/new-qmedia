@@ -6,6 +6,7 @@
 
 BUILD_DIR=build
 CLANG_FORMAT=clang-format -i
+CLANG_TIDY=clang-tidy -i
 TEST_DIR=test
 TEST_BIN=${BUILD_DIR}/${TEST_DIR}/qmedia_test
 
@@ -39,3 +40,8 @@ format:
 	find include -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
 	find src -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
 	find test -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_FORMAT}
+
+tidy:
+	find include -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_TIDY}
+	find src -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_TIDY}
+	find test -iname "*.hpp" -or -iname "*.cpp" | xargs ${CLANG_TIDY}
