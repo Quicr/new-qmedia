@@ -8,6 +8,7 @@
 #include <quicr/quicr_client.h>
 #include <cantina/logger.h>
 #include <transport/transport.h>
+#include <quicr/measurement.h>
 
 #include <mutex>
 #include <thread>

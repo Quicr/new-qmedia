@@ -61,8 +61,14 @@ int QController::connect(const std::string endpointID,
         .proto = protocol,
     };
 
+    quicr::MeasurementsConfig metrics_config{
+        .metrics_namespace = quicr::Namespace("0xA11CEB0B000000000000000000000000/80"),
+        .priority = 31,
+        .ttl = 65535,
+    };
+
     // SAH - add const std::string endpointId to the constructor
-    client_session = std::make_unique<quicr::Client>(relayInfo, endpointID, chunkSize, config, logger);
+    client_session = std::make_unique<quicr::Client>(relayInfo, endpointID, chunkSize, config, logger, metrics_config);
 
     if (!client_session->connect()) return -1;
 
@@ -173,7 +179,8 @@ void QController::publishMeasurement(const quicr::Measurement& m)
 
 void QController::publishMeasurement(const json& j)
 {
-    publishMeasurement(j.template get<quicr::Measurement>());
+    quicr::Measurement m = j;
+    publishMeasurement(m);
 }
 
 /*===========================================================================*/
