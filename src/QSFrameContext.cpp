@@ -1,21 +1,11 @@
 #include <bit>
 #include "qmedia/QSFrameContext.hpp"
-#include "sframe/crypto.h"
 
 namespace qmedia
 {
-QSFrameContext::QSFrameContext(sframe::CipherSuite cipher_suite) : cipher_suite(cipher_suite)
+QSFrameContext::QSFrameContext(sframe::CipherSuiteImpl cipher_suite) : cipher_suite(cipher_suite)
 {
     // Nothing more to do
-}
-
-QSFrameContext::QSFrameContext(QSFrameContext& other)
-{
-    std::lock_guard<std::mutex> lock(other.context_mutex);
-    cipher_suite = other.cipher_suite;
-    current_epoch = other.current_epoch;
-    epoch_secrets = other.epoch_secrets;
-    ns_contexts = other.ns_contexts;
 }
 
 void QSFrameContext::addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret)
@@ -55,8 +45,7 @@ sframe::output_bytes QSFrameContext::unprotect(uint64_t epoch,
 void QSFrameContext::ensure_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace)
 {
     // NOTE: caller must lock the mutex
-
-    if ((ns_contexts.count(quicr_namespace) > 0) && !ns_contexts.at(quicr_namespace).has_key(epoch_id))
+    if ((ns_contexts.count(quicr_namespace) > 0))
     {
         return;
     }
@@ -75,7 +64,7 @@ sframe::bytes QSFrameContext::derive_base_key(uint64_t epoch_id, const quicr::Na
     // NOTE: caller must lock the mutex
     std::string salt_string = "Quicr epoch base key " + std::string(quicr_namespace);
     sframe::bytes salt(salt_string.begin(), salt_string.end());
-    return sframe::hkdf_extract(cipher_suite, salt, epoch_secrets[epoch_id]);
+    return cipher_suite.hkdf_extract(salt, epoch_secrets[epoch_id]);
 }
 
 }        // namespace qmedia

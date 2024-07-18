@@ -3,6 +3,10 @@
 #include "qmedia/ManifestTypes.hpp"
 
 #include <quicr/hex_endec.h>
+#include <sframe/provider.h>
+#if defined(USE_MBEDTLS)
+#include "mbedtls.h"
+#endif
 
 #include <iostream>
 #include <sstream>
@@ -20,7 +24,6 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
     closed(false),
-    cipher_suite(cipher_suite)
 {
     // If there's a parent logger, its log level will be used.
     // Otherwise, query the debugging flag.
@@ -30,6 +33,23 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     }
 
     LOGGER_DEBUG(this->logger, "QController started...");
+
+    // SFrame configuration.
+    if (cipher_suite.has_value())
+    {
+        sframe::provider::ProviderPtr provider;
+#if defined(USE_MBEDTLS)
+        provider = std::make_shared<sframe::provider::mbedtls::MbedTLSProvider>();
+        LOGGER_DEBUG(this->logger, "SFrame will use the MbedTLS provider");
+#else
+        provider = std::make_shared<sframe::provider::openssl::OpenSSLProvider>();
+        LOGGER_DEBUG(this->logger, "SFrame will use the OpenSSL provider");
+#endif
+        this->cipher_suite = sframe::CipherSuiteImpl(*cipher_suite, provider);
+    }
+    else {
+        this->cipher_suite = std::nullopt;
+    }
 
     // quicr://webex.cisco.com/conference/1/mediaType/192/endpoint/2
     //   org, app,   conf, media, endpoint,     group, object
@@ -182,7 +202,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
                                              const std::string& authToken,
                                              quicr::bytes&& e2eToken,
                                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                                             const std::optional<sframe::CipherSuite> cipherSuite)
+                                             const std::optional<sframe::CipherSuiteImpl> cipherSuite)
 {
     std::lock_guard<std::mutex> _(subsMutex);
     if (quicrSubscriptionsMap.contains(quicrNamespace))

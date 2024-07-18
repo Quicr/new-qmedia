@@ -32,4 +32,12 @@ set_target_properties(${PROJECT_NAME}
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS OFF)
 
+if (USE_MBEDTLS)
+    target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+            USE_MBEDTLS)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            sframe_mbedtls)
+endif()
 #add_subdirectory(extern)

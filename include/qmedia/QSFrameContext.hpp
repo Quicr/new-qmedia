@@ -14,8 +14,7 @@ namespace qmedia
 class QSFrameContext
 {
 public:
-    QSFrameContext(sframe::CipherSuite cipher_suite);
-    QSFrameContext(QSFrameContext& other);
+    QSFrameContext(sframe::CipherSuiteImpl cipher_suite);
 
     void addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret);
     void enableEpoch(uint64_t epoch_id);
@@ -35,7 +34,7 @@ protected:
     void ensure_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
     sframe::bytes derive_base_key(uint64_t epoch_id, const quicr::Namespace& quicr_namespace);
 
-    sframe::CipherSuite cipher_suite;
+    sframe::CipherSuiteImpl cipher_suite;
     std::optional<uint64_t> current_epoch;
     std::map<uint64_t, quicr::bytes> epoch_secrets;
     std::map<quicr::Namespace, sframe::ContextBase> ns_contexts;        // key_id=epoch
