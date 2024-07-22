@@ -39,5 +39,9 @@ if (USE_MBEDTLS)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
             sframe_mbedtls)
+else()
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            sframe_openssl)
 endif()
 #add_subdirectory(extern)

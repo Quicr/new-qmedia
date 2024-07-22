@@ -6,6 +6,8 @@
 #include <sframe/provider.h>
 #if defined(USE_MBEDTLS)
 #include "mbedtls.h"
+#else
+#include "openssl.h"
 #endif
 
 #include <iostream>
@@ -23,7 +25,7 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
-    closed(false),
+    closed(false)
 {
     // If there's a parent logger, its log level will be used.
     // Otherwise, query the debugging flag.
