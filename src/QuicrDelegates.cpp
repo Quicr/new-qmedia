@@ -3,7 +3,6 @@
 
 #include <quicr/hex_endec.h>
 #include <quicr/message_buffer.h>
-#include <sframe/crypto.h>
 
 #include <iostream>
 #include <sstream>
@@ -26,7 +25,7 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                                            const cantina::LoggerPointer& logger,
-                                           std::optional<sframe::CipherSuite> cipherSuite) :
+                                           std::optional<sframe::CipherSuiteImpl> cipherSuite) :
     canReceiveSubs(true),
     sourceId(sourceId),
     quicrNamespace(quicrNamespace),
@@ -44,11 +43,10 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     if (sframe_context)
     {
         // TODO: This needs to be replaced with valid keying material
-        sframe::CipherSuite suite = *cipherSuite;
+        sframe::CipherSuiteImpl suite = *cipherSuite;
         std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
         sframe::bytes salt(salt_string.begin(), salt_string.end());
-        auto epoch_key = hkdf_extract(
-            suite,
+        auto epoch_key = suite.hkdf_extract(
             salt,
             {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
         sframe_context->addEpoch(Fixed_Epoch, epoch_key);
@@ -70,7 +68,7 @@ SubscriptionDelegate::create(const std::string& sourceId,
                              quicr::bytes e2eToken,
                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                              const cantina::LoggerPointer& logger,
-                             std::optional<sframe::CipherSuite> cipherSuite)
+                             std::optional<sframe::CipherSuiteImpl> cipherSuite)
 {
 
     return std::shared_ptr<SubscriptionDelegate>(new SubscriptionDelegate(sourceId,
@@ -249,7 +247,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                                          const std::vector<std::uint8_t>& priority,
                                          const std::vector<std::uint16_t>& expiry,
                                          const cantina::LoggerPointer& logger,
-                                         const std::optional<sframe::CipherSuite> cipherSuite) :
+                                         const std::optional<sframe::CipherSuiteImpl> cipherSuite) :
     // canPublish(true),
     sourceId(sourceId),
     originUrl(originUrl),
@@ -269,8 +267,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
         // TODO: This needs to be replaced with valid keying material
         std::string salt_string = "Quicr epoch master key " + std::to_string(Fixed_Epoch);
         sframe::bytes salt(salt_string.begin(), salt_string.end());
-        auto epoch_key = hkdf_extract(
-            *cipherSuite,
+        auto epoch_key = (*cipherSuite).hkdf_extract(
             salt,
             std::vector<std::uint8_t>{
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f});
@@ -298,7 +295,7 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                  const std::vector<std::uint8_t>& priority,
                                                                  const std::vector<std::uint16_t>& expiry,
                                                                  const cantina::LoggerPointer& logger,
-                                                                 const std::optional<sframe::CipherSuite> cipherSuite)
+                                                                 const std::optional<sframe::CipherSuiteImpl> cipherSuite)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
                                                                         sourceId,

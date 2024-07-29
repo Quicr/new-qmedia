@@ -12,7 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <optional>
-#include <sframe/sframe.h>
+#include <sframe/cipher.h>
 
 using json = nlohmann::json;
 using SourceId = std::string;
@@ -103,7 +103,7 @@ private:
                                     const std::string& authToken,
                                     quicr::bytes&& e2eToken,
                                     std::shared_ptr<qmedia::QSubscriptionDelegate> delegate,
-                                    const std::optional<sframe::CipherSuite> cipherSuite);
+                                    const std::optional<sframe::CipherSuiteImpl> cipherSuite);
 
     std::shared_ptr<PublicationDelegate> findQuicrPublicationDelegate(const quicr::Namespace& quicrNamespace);
 
@@ -172,7 +172,7 @@ private:
     bool closed;
     bool is_singleordered_subscription = true;
     bool is_singleordered_publication = false;
-    std::optional<sframe::CipherSuite> cipher_suite;
+    std::optional<sframe::CipherSuiteImpl> cipher_suite;
 };
 
 }        // namespace qmedia
