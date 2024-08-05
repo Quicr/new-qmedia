@@ -64,7 +64,7 @@ int QController::connect(const std::string endpointID,
     quicr::MeasurementsConfig metrics_config{
         .metrics_namespace = quicr::Namespace("0xA11CEB0B000000000000000000000000/80"),
         .priority = 31,
-        .ttl = 65535,
+        .ttl = 50000,
     };
 
     // SAH - add const std::string endpointId to the constructor
@@ -179,8 +179,13 @@ void QController::publishMeasurement(const quicr::Measurement& m)
 
 void QController::publishMeasurement(const json& j)
 {
-    quicr::Measurement m = j;
-    publishMeasurement(m);
+    if (!client_session)
+    {
+        LOGGER_ERROR(logger, "Failed to publish measurement: No Quicr session established");
+        return;
+    }
+
+    client_session->publishMeasurement(j);
 }
 
 /*===========================================================================*/
