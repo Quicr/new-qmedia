@@ -53,18 +53,13 @@ int QController::connect(const std::string endpointID,
                          std::uint16_t remotePort,
                          quicr::RelayInfo::Protocol protocol,
                          size_t chunkSize,
-                         const qtransport::TransportConfig& config)
+                         const qtransport::TransportConfig& config,
+                         const std::optional<quicr::MeasurementsConfig> metrics_config)
 {
     quicr::RelayInfo relayInfo = {
         .hostname = remoteAddress.c_str(),
         .port = remotePort,
         .proto = protocol,
-    };
-
-    quicr::MeasurementsConfig metrics_config{
-        .metrics_namespace = quicr::Namespace("0xA11CEB0B000000000000000000000000/80"),
-        .priority = 31,
-        .ttl = 50000,
     };
 
     // SAH - add const std::string endpointId to the constructor

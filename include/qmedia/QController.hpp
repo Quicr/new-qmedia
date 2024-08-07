@@ -45,7 +45,8 @@ public:
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
                 size_t chunkSize,
-                const qtransport::TransportConfig& config);
+                const qtransport::TransportConfig& config,
+                const std::optional<quicr::MeasurementsConfig> metrics_config = std::nullopt);
 
     int disconnect();
 
