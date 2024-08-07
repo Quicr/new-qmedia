@@ -242,7 +242,7 @@ void SubscriptionDelegate::unsubscribe(std::shared_ptr<quicr::Client> client)
 PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
                                          const std::string& sourceId,
                                          const quicr::Namespace& quicrNamespace,
-                                         const quicr::TransportMode transport_mode,
+                                         [[maybe_unused]] const quicr::TransportMode transport_mode,
                                          const std::string& originUrl,
                                          const std::string& authToken,
                                          quicr::bytes&& payload,
@@ -257,7 +257,8 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     quicrNamespace(quicrNamespace),
     groupId(time(nullptr)),        // TODO: Multiply by packet count.
     objectId(0),
-    transport_mode(transport_mode),
+    // TODO(shenning): Figure out if this is needed, otherwise remove.
+    // transport_mode(transport_mode),
     payload(std::move(payload)),
     priority(priority),
     expiry(expiry),

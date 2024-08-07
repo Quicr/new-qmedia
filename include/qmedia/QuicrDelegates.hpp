@@ -153,7 +153,8 @@ private:
     quicr::Namespace quicrNamespace;
     std::uint32_t groupId;
     std::uint16_t objectId;
-    quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
+    // TODO(shenning): Figure out if this is needed, otherwise remove.
+    // quicr::TransportMode transport_mode { quicr::TransportMode::ReliablePerTrack };
     quicr::bytes&& payload;
     std::vector<std::uint8_t> priority;
     std::vector<std::uint16_t> expiry;

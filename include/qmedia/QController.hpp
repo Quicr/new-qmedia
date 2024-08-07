@@ -8,6 +8,7 @@
 #include <quicr/quicr_client.h>
 #include <cantina/logger.h>
 #include <transport/transport.h>
+#include <quicr/measurement.h>
 
 #include <mutex>
 #include <thread>
@@ -44,10 +45,11 @@ public:
                 std::uint16_t remotePort,
                 quicr::RelayInfo::Protocol protocol,
                 size_t chunkSize,
-                const qtransport::TransportConfig& config);
+                const qtransport::TransportConfig& config,
+                const std::optional<quicr::MeasurementsConfig> metrics_config = std::nullopt);
 
     int disconnect();
-    
+
     bool connected() const;
 
     [[deprecated("Use QController::disconnect instead")]] void close();
@@ -63,6 +65,9 @@ public:
                             std::size_t len,
                             bool groupFlag);
     void publishNamedObjectTest(std::uint8_t* data, std::size_t len, bool groupFlag);
+
+    void publishMeasurement(const quicr::Measurement& m);
+    void publishMeasurement(const json& j);
 
     void setSubscriptionSingleOrdered(bool new_value) { is_singleordered_subscription = new_value; }
     void setPublicationSingleOrdered(bool new_value) { is_singleordered_publication = new_value; }

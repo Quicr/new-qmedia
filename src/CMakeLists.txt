@@ -10,16 +10,12 @@ set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-        ${LIBRARIES}
         quicr
         cantina::logger
-        numero_uri_lib
-        sframe)
+        sframe
+        nlohmann_json::nlohmann_json)
 
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_options(${PROJECT_NAME}
     PRIVATE
