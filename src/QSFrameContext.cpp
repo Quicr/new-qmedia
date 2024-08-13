@@ -8,6 +8,14 @@ QSFrameContext::QSFrameContext(sframe::CipherSuiteImpl cipher_suite) : cipher_su
     // Nothing more to do
 }
 
+QSFrameContext::QSFrameContext(QSFrameContext& other) : cipher_suite(other.cipher_suite)
+{
+    std::lock_guard<std::mutex> lock(other.context_mutex);
+    current_epoch = other.current_epoch;
+    epoch_secrets = other.epoch_secrets;
+    ns_contexts = other.ns_contexts;
+}
+
 void QSFrameContext::addEpoch(uint64_t epoch_id, const quicr::bytes& epoch_secret)
 {
     std::lock_guard<std::mutex> lock(context_mutex);
