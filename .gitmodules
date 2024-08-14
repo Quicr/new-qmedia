@@ -15,6 +15,3 @@
 	path = dependencies/sframe
 	url = https://github.com/Quicr/sframe.git
 	branch = provider
-[submodule "dependencies/sframe-mbedtls"]
-	path = dependencies/sframe-mbedtls
-	url = https://github.com/RichLogan/sframe-mbedtls.git

@@ -36,9 +36,8 @@ if (USE_MBEDTLS)
     target_compile_definitions(${PROJECT_NAME}
         PRIVATE
             USE_MBEDTLS)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            sframe_mbedtls)
+    target_sources(${PROJECT_NAME} PRIVATE mbedtls.cpp)
+    target_link_libraries(${PROJECT_NAME} PRIVATE mbedtls)
 else()
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
