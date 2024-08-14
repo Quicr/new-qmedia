@@ -8,6 +8,7 @@
 #include <cantina/logger.h>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
+#include <sframe/cipher.h>
 
 #include <optional>
 #include <string>
@@ -26,7 +27,7 @@ class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enabl
                          quicr::bytes e2eToken,
                          std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
                          const cantina::LoggerPointer& logger,
-                         const std::optional<sframe::CipherSuite> cipherSuite);
+                         const std::optional<sframe::CipherSuiteImpl> cipherSuite);
 
 public:
     [[nodiscard]] static std::shared_ptr<SubscriptionDelegate>
@@ -39,7 +40,7 @@ public:
            quicr::bytes e2eToken,
            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
            const cantina::LoggerPointer& logger,
-           const std::optional<sframe::CipherSuite> cipherSuite);
+           const std::optional<sframe::CipherSuiteImpl> cipherSuite);
 
     std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
 
@@ -104,7 +105,7 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
                         const std::vector<std::uint8_t>& priority,
                         const std::vector<std::uint16_t>& expiry,
                         const cantina::LoggerPointer& logger,
-                        const std::optional<sframe::CipherSuite> cipherSuite);
+                        const std::optional<sframe::CipherSuiteImpl> cipherSuite);
 
 public:
     [[nodiscard]] static std::shared_ptr<PublicationDelegate>
@@ -118,7 +119,7 @@ public:
            const std::vector<std::uint8_t>& priority,
            const std::vector<std::uint16_t>& expiry,
            const cantina::LoggerPointer& logger,
-           const std::optional<sframe::CipherSuite> cipherSuite);
+           const std::optional<sframe::CipherSuiteImpl> cipherSuite);
 
     std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
 
