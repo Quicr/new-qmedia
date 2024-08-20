@@ -234,8 +234,8 @@ TEST_CASE("Localhost relay")
     };
 
     const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
     };
 
     using namespace std::chrono_literals;

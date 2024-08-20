@@ -1,7 +1,3 @@
-if (NOT TARGET spdlog)
-    add_subdirectory(spdlog)
-endif()
-
 add_subdirectory(libquicr)
 
 option (INCLUDE_JSON "Turn on/off json build." ON)

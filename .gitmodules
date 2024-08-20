@@ -14,6 +14,3 @@
 [submodule "dependencies/sframe"]
 	path = dependencies/sframe
 	url = https://github.com/Quicr/sframe.git
-[submodule "dependencies/spdlog"]
-	path = dependencies/spdlog
-	url = https://github.com/gabime/spdlog.git
