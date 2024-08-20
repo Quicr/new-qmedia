@@ -12,7 +12,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${LIBRARIES}
         quicr
-        cantina::logger
+        spdlog
         numero_uri_lib
         sframe)
 

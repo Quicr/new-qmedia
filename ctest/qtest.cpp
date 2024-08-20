@@ -1,7 +1,8 @@
 #include <iostream>
 #include <qmedia/QController.hpp>
-#include <cantina/logger.h>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <qmedia/ManifestTypes.hpp>
 #include <qmedia/QDelegates.hpp>
 #include <qmedia/QuicrDelegates.hpp>
@@ -28,18 +29,18 @@ class QSubscriptionTestDelegate : public qmedia::QSubscriptionDelegate
 {
 public:
     QSubscriptionTestDelegate(const SourceId& sourceId) :
-        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
+        logger(spdlog::stderr_color_mt("TEST"))
     {
-        logger->Log("QSubscriptionTestDelegate constructed");
+        SPDLOG_LOGGER_INFO(logger, "QSubscriptionTestDelegate constructed");
     }
 public:
     int prepare(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet, quicr::TransportMode& transportMode) override {
         transportMode = quicr::TransportMode::ReliablePerGroup;
-        logger->Log("QSubscriptionTestDelegate::prepare");
+        SPDLOG_LOGGER_INFO(logger, "QSubscriptionTestDelegate::prepare");
         return 0;
     }
     int update(const std::string& sourceId, const std::string& label, const qmedia::manifest::ProfileSet& profileSet) override {
-        logger->Log("QSubscriptionTestDelegate::update");
+        SPDLOG_LOGGER_INFO(logger, "QSubscriptionTestDelegate::update");
         return 1; //1 = needs prepare
     }
 
@@ -58,30 +59,30 @@ public:
     }
 
 private:
-    const cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 };
 
 class QSubsciberTestDelegate : public qmedia::QSubscriberDelegate
 {
 public:
-    QSubsciberTestDelegate() : logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
+    QSubsciberTestDelegate() : logger(spdlog::stderr_color_mt("TEST"))
     {
     }
 
     std::shared_ptr<qmedia::QSubscriptionDelegate> allocateSubBySourceId(const SourceId& sourceId, const qmedia::manifest::ProfileSet& profileSet)
     {
-       logger->Log("QSubscriberTestDelegate::allocateSubBySourceId");
+       SPDLOG_LOGGER_INFO(logger, "QSubscriberTestDelegate::allocateSubBySourceId");
        return std::make_shared<QSubscriptionTestDelegate>(sourceId);
     }
 
     int removeSubBySourceId(const SourceId& sourceId)
     {
-       logger->Log("QSubscriberTestDelegate::removeSubBySourceId");
+       SPDLOG_LOGGER_INFO(logger, "QSubscriberTestDelegate::removeSubBySourceId");
        return 0;
     }
 
 private:
-    const cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 };
 
 ////// PUBLISH
@@ -91,54 +92,54 @@ class QPublicationTestDelegate : public qmedia::QPublicationDelegate
 public:
     QPublicationTestDelegate(const quicr::Namespace& quicrNamespace) :
         qmedia::QPublicationDelegate(),
-        logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
+        logger(spdlog::stderr_color_mt("TEST"))
     //quicrNamespace(quicrNamespace)
     {
-        logger->Log("QPublicationTestDelegate constructed");
+        SPDLOG_LOGGER_INFO(logger, "QPublicationTestDelegate constructed");
     }
 public:
     int prepare(const std::string& sourceId,  const std::string& qualityProfile, quicr::TransportMode& transportMode)  {
         transportMode = quicr::TransportMode::ReliablePerGroup;
-        logger->Log("QPublicationTestDelegate::prepare");
+        SPDLOG_LOGGER_INFO(logger, "QPublicationTestDelegate::prepare");
         std::cerr << "pub prepare " << std::endl;
         return 0;
     }
     int update(const std::string& sourceId, const std::string& qualityProfile) {
-        logger->Log("QPublicationTestDelegate::update");
+        SPDLOG_LOGGER_INFO(logger, "QPublicationTestDelegate::update");
         return 1; //1 = needs prepare
     }
     void publish(bool pubFlag) {
-        logger->Log("QPublicationTestDelegate::publish");
+        SPDLOG_LOGGER_INFO(logger, "QPublicationTestDelegate::publish");
     }
 
 private:
-    cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
     quicr::Namespace quicrNamespace;
 };
 
 class QPubisherTestDelegate : public qmedia::QPublisherDelegate
 {
 public:
-    QPubisherTestDelegate() : logger(std::make_shared<cantina::Logger>("Qmedia", "TEST"))
+    QPubisherTestDelegate() : logger(spdlog::stderr_color_mt("TEST"))
     {
-        logger->Log("QPubisherTestDelegate constructed");
+        SPDLOG_LOGGER_INFO(logger, "QPubisherTestDelegate constructed");
     }
 
     std::shared_ptr<qmedia::QPublicationDelegate> allocatePubByNamespace(const quicr::Namespace& quicrNamespace, const std::string& sourceID, const std::string& qualityProfile, const std::string& appTag)
     {
-       logger->Log("QPubisherTestDelegate::allocatePubByNamespace");
+       SPDLOG_LOGGER_INFO(logger, "QPubisherTestDelegate::allocatePubByNamespace");
        std::cerr << "allocatePubByNamespace " << quicrNamespace << std::endl;
        return std::make_shared<QPublicationTestDelegate>(quicrNamespace);
     }
 
     int removePubByNamespace(const quicr::Namespace& quicrNamespace)
     {
-       logger->Log("QPubisherTestDelegate::removeByNamespace");
+       SPDLOG_LOGGER_INFO(logger, "QPubisherTestDelegate::removeByNamespace");
        return 0;
     }
 
 private:
-    cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 };
 
 int test()
@@ -148,10 +149,10 @@ int test()
 
     auto qSubscriber = std::make_shared<QSubsciberTestDelegate>();
     auto qPublisher = std::make_shared<QPubisherTestDelegate>();
-    auto logger = std::make_shared<cantina::Logger>("QTest", "QTEST");
+    auto logger = spdlog::stderr_color_mt("QTEST");
     auto qController = std::make_shared<qmedia::QController>(qSubscriber, qPublisher, logger);
 
-    //logger->Log("connecting to qController");
+    //SPDLOG_LOGGER_INFO(logger, "connecting to qController");
     then = timeSinceEpochMillisec();
     qtransport::TransportConfig config {
         .tls_cert_filename = NULL,

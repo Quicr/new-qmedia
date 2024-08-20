@@ -3,6 +3,8 @@
 #include "relay.h"
 
 #include <quicr/quicr_client.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <future>
 #include <chrono>
@@ -10,7 +12,7 @@
 class LocalhostServerDelegate : public quicr::ServerDelegate
 {
 public:
-    LocalhostServerDelegate(std::shared_ptr<cantina::Logger> logger_in) : server(nullptr), logger(std::move(logger_in))
+    LocalhostServerDelegate(std::shared_ptr<spdlog::logger> logger_in) : server(nullptr), logger(std::move(logger_in))
     {
     }
 
@@ -21,7 +23,7 @@ public:
                          const std::string& /* auth_token */,
                          quicr::bytes&& /* e2e_token */) override
     {
-        logger->info << "PublishIntent namespace=" << quicr_namespace << std::flush;
+        SPDLOG_LOGGER_INFO(logger, "PublishIntent namespace={0}", std::string(quicr_namespace));
 
         quicr::PublishIntentResult result{quicr::messages::Response::Ok, {}, {}};
         server->publishIntentResponse(quicr_namespace, result);
@@ -42,7 +44,7 @@ public:
                      const std::string& /* auth_token */,
                      quicr::bytes&& /* data */) override
     {
-        logger->info << "Subscribe namespace=" << quicr_namespace << " subscriber_id=" << subscriber_id << std::flush;
+        SPDLOG_LOGGER_INFO(logger, "Subscribe namespace={0} subscriber_id={1}", std::string(quicr_namespace), subscriber_id);
 
         subscriptions.try_emplace(quicr_namespace);
         subscriptions.at(quicr_namespace).push_back({subscriber_id, conn_id});
@@ -56,7 +58,7 @@ public:
                        const uint64_t& subscriber_id,
                        const std::string& /* auth_token */) override
     {
-        logger->info << "Unsubscribe namespace=" << quicr_namespace << " subscriber_id=" << subscriber_id << std::flush;
+        SPDLOG_LOGGER_INFO(logger, "Unsubscribe namespace={0} subscriber_id={1}", std::string(quicr_namespace), subscriber_id);
 
         const auto status = quicr::SubscribeResult::SubscribeStatus::Ok;
         server->subscriptionEnded(subscriber_id, quicr_namespace, status);
@@ -72,8 +74,7 @@ public:
                            [[maybe_unused]] bool reliable,
                            quicr::messages::PublishDatagram&& datagram) override
     {
-        logger->info << "PublisherObject name=" << datagram.header.name << " size=" << datagram.media_data.size()
-                     << std::flush;
+        SPDLOG_LOGGER_INFO(logger, "PublisherObject name={0} size={1}", std::string(datagram.header.name), datagram.media_data.size());
 
         const auto name = datagram.header.name;
         for (const auto& [ns, subs] : subscriptions)
@@ -88,11 +89,11 @@ public:
                 if (sub.conn_id == conn_id)
                 {
                     // No loopback
-                    logger->info << "  Skipping loopback to subscriber_id=" << sub.subscriber_id << std::flush;
+                    SPDLOG_LOGGER_INFO(logger, "  Skipping loopback to subscriber_id={0}", sub.subscriber_id);
                     continue;
                 }
 
-                logger->info << "  Forwarding to subscriber_id=" << sub.subscriber_id << std::flush;
+                SPDLOG_LOGGER_INFO(logger, "  Forwarding to subscriber_id={0}", sub.subscriber_id);
                 server->sendNamedObject(sub.subscriber_id, 1, 500, datagram);
             }
         }
@@ -108,7 +109,7 @@ public:
 
 private:
     std::shared_ptr<quicr::Server> server;
-    std::shared_ptr<cantina::Logger> logger;
+    std::shared_ptr<spdlog::logger> logger;
 
     struct Subscriber
     {
@@ -127,12 +128,12 @@ LocalhostRelay::LocalhostRelay()
     };
 
     const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = const_cast<char *>(cert_file),
-        .tls_key_filename = const_cast<char *>(key_file),
+        .tls_cert_filename = cert_file,
+        .tls_key_filename = key_file,
         .time_queue_rx_size = 2000
     };
 
-    const auto logger = std::make_shared<cantina::Logger>("LocalhostRelay");
+    static const auto logger = spdlog::stderr_color_mt("LocalhostRelay");
     const auto delegate = std::make_shared<LocalhostServerDelegate>(logger);
 
     server = std::make_shared<quicr::Server>(relayInfo, tcfg, delegate, logger);
@@ -225,7 +226,7 @@ TEST_CASE("Localhost relay")
     relay.run();
 
     // Construct three clients
-    const auto logger = std::make_shared<cantina::Logger>("LocalhostRelayTestClient");
+    const auto logger = spdlog::stderr_color_mt("LocalhostRelayTestClient");
     const auto relayInfo = quicr::RelayInfo{
         .hostname = "127.0.0.1",
         .port = LocalhostRelay::port,
@@ -233,13 +234,13 @@ TEST_CASE("Localhost relay")
     };
 
     const auto tcfg = qtransport::TransportConfig{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
     };
 
     using namespace std::chrono_literals;
 
-    logger->Log("Connecting...");
+    SPDLOG_LOGGER_INFO(logger, "Connecting...");
     auto client_a = quicr::Client(relayInfo, "test-client-1", 0, tcfg, logger);
     auto client_b = quicr::Client(relayInfo, "test-client-2", 0, tcfg, logger);
     auto client_c = quicr::Client(relayInfo, "test-client-3", 0, tcfg, logger);
@@ -253,7 +254,7 @@ TEST_CASE("Localhost relay")
     REQUIRE(client_c.connected());
 
     // All three clients subscribe to the same namespace
-    logger->Log("Subscribing...");
+    SPDLOG_LOGGER_INFO(logger, "Subscribing...");
     const auto ns = quicr::Namespace(0x01020304000000000000000000000000_name, 32);
     const auto intent = quicr::SubscribeIntent::immediate;
 
@@ -276,7 +277,7 @@ TEST_CASE("Localhost relay")
     sub_del_c->await_subscribe_response();
 
     // One client publishes on the namespace
-    logger->Log("Publishing...");
+    SPDLOG_LOGGER_INFO(logger, "Publishing...");
     const auto name_a = 0x01020304000000000000000000000001_name;
     const auto data_a = quicr::bytes{0, 1, 2, 3, 4, 5, 6, 7};
     auto data = data_a;
@@ -293,7 +294,7 @@ TEST_CASE("Localhost relay")
     client_a.publishNamedObject(name_a, 0, 1000, std::move(data), std::move(trace));
 
     // Verify that both other clients received on the namespace
-    logger->Log("Receiving...");
+    SPDLOG_LOGGER_INFO(logger, "Receiving...");
     const auto [name_b, data_b] = sub_del_b->recv();
     const auto [name_c, data_c] = sub_del_c->recv();
     REQUIRE(name_b == name_a);

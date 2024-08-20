@@ -1,5 +1,3 @@
-
-
 add_subdirectory(libquicr)
 
 option (INCLUDE_JSON "Turn on/off json build." ON)
@@ -17,4 +15,3 @@ add_subdirectory(sframe)
 if(BUILD_TESTING AND QMEDIA_BUILD_TESTS AND NOT TARGET doctest)
   add_subdirectory( doctest )
 endif()
-

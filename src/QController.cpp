@@ -7,15 +7,22 @@
 #include <iostream>
 #include <sstream>
 
+#define LOGGER_TRACE(logger, ...) if (logger) SPDLOG_LOGGER_TRACE(logger, __VA_ARGS__)
+#define LOGGER_DEBUG(logger, ...) if (logger) SPDLOG_LOGGER_DEBUG(logger, __VA_ARGS__)
+#define LOGGER_INFO(logger, ...) if (logger) SPDLOG_LOGGER_INFO(logger, __VA_ARGS__)
+#define LOGGER_WARN(logger, ...) if (logger) SPDLOG_LOGGER_WARN(logger, __VA_ARGS__)
+#define LOGGER_ERROR(logger, ...) if (logger) SPDLOG_LOGGER_ERROR(logger, __VA_ARGS__)
+#define LOGGER_CRITICAL(logger, ...) if (logger) SPDLOG_LOGGER_CRITICAL(logger, __VA_ARGS__)
+
 namespace qmedia
 {
 
 QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate,
                          std::shared_ptr<QPublisherDelegate> qPublisherDelegate,
-                         const cantina::LoggerPointer& logger,
+                         std::shared_ptr<spdlog::logger> logger,
                          const bool debugging,
                          const std::optional<sframe::CipherSuite> cipher_suite) :
-    logger(std::make_shared<cantina::Logger>("QCTRL", logger)),
+    logger(std::move(logger)),
     qSubscriberDelegate(std::move(qSubscriberDelegate)),
     qPublisherDelegate(std::move(qPublisherDelegate)),
     stop(false),
@@ -26,7 +33,7 @@ QController::QController(std::shared_ptr<QSubscriberDelegate> qSubscriberDelegat
     // Otherwise, query the debugging flag.
     if (logger == nullptr && debugging)
     {
-        this->logger->SetLogLevel(cantina::LogLevel::Debug);
+        this->logger->set_level(spdlog::level::debug);
     }
 
     LOGGER_DEBUG(this->logger, "QController started...");
@@ -124,7 +131,7 @@ void QController::publishNamedObject(const quicr::Namespace& quicrNamespace,
     const auto& it = quicrPublicationsMap.find(quicrNamespace);
     if (it == quicrPublicationsMap.end())
     {
-        LOGGER_WARNING(logger, "Publication not found for " << quicrNamespace);
+        LOGGER_WARN(logger, "Publication not found for {0}", std::string(quicrNamespace));
         return;
     }
     const auto& publication = it->second;
@@ -187,7 +194,7 @@ QController::createQuicrSubscriptionDelegate(const std::string& sourceId,
     std::lock_guard<std::mutex> _(subsMutex);
     if (quicrSubscriptionsMap.contains(quicrNamespace))
     {
-        LOGGER_ERROR(logger, "Quicr Subscription delegate for \"" << quicrNamespace << "\" already exists!");
+        LOGGER_ERROR(logger, "Quicr Subscription delegate for \"{0}\" already exists!", std::string(quicrNamespace));
         return nullptr;
     }
 
@@ -228,7 +235,7 @@ QController::createQuicrPublicationDelegate(std::shared_ptr<qmedia::QPublication
     std::lock_guard<std::mutex> _(pubsMutex);
     if (quicrPublicationsMap.contains(quicrNamespace))
     {
-        LOGGER_ERROR(logger, "Quicr Publication delegate for \"" << quicrNamespace << "\" already exists!");
+        LOGGER_ERROR(logger, "Quicr Publication delegate for \"{0}\" already exists!", std::string(quicrNamespace));
         return nullptr;
     }
 
@@ -259,7 +266,7 @@ std::shared_ptr<QSubscriptionDelegate> QController::getSubscriptionDelegate(cons
 {
     if (!qSubscriberDelegate)
     {
-        LOGGER_ERROR(logger, "Subscription delegate doesn't exist for " << sourceId);
+        LOGGER_ERROR(logger, "Subscription delegate doesn't exist for {0}", sourceId);
         return nullptr;
     }
 
@@ -279,7 +286,7 @@ std::shared_ptr<QPublicationDelegate> QController::getPublicationDelegate(const 
 {
     if (!qPublisherDelegate)
     {
-        LOGGER_ERROR(logger, "Publication delegate doesn't exist for " << quicrNamespace);
+        LOGGER_ERROR(logger, "Publication delegate doesn't exist for {0}", std::string(quicrNamespace));
         return nullptr;
     }
 
@@ -319,7 +326,7 @@ int QController::startSubscription(std::shared_ptr<qmedia::QSubscriptionDelegate
 
     if (!sub_delegate)
     {
-        LOGGER_ERROR(logger, "Failed to find or create Subscription delegate for " << quicrNamespace);
+        LOGGER_ERROR(logger, "Failed to find or create Subscription delegate for {0}", std::string(quicrNamespace));
         return -1;
     }
 
@@ -332,7 +339,7 @@ void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
     std::lock_guard<std::mutex> _(subsMutex);
     const auto& it = quicrSubscriptionsMap.find(quicrNamespace);
     if (it == quicrSubscriptionsMap.end()) {
-        LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
+        LOGGER_WARN(logger, "Subscription not found for {0}", std::string(quicrNamespace));
         return;
     }
     auto& sub_delegate = it->second;
@@ -341,7 +348,7 @@ void QController::stopSubscription(const quicr::Namespace& quicrNamespace)
 
     // TODO: Remove from qSubscriptionsMap if no more subscriptions
     // left in the switching set.
-    LOGGER_INFO(logger, "Unsubscribed " << quicrNamespace);
+    LOGGER_INFO(logger, "Unsubscribed {0}", std::string(quicrNamespace));
 }
 
 int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> qDelegate,
@@ -357,7 +364,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
 {
     if (!client_session)
     {
-        LOGGER_ERROR(logger, "Failed to start publication for " << quicrNamespace << ": No Quicr session established");
+        LOGGER_ERROR(logger, "Failed to start publication for {0}: No Quicr session established", std::string(quicrNamespace));
         return -1;
     }
 
@@ -372,7 +379,7 @@ int QController::startPublication(std::shared_ptr<qmedia::QPublicationDelegate> 
                                                            transportMode);
     if (!quicrPubDelegate)
     {
-        LOGGER_ERROR(logger, "Failed to start publication for " << quicrNamespace << ": Delegate was null");
+        LOGGER_ERROR(logger, "Failed to start publication for {0}: Delegate was null", std::string(quicrNamespace));
         return -1;
     }
 
@@ -389,22 +396,22 @@ void QController::processSubscriptions(const std::vector<manifest::MediaStream>&
         auto delegate = getSubscriptionDelegate(subscription.sourceId, subscription.profileSet);
         if (!delegate)
         {
-            LOGGER_WARNING(logger, "Unable to allocate subscription delegate.");
+            LOGGER_WARN(logger, "Unable to allocate subscription delegate.");
             continue;
         }
 
         int update_error = delegate->update(subscription.sourceId, subscription.label, subscription.profileSet);
         if (update_error == 0)
         {
-            LOGGER_INFO(logger, "Updated subscription " << subscription.sourceId);
+            LOGGER_INFO(logger, "Updated subscription {0}", subscription.sourceId);
             continue;
         }
-        
+
         auto transportMode = quicr::TransportMode::Unreliable;
         int prepare_error = delegate->prepare(subscription.sourceId, subscription.label, subscription.profileSet, transportMode);
         if (prepare_error != 0)
         {
-            LOGGER_ERROR(logger, "Error preparing subscription: " << prepare_error);
+            LOGGER_ERROR(logger, "Error preparing subscription: {0}", prepare_error);
             continue;
         }
 
@@ -439,7 +446,7 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
                 profile.quicrNamespace, publication.sourceId, profile.qualityProfile, profile.appTag);
             if (!delegate)
             {
-                LOGGER_ERROR(logger, "Failed to create publication delegate: " << profile.quicrNamespace);
+                LOGGER_ERROR(logger, "Failed to create publication delegate: {0}", std::string(profile.quicrNamespace));
                 continue;
             }
 
@@ -448,8 +455,10 @@ void QController::processPublications(const std::vector<manifest::MediaStream>& 
             int prepare_error = delegate->prepare(publication.sourceId, profile.qualityProfile, transportMode);
             if (prepare_error != 0)
             {
-                LOGGER_WARNING(logger,
-                               "Preparing publication \"" << profile.quicrNamespace << "\" failed: " << prepare_error);
+                LOGGER_WARN(logger,
+                            "Preparing publication \"{0}\" failed: {1}",
+                            std::string(profile.quicrNamespace),
+                            prepare_error);
                 continue;
             }
 
@@ -533,7 +542,7 @@ void QController::setPublicationState(const quicr::Namespace& quicrNamespace, co
     const auto& it = quicrPublicationsMap.find(quicrNamespace);
     if (it == quicrPublicationsMap.end())
     {
-        LOGGER_WARNING(logger, "Publication not found for " << quicrNamespace);
+        LOGGER_WARN(logger, "Publication not found for {0}", std::string(quicrNamespace));
         return;
     }
     it->second.state = state;
@@ -545,7 +554,7 @@ void QController::setSubscriptionState(const quicr::Namespace& quicrNamespace, c
     const auto& it = quicrSubscriptionsMap.find(quicrNamespace);
     if (it == quicrSubscriptionsMap.end())
     {
-        LOGGER_WARNING(logger, "Subscription not found for " << quicrNamespace);
+        LOGGER_WARN(logger, "Subscription not found for {0}", std::string(quicrNamespace));
         return;
     }
     it->second->subscribe(client_session, transportMode);
@@ -555,5 +564,4 @@ quicr::SubscriptionState QController::getSubscriptionState(const quicr::Namespac
 {
     return client_session->getSubscriptionState(quicrNamespace);
 }
-
 }        // namespace qmedia
