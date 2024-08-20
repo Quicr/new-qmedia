@@ -1,5 +1,5 @@
 #include "qmedia/QuicrDelegates.hpp"
-#include <cantina/logger.h>
+#include <spdlog/spdlog.h>
 
 #include <quicr/hex_endec.h>
 #include <quicr/message_buffer.h>
@@ -8,6 +8,13 @@
 #include <iostream>
 #include <sstream>
 #include <ctime>
+
+#define LOGGER_TRACE(logger, ...) if (logger) SPDLOG_LOGGER_TRACE(logger, __VA_ARGS__)
+#define LOGGER_DEBUG(logger, ...) if (logger) SPDLOG_LOGGER_DEBUG(logger, __VA_ARGS__)
+#define LOGGER_INFO(logger, ...) if (logger) SPDLOG_LOGGER_INFO(logger, __VA_ARGS__)
+#define LOGGER_WARN(logger, ...) if (logger) SPDLOG_LOGGER_WARN(logger, __VA_ARGS__)
+#define LOGGER_ERROR(logger, ...) if (logger) SPDLOG_LOGGER_ERROR(logger, __VA_ARGS__)
+#define LOGGER_CRITICAL(logger, ...) if (logger) SPDLOG_LOGGER_CRITICAL(logger, __VA_ARGS__)
 
 constexpr quicr::Name Group_ID_Mask = ~(~0x0_name << 32) << 16;
 constexpr quicr::Name Object_ID_Mask = ~(~0x0_name << 16);
@@ -25,7 +32,7 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
                                            const std::string& authToken,
                                            quicr::bytes e2eToken,
                                            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                                           const cantina::LoggerPointer& logger,
+                                           std::shared_ptr<spdlog::logger> logger,
                                            std::optional<sframe::CipherSuite> cipherSuite) :
     canReceiveSubs(true),
     sourceId(sourceId),
@@ -35,7 +42,7 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     authToken(authToken),
     e2eToken(e2eToken),
     qDelegate(std::move(qDelegate)),
-    logger(std::make_shared<cantina::Logger>("TSDEL", logger)),
+    logger(std::move(logger)),
     sframe_context(cipherSuite ? std::optional<QSFrameContext>(*cipherSuite) : std::nullopt)
 {
     currentGroupId = 0;
@@ -56,7 +63,7 @@ SubscriptionDelegate::SubscriptionDelegate(const std::string& sourceId,
     }
     else
     {
-        LOGGER_WARNING(logger, "[" << quicrNamespace << "] This subscription will not attempt to encrypt data");
+        LOGGER_WARN(logger, "[{0}] This subscription will not attempt to encrypt data", std::string(quicrNamespace));
     }
 }
 
@@ -69,7 +76,7 @@ SubscriptionDelegate::create(const std::string& sourceId,
                              const std::string& authToken,
                              quicr::bytes e2eToken,
                              std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                             const cantina::LoggerPointer& logger,
+                             std::shared_ptr<spdlog::logger> logger,
                              std::optional<sframe::CipherSuite> cipherSuite)
 {
 
@@ -81,7 +88,7 @@ SubscriptionDelegate::create(const std::string& sourceId,
                                                                           authToken,
                                                                           e2eToken,
                                                                           std::move(qDelegate),
-                                                                          logger,
+                                                                          std::move(logger),
                                                                           cipherSuite));
 }
 
@@ -111,7 +118,7 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
     // LOGGER_DEBUG(logger, __FUNCTION__);
     if (data.empty())
     {
-        LOGGER_WARNING(logger, "Object " << quicrName << " is empty");
+        LOGGER_WARN(logger, "Object {0} is empty", std::string(quicrName));
         return;
     }
 
@@ -167,12 +174,12 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
         }
         catch (const std::exception& e)
         {
-            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: " << e.what());
+            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: {0}", e.what());
             return;
         }
         catch (const std::string& s)
         {
-            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: " << s);
+            LOGGER_ERROR(logger, "Exception trying to decrypt sframe: {0}", s);
             return;
         }
         catch (...)
@@ -193,11 +200,11 @@ void SubscriptionDelegate::onSubscribedObject(const quicr::Name& quicrName,
     }
     catch (const std::exception& e)
     {
-        LOGGER_ERROR(logger, "Exception trying to forward object: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to forward object: {0}", e.what());
     }
     catch (const std::string& s)
     {
-        LOGGER_ERROR(logger, "Exception trying to forward object: " << s);
+        LOGGER_ERROR(logger, "Exception trying to forward object: {0}", s);
     }
     catch (...)
     {
@@ -248,7 +255,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
                                          quicr::bytes&& payload,
                                          const std::vector<std::uint8_t>& priority,
                                          const std::vector<std::uint16_t>& expiry,
-                                         const cantina::LoggerPointer& logger,
+                                         std::shared_ptr<spdlog::logger> logger,
                                          const std::optional<sframe::CipherSuite> cipherSuite) :
     // canPublish(true),
     sourceId(sourceId),
@@ -262,7 +269,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
     priority(priority),
     expiry(expiry),
     qDelegate(std::move(qDelegate)),
-    logger(std::make_shared<cantina::Logger>("TPDEL", logger)),
+    logger(std::move(logger)),
     sframe_context(cipherSuite ? std::optional<QSFrameContext>(*cipherSuite) : std::nullopt)
 {
     if (sframe_context) {
@@ -277,7 +284,7 @@ PublicationDelegate::PublicationDelegate(std::shared_ptr<qmedia::QPublicationDel
         sframe_context->addEpoch(Fixed_Epoch, epoch_key);
         sframe_context->enableEpoch(Fixed_Epoch);
     } else {
-        LOGGER_WARNING(logger, "[" << quicrNamespace << "] This publication will not attempt to encrypt data");
+        LOGGER_WARN(logger, "[{0}] This publication will not attempt to encrypt data", std::string(quicrNamespace));
     }
 
     // Publish named object and intent require priorities. Set defaults if missing
@@ -297,7 +304,7 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
                                                                  quicr::bytes&& payload,
                                                                  const std::vector<std::uint8_t>& priority,
                                                                  const std::vector<std::uint16_t>& expiry,
-                                                                 const cantina::LoggerPointer& logger,
+                                                                 std::shared_ptr<spdlog::logger> logger,
                                                                  const std::optional<sframe::CipherSuite> cipherSuite)
 {
     return std::shared_ptr<PublicationDelegate>(new PublicationDelegate(std::move(qDelegate),
@@ -316,8 +323,7 @@ std::shared_ptr<PublicationDelegate> PublicationDelegate::create(std::shared_ptr
 void PublicationDelegate::onPublishIntentResponse(const quicr::Namespace& quicr_namespace,
                                                   const quicr::PublishIntentResult& result)
 {
-    LOGGER_INFO(logger,
-                "Received PublishIntent response for " << quicr_namespace << ": " << static_cast<int>(result.status));
+    LOGGER_INFO(logger, "Received PublishIntent response for {0}: {1}", std::string(quicr_namespace), static_cast<int>(result.status));
 }
 
 void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client,
@@ -329,18 +335,18 @@ void PublicationDelegate::publishIntent(std::shared_ptr<quicr::Client> client,
         return;
     }
 
-    LOGGER_DEBUG(logger, "Sending PublishIntent for " << quicrNamespace << "...");
+    LOGGER_DEBUG(logger, "Sending PublishIntent for {0}...", std::string(quicrNamespace));
     bool success = client->publishIntent(
         shared_from_this(), quicrNamespace, originUrl,
         authToken, std::move(payload), transport_mode, priority[0]);
 
     if (!success)
     {
-        LOGGER_ERROR(logger, "Failed to send PublishIntent for " << quicrNamespace);
+        LOGGER_ERROR(logger, "Failed to send PublishIntent for {0}", std::string(quicrNamespace));
         return;
     }
 
-    LOGGER_INFO(logger, "Sent PublishIntent for " << quicrNamespace);
+    LOGGER_INFO(logger, "Sent PublishIntent for {0}", std::string(quicrNamespace));
 }
 
 void PublicationDelegate::publishIntentEnd(std::shared_ptr<quicr::Client> client)
@@ -363,7 +369,7 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     // If the object data isn't present, return
     if (len == 0)
     {
-        LOGGER_WARNING(logger, "Cannot send empty object");
+        LOGGER_WARN(logger, "Cannot send empty object");
         return;
     }
 
@@ -413,12 +419,12 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
         }
         catch (const std::exception& e)
         {
-            LOGGER_ERROR(logger, "Exception trying to encrypt: " << e.what());
+            LOGGER_ERROR(logger, "Exception trying to encrypt: {0}", e.what());
             return;
         }
         catch (const std::string& s)
         {
-            LOGGER_ERROR(logger, "Exception trying to encrypt: " << s);
+            LOGGER_ERROR(logger, "Exception trying to encrypt: {0}", s);
             return;
         }
         catch (...)
@@ -438,12 +444,12 @@ void PublicationDelegate::publishNamedObject(std::shared_ptr<quicr::Client> clie
     }
     catch (const std::exception& e)
     {
-        LOGGER_ERROR(logger, "Exception trying to publish: " << e.what());
+        LOGGER_ERROR(logger, "Exception trying to publish: {0}", e.what());
         return;
     }
     catch (const std::string& s)
     {
-        LOGGER_ERROR(logger, "Exception trying to publish: " << s);
+        LOGGER_ERROR(logger, "Exception trying to publish: {0}", s);
         return;
     }
     catch (...)

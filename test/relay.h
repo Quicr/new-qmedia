@@ -6,8 +6,8 @@ class LocalhostRelay
 {
 public:
     static constexpr auto port = uint16_t(12345);
-    static constexpr auto* cert_file = "server-cert.pem";
-    static constexpr auto* key_file = "server-key.pem";
+    static constexpr auto cert_file = "server-cert.pem";
+    static constexpr auto key_file = "server-key.pem";
 
     LocalhostRelay();
 

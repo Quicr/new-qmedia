@@ -1,7 +1,8 @@
 #include <doctest/doctest.h>
 
 #include <UrlEncoder.h>
-#include <cantina/logger.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <qmedia/QController.hpp>
 #include <qmedia/QDelegates.hpp>
 
@@ -191,8 +192,8 @@ static qmedia::QController make_controller(std::shared_ptr<SubscriptionCollector
 {
     const auto sub = std::make_shared<QSubscriberTestDelegate>(std::move(collector));
     const auto pub = std::make_shared<QPublisherTestDelegate>();
-    const auto logger = std::make_shared<cantina::Logger>("QTest", "QTEST");
-    logger->SetLogLevel("DEBUG");
+    static const auto logger = spdlog::stderr_color_mt("QTEST");
+    logger->set_level(spdlog::level::debug);
     const auto suite = encrypt ? std::optional<sframe::CipherSuite>(qmedia::Default_Cipher_Suite) : std::nullopt;
     return qmedia::QController(sub, pub, logger, true, suite);
 }
@@ -257,8 +258,8 @@ static void two_party_session(bool encrypt)
 
     // Connect to the relay
     qtransport::TransportConfig config{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
     };
     controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
     controller_b.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
@@ -358,8 +359,8 @@ TEST_CASE("Fetch Publications")
     const auto relay = LocalhostRelay();
     relay.run();
     qtransport::TransportConfig config{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
     };
     controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
 
@@ -393,8 +394,8 @@ TEST_CASE("Test Publication States")
 
     // Connect to the relay
     qtransport::TransportConfig config{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
         .debug = true,
     };
     controller_a.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
@@ -470,8 +471,8 @@ TEST_CASE("Subscription set/get state")
     const auto relay = LocalhostRelay();
     relay.run();
     qtransport::TransportConfig config{
-        .tls_cert_filename = nullptr,
-        .tls_key_filename = nullptr,
+        .tls_cert_filename = "",
+        .tls_key_filename = "",
     };
     controller.connect("a@cisco.com", "127.0.0.1", LocalhostRelay::port, quicr::RelayInfo::Protocol::QUIC, 0, config);
     controller.updateManifest(manifest);
@@ -488,19 +489,4 @@ TEST_CASE("Subscription set/get state")
     const quicr::SubscriptionState& pausedState = controller.getSubscriptionState(media.profileSet.profiles[0].quicrNamespace);
     REQUIRE(pausedState == quicr::SubscriptionState::Paused);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-}
-
-TEST_CASE("Parent logger")
-{
-    // Parent logger gets log messages.
-    bool messageReceived = false;
-    auto parent = std::make_shared<cantina::CustomLogger>([&messageReceived](auto level, const std::string& msg, bool) {
-        messageReceived |= (msg.find("QController started...") != std::string::npos && level == cantina::LogLevel::Debug);
-    });
-    parent->SetLogLevel(cantina::LogLevel::Debug);
-    auto controller = qmedia::QController(nullptr, nullptr, parent);
-    REQUIRE(messageReceived);
-
-    // Non-parent construction still should work.
-    qmedia::QController(nullptr, nullptr, nullptr);
 }

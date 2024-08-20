@@ -6,7 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
-#include <cantina/logger.h>
+#include <spdlog/spdlog.h>
 #include <transport/transport.h>
 
 #include <mutex>
@@ -33,7 +33,7 @@ public:
 
     QController(std::shared_ptr<QSubscriberDelegate> subscriberDelegate,
                 std::shared_ptr<QPublisherDelegate> publisherDelegate,
-                const cantina::LoggerPointer& logger,
+                std::shared_ptr<spdlog::logger> logger,
                 const bool debugging = false,
                 const std::optional<sframe::CipherSuite> cipherSuite = Default_Cipher_Suite);
 
@@ -47,7 +47,7 @@ public:
                 const qtransport::TransportConfig& config);
 
     int disconnect();
-    
+
     bool connected() const;
 
     [[deprecated("Use QController::disconnect instead")]] void close();
@@ -155,7 +155,7 @@ private:
     std::mutex subsMutex;
     std::mutex pubsMutex;
 
-    const cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 
     std::shared_ptr<QSubscriberDelegate> qSubscriberDelegate;
     std::shared_ptr<QPublisherDelegate> qPublisherDelegate;

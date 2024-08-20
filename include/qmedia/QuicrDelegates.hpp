@@ -5,7 +5,7 @@
 
 #include <transport/transport.h>
 
-#include <cantina/logger.h>
+#include <spdlog/spdlog.h>
 #include <quicr/quicr_common.h>
 #include <quicr/quicr_client.h>
 
@@ -25,7 +25,7 @@ class SubscriptionDelegate : public quicr::SubscriberDelegate, public std::enabl
                          const std::string& authToken,
                          quicr::bytes e2eToken,
                          std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-                         const cantina::LoggerPointer& logger,
+                         std::shared_ptr<spdlog::logger> logger,
                          const std::optional<sframe::CipherSuite> cipherSuite);
 
 public:
@@ -38,7 +38,7 @@ public:
            const std::string& authToken,
            quicr::bytes e2eToken,
            std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate,
-           const cantina::LoggerPointer& logger,
+           std::shared_ptr<spdlog::logger> logger,
            const std::optional<sframe::CipherSuite> cipherSuite);
 
     std::shared_ptr<SubscriptionDelegate> getptr() { return shared_from_this(); }
@@ -79,7 +79,7 @@ private:
     std::string authToken;
     quicr::bytes e2eToken;
     std::shared_ptr<qmedia::QSubscriptionDelegate> qDelegate;
-    const cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 
     std::uint64_t groupCount;
     std::uint64_t objectCount;
@@ -103,7 +103,7 @@ class PublicationDelegate : public quicr::PublisherDelegate, public std::enable_
                         quicr::bytes&& payload,
                         const std::vector<std::uint8_t>& priority,
                         const std::vector<std::uint16_t>& expiry,
-                        const cantina::LoggerPointer& logger,
+                        std::shared_ptr<spdlog::logger> logger,
                         const std::optional<sframe::CipherSuite> cipherSuite);
 
 public:
@@ -117,7 +117,7 @@ public:
            quicr::bytes&& payload,
            const std::vector<std::uint8_t>& priority,
            const std::vector<std::uint16_t>& expiry,
-           const cantina::LoggerPointer& logger,
+           std::shared_ptr<spdlog::logger> logger,
            const std::optional<sframe::CipherSuite> cipherSuite);
 
     std::shared_ptr<PublicationDelegate> getptr() { return shared_from_this(); }
@@ -159,7 +159,7 @@ private:
     std::vector<std::uint16_t> expiry;
 
     std::shared_ptr<qmedia::QPublicationDelegate> qDelegate;
-    const cantina::LoggerPointer logger;
+    const std::shared_ptr<spdlog::logger> logger;
 
     std::optional<QSFrameContext> sframe_context;
 };
