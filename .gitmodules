@@ -8,9 +8,6 @@
 [submodule "dependencies/numero-uri"]
 	path = dependencies/numero-uri
 	url = https://github.com/Quicr/numero-uri.git
-[submodule "dependencies/json"]
-	path = dependencies/json
-	url = https://github.com/nlohmann/json
 [submodule "dependencies/sframe"]
 	path = dependencies/sframe
 	url = https://github.com/Quicr/sframe.git
